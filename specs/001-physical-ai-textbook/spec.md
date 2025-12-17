@@ -97,6 +97,8 @@ To create an AI-native educational platform that teaches students how to bridge 
 
 ### 4.1 Technology Stack
 - **Frontend**: Docusaurus for textbook presentation
+- **Type Safety**: TypeScript for enhanced development experience and error prevention
+- **Styling**: Tailwind CSS for responsive and consistent UI design
 - **AI Platform**: Cohere for RAG chatbot (instead of OpenAI)
 - **Authentication**: Better-Auth
 - **Database**: Neon Serverless Postgres
@@ -226,3 +228,23 @@ To create an AI-native educational platform that teaches students how to bridge 
 - Student engagement with interactive features
 - Effectiveness of personalized content delivery
 - Success of multilingual support in improving comprehension
+
+## 11. Project Plan
+
+### Phase 1: Foundation (Completed)
+- Docusaurus setup
+- Basic structure
+- Tailwind integration
+
+### Phase 2: Elegant Luxury UI/UX Development (Current Priority)
+- Implement pure black background site-wide
+- Design premium hero section with deep black base and elegant gold accents
+- Create sophisticated card components with subtle gold borders and soft shadows
+- Add minimal grain texture and gentle scroll/hover animations
+- Use warm amber/gold gradients for text and buttons
+- Ensure timeless luxury feel – no futuristic elements
+- Polish responsiveness and subtle interactions
+
+### Phase 3–4: Content & Launch
+- Module writing
+- Final review and release

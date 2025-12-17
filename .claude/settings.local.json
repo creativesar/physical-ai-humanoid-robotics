@@ -1,7 +1,40 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git config user.name \"Claude Code\")",
+      "Bash(git config user.email \"claude-code@anthropic.com\")",
+      "Bash(git commit -m \"Initial commit: Physical AI & Humanoid Robotics textbook project setup\")",
+      "Bash(bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only)",
+      "Bash(mkdir -p specs/001-physical-ai-textbook)",
+      "Bash(cp specs/physical-ai-textbook/spec.md specs/001-physical-ai-textbook/spec.md)",
+      "Bash(cp specs/physical-ai-textbook/plan.md specs/001-physical-ai-textbook/plan.md)",
+      "SlashCommand(/sp.clarify)",
+      "Bash(npx create-docusaurus@latest physical-ai-humanoid-robotics-textbook classic --typescript)",
+      "Bash(npx create-docusaurus@latest . classic --typescript)",
+      "Bash(git rev-parse --git-dir)",
+      "Bash(ls -la *.json *.yml *.yaml *.config.* .eslintrc* .prettierrc*)",
+      "Bash(npm install -D tailwindcss postcss autoprefixer)",
+      "Bash(npx tailwindcss init -p)",
+      "Bash(npm install tailwindcss postcss autoprefixer --save-dev)",
+      "Bash(npm search spec-kit-plus --json)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(find specs/001-physical-ai-textbook/ -name \"*.md\" -exec grep -l \"checklist\\|-\\ \\[ \\]\\|-\\ \\[X\\]\" {} ;)",
+      "Bash(npm install framer-motion gsap)",
+      "Bash(npm install @react-three/fiber @react-three/drei three)",
+      "Bash(npm install three @react-three/fiber @react-three/drei)",
+      "Bash(bash .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(cat:*)",
+      "SlashCommand(/sp.phr)",
+      "Bash(dir frontendsrc /s /b)",
+      "Bash(findstr -i \"auth\")",
+      "Bash(dir frontendsrctheme)",
+      "Bash(dir \"C:\\Users\\Coders\\Desktop\\physical-ai-humanoid-robotics\\specs\\001-physical-ai-textbook\\checklists\")",
+      "Bash(dir \".gitignore\" \".dockerignore\" \".eslintignore\" \".prettierignore\" \".npmignore\")",
+      "Bash(dir \"package.json\" \"tsconfig.json\" \"tailwind.config.*\" \"Dockerfile*\" \"*.tf\" \".eslintrc*\" \"eslint.config.*\" \".prettierrc*\")",
+      "Bash(npx docusaurus build)",
+      "Bash(rm nul)",
+      "Bash(git add .claude/settings.local.json .specify/memory/constitution.md specs/physical-ai-textbook/ .gitignore .qwen/ QWEN.md frontend/ history/ physical-ai-humanoid-robotics-textbook/ specs/001-physical-ai-textbook/ src/)"
     ]
   }
 }

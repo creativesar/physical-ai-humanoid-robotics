@@ -1,0 +1,51 @@
+.section {
+  background: linear-gradient(165deg, #000000 0%, #0a0a1a 100%);
+  padding: 8rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top right, rgba(15, 227, 192, 0.08) 0%, transparent 40%), 
+              radial-gradient(circle at bottom left, rgba(15, 227, 192, 0.04) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 10%;
+  width: 200px;
+  height: 200px;
+  background: rgba(15, 227, 192, 0.05);
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+}
+
+@media (max-width: 996px) {
+  .section {
+    padding: 5rem 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 3rem 0;
+  }
+  
+  .section::after {
+    width: 120px;
+    height: 120px;
+    top: 10%;
+    left: 5%;
+  }
+}
