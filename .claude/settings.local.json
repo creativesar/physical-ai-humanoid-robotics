@@ -34,7 +34,9 @@
       "Bash(dir \"package.json\" \"tsconfig.json\" \"tailwind.config.*\" \"Dockerfile*\" \"*.tf\" \".eslintrc*\" \"eslint.config.*\" \".prettierrc*\")",
       "Bash(npx docusaurus build)",
       "Bash(rm nul)",
-      "Bash(git add .claude/settings.local.json .specify/memory/constitution.md specs/physical-ai-textbook/ .gitignore .qwen/ QWEN.md frontend/ history/ physical-ai-humanoid-robotics-textbook/ specs/001-physical-ai-textbook/ src/)"
+      "Bash(git add .claude/settings.local.json .specify/memory/constitution.md specs/physical-ai-textbook/ .gitignore .qwen/ QWEN.md frontend/ history/ physical-ai-humanoid-robotics-textbook/ specs/001-physical-ai-textbook/ src/)",
+      "Bash(git commit -m \"Fix Docusaurus build error by resolving undefined component issue in Root.tsx and update frontend with Physical AI & Humanoid Robotics textbook content\n\n- Fixed ''Element type is invalid'' error during static site generation by removing problematic AuthProvider from Root.tsx\n- Updated AuthButton component to handle client-side authentication properly\n- Added comprehensive Physical AI & Humanoid Robotics textbook content including modules on ROS2, digital twins, Isaac, VLA, and more\n- Added assessment materials, documentation, and interactive components\n- Updated configuration files and styling for improved user experience\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\")",
+      "Bash(git push origin 001-physical-ai-textbook)"
     ]
   }
 }
