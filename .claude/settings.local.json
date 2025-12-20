@@ -259,7 +259,12 @@
       "Bash(python -m uvicorn main:app --host 127.0.0.1 --port 8000)",
       "Bash(python -c \"import sys; print\\(sys.path\\)\")",
       "Bash(git add .claude/settings.local.json backend/.gitignore backend/requirements.txt backend/services/mistral_service.py backend/services/qdrant_service.py backend/utils/content_ingestor.py frontend/src/components/ContentTranslator.tsx frontend/src/components/LuxuryChatbotWidget.module.css frontend/src/components/LuxuryChatbotWidget.tsx backend/.env.example)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Physical AI & Humanoid Robotics textbook project with backend and frontend enhancements\n\n- Update backend services including Mistral and Qdrant services\n- Enhance content ingestion functionality\n- Improve frontend components for content translation and chatbot widget\n- Update requirements and gitignore for project consistency\n- Add environment example file\n\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Physical AI & Humanoid Robotics textbook project with backend and frontend enhancements\n\n- Update backend services including Mistral and Qdrant services\n- Enhance content ingestion functionality\n- Improve frontend components for content translation and chatbot widget\n- Update requirements and gitignore for project consistency\n- Add environment example file\n\nEOF\n\\)\")",
+      "Bash(git rm --cached .claude/tools/__pycache__/content_generator.cpython-312.pyc .claude/tools/__pycache__/content_personalization.cpython-312.pyc .claude/tools/__pycache__/content_update_system.cpython-312.pyc .claude/tools/__pycache__/practice_question_generator.cpython-312.pyc .claude/tools/__pycache__/textbook_maintenance.cpython-312.pyc backend/__pycache__/main.cpython-312.pyc backend/api/__pycache__/chat.cpython-312.pyc backend/api/__pycache__/content.cpython-312.pyc backend/api/__pycache__/translate.cpython-312.pyc backend/services/__pycache__/cohere_service.cpython-312.pyc backend/services/__pycache__/mistral_service.cpython-312.pyc backend/services/__pycache__/qdrant_service.cpython-312.pyc backend/services/__pycache__/rag_service.cpython-312.pyc backend/utils/__pycache__/content_ingestor.cpython-312.pyc)",
+      "Bash(git reset)",
+      "Bash(git clean -fd)",
+      "Bash(git reset HEAD .)",
+      "Bash(find backend -name \"*.py\" -type f -exec git status --porcelain {} ;)"
     ]
   }
 }
