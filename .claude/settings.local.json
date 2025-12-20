@@ -258,7 +258,8 @@
       "Bash(python -c \"from main import app; print\\(''App imported successfully''\\)\")",
       "Bash(python -m uvicorn main:app --host 127.0.0.1 --port 8000)",
       "Bash(python -c \"import sys; print\\(sys.path\\)\")",
-      "Bash(git add .claude/settings.local.json backend/.gitignore backend/requirements.txt backend/services/mistral_service.py backend/services/qdrant_service.py backend/utils/content_ingestor.py frontend/src/components/ContentTranslator.tsx frontend/src/components/LuxuryChatbotWidget.module.css frontend/src/components/LuxuryChatbotWidget.tsx backend/.env.example)"
+      "Bash(git add .claude/settings.local.json backend/.gitignore backend/requirements.txt backend/services/mistral_service.py backend/services/qdrant_service.py backend/utils/content_ingestor.py frontend/src/components/ContentTranslator.tsx frontend/src/components/LuxuryChatbotWidget.module.css frontend/src/components/LuxuryChatbotWidget.tsx backend/.env.example)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate Physical AI & Humanoid Robotics textbook project with backend and frontend enhancements\n\n- Update backend services including Mistral and Qdrant services\n- Enhance content ingestion functionality\n- Improve frontend components for content translation and chatbot widget\n- Update requirements and gitignore for project consistency\n- Add environment example file\n\nEOF\n\\)\")"
     ]
   }
 }
