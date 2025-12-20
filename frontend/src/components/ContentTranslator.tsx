@@ -92,6 +92,14 @@ export default function ContentTranslator() {
             // Update the element with translated text
             if (translatedText && element.textContent) {
               element.textContent = translatedText;
+              // Apply RTL styling for Urdu content
+              if (language === 'urdu') {
+                element.dir = 'rtl';
+                element.style.textAlign = 'right';
+              } else {
+                element.dir = 'ltr';
+                element.style.textAlign = 'left';
+              }
             }
           }
         } catch (error) {

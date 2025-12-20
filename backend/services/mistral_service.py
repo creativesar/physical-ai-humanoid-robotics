@@ -37,6 +37,8 @@ class MistralService:
             logger.error(f"Mistral embedding error for {len(texts)} texts: {str(e)}")
             if hasattr(e, 'http_status'):
                 logger.error(f"HTTP Status: {e.http_status}")
+                if e.http_status == 401:
+                    logger.error("Authentication failed - check your MISTRAL_API_KEY in the .env file")
             raise
 
     async def generate_embeddings_query(self, text: str) -> List[float]:
@@ -51,6 +53,10 @@ class MistralService:
             return response.data[0].embedding
         except Exception as e:
             logger.error(f"Mistral query embedding error: {str(e)}")
+            if hasattr(e, 'http_status'):
+                logger.error(f"HTTP Status: {e.http_status}")
+                if e.http_status == 401:
+                    logger.error("Authentication failed - check your MISTRAL_API_KEY in the .env file")
             raise
 
     async def generate_response(self, prompt: str, context: str = "") -> str:
@@ -58,7 +64,7 @@ class MistralService:
         Generate a response using Mistral's language model
         """
         try:
-            full_prompt = f"Context: {context}\n\nQuestion: {prompt}\n\nPlease provide a helpful answer based on the context above. If the context doesn't contain relevant information, say so."
+            full_prompt = f"Context: {context}\n\nQuestion: {prompt}\n\nProvide a very concise answer in 1-2 sentences. If context is insufficient, say so briefly."
 
             chat_response = await self.client.chat.complete_async(
                 model=self.generation_model,
@@ -68,13 +74,17 @@ class MistralService:
                         "content": full_prompt,
                     }
                 ],
-                temperature=0.3,
-                max_tokens=500
+                temperature=0.1,  # Very low temperature for focused responses
+                max_tokens=100    # Further limit tokens for brevity
             )
 
             return chat_response.choices[0].message.content
         except Exception as e:
             logger.error(f"Mistral chat response error: {str(e)}")
+            if hasattr(e, 'http_status'):
+                logger.error(f"HTTP Status: {e.http_status}")
+                if e.http_status == 401:
+                    logger.error("Authentication failed - check your MISTRAL_API_KEY in the .env file")
             if "rate limit" in str(e).lower():
                 logger.warning("Mistral rate limit hit")
             raise
@@ -89,4 +99,8 @@ class MistralService:
             return len(test_response) > 0
         except Exception as e:
             logger.error(f"Mistral connection test failed: {str(e)}")
+            if hasattr(e, 'http_status'):
+                logger.error(f"HTTP Status: {e.http_status}")
+                if e.http_status == 401:
+                    logger.error("Authentication failed - check your MISTRAL_API_KEY in the .env file")
             return False

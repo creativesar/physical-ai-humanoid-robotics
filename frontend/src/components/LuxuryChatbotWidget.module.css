@@ -5,6 +5,21 @@
   z-index: 1000;
 }
 
+/* Mobile responsiveness for the chatbot container */
+@media (max-width: 768px) {
+  .chatbotContainer {
+    bottom: 15px;
+    right: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatbotContainer {
+    bottom: 12px;
+    right: 12px;
+  }
+}
+
 .chatButton {
   width: 70px;
   height: 70px;
@@ -23,6 +38,21 @@
   position: relative;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   animation: float 4s ease-in-out infinite, neon-glow 2s ease-in-out infinite alternate;
+}
+
+/* Mobile responsiveness for the chat button */
+@media (max-width: 768px) {
+  .chatButton {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatButton {
+    width: 55px;
+    height: 55px;
+  }
 }
 
 .chatButton:hover {
@@ -204,6 +234,27 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 255, 255, 0.1);
 }
 
+/* Mobile responsiveness for the chat window */
+@media (max-width: 768px) {
+  .chatWindow {
+    width: 350px;
+    height: 450px;
+    bottom: 75px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatWindow {
+    width: calc(100vw - 30px);
+    height: calc(100vh - 100px);
+    min-height: 300px;
+    max-height: calc(100vh - 80px);
+    bottom: 15px;
+    right: 15px;
+    left: 15px;
+  }
+}
+
 .chatWindow::before {
   content: '';
   position: absolute;
@@ -264,6 +315,13 @@
   backdrop-filter: blur(10px);
 }
 
+/* Mobile responsiveness for the chat header */
+@media (max-width: 480px) {
+  .chatHeader {
+    padding: 12px 15px;
+  }
+}
+
 .chatHeader::before {
   content: '';
   position: absolute;
@@ -301,6 +359,13 @@
   filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.6));
 }
 
+/* Mobile responsiveness for the bot avatar container */
+@media (max-width: 480px) {
+  .botAvatarContainer {
+    margin-right: 12px;
+  }
+}
+
 .botAvatar {
   width: 45px;
   height: 45px;
@@ -312,6 +377,14 @@
   border: 2px solid #00ffff;
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
   animation: avatar-glow 2s ease-in-out infinite alternate;
+}
+
+/* Mobile responsiveness for the bot avatar */
+@media (max-width: 480px) {
+  .botAvatar {
+    width: 38px;
+    height: 38px;
+  }
 }
 
 @keyframes avatar-glow {
@@ -366,6 +439,17 @@
   text-shadow: 0 0 5px rgba(0, 255, 255, 0.4);
 }
 
+/* Mobile responsiveness for the header info */
+@media (max-width: 480px) {
+  .headerInfo h3 {
+    font-size: 18px;
+  }
+
+  .headerInfo p {
+    font-size: 13px;
+  }
+}
+
 .statusDot {
   width: 10px;
   height: 10px;
@@ -391,6 +475,17 @@
   transition: all 0.3s ease;
   backdrop-filter: blur(5px);
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+}
+
+/* Mobile responsiveness for the header actions */
+@media (max-width: 480px) {
+  .headerActions {
+    gap: 8px;
+  }
+
+  .iconButton {
+    padding: 6px;
+  }
 }
 
 .iconButton:hover {
@@ -660,6 +755,18 @@
   animation: input-glow 3s ease-in-out infinite alternate;
 }
 
+/* Mobile responsiveness for input elements */
+@media (max-width: 480px) {
+  .inputContainer {
+    padding: 10px 15px;
+  }
+
+  .inputWrapper {
+    padding: 6px 12px;
+    border-radius: 20px;
+  }
+}
+
 @keyframes input-glow {
   from {
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
@@ -712,6 +819,15 @@
   animation: button-pulse 2s infinite;
 }
 
+/* Mobile responsiveness for voice button */
+@media (max-width: 480px) {
+  .voiceButton {
+    width: 30px;
+    height: 30px;
+    padding: 6px;
+  }
+}
+
 @keyframes button-pulse {
 
   0%,
@@ -730,6 +846,24 @@
   box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
 }
 
+.voiceButton.listening {
+  background: linear-gradient(135deg, #ff0055, #cc0044);
+  animation: listening-pulse 1.5s infinite;
+  box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
+}
+
+@keyframes listening-pulse {
+  0% {
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 0, 85, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+  }
+}
+
 .sendButton {
   background: linear-gradient(135deg, #0066ff, #0044cc);
   color: white;
@@ -744,6 +878,15 @@
   transition: all 0.3s ease;
   box-shadow: 0 0 25px rgba(0, 102, 255, 0.4);
   animation: send-button-glow 2s infinite alternate;
+}
+
+/* Mobile responsiveness for send button */
+@media (max-width: 480px) {
+  .sendButton {
+    width: 30px;
+    height: 30px;
+    padding: 6px;
+  }
 }
 
 @keyframes send-button-glow {

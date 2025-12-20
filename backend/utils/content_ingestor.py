@@ -19,7 +19,7 @@ class ContentIngestor:
     def __init__(self, rag_service: RAGService):
         self.rag_service = rag_service
 
-    async def ingest_from_directory(self, docs_path: str, base_url: str = "/docs/") -> Dict[str, Any]:
+    async def ingest_from_directory(self, docs_path: str, base_url: str = "/") -> Dict[str, Any]:
         """
         Ingest content from a directory of markdown files
         """
@@ -62,7 +62,13 @@ class ContentIngestor:
             content = f.read()
 
         # Extract chapter/section info from file path
-        relative_path = os.path.relpath(file_path, os.path.dirname(file_path.split("docs")[0] + "docs"))
+        docs_dir = os.path.join(os.path.dirname(file_path), "docs").replace("docs/docs", "docs")
+        if "docs" in file_path:
+            # Find the 'docs' part and get the relative path from there
+            docs_index = file_path.rfind("docs") + 5  # +5 to skip "docs/"
+            relative_path = file_path[docs_index:].replace('\\', '/')
+        else:
+            relative_path = os.path.relpath(file_path, start=docs_path)
 
         # Clean up the path to create a proper chapter ID
         chapter_id = relative_path.replace('/', '_').replace('\\', '_').replace('.md', '').replace('.mdx', '')
@@ -72,7 +78,7 @@ class ContentIngestor:
         plain_text = self._markdown_to_text(content)
 
         # Create source URL
-        source_url = base_url + relative_path.replace('.md', '').replace('.mdx', '').replace('\\', '/')
+        source_url = base_url + relative_path.replace('.md', '').replace('.mdx', '')
 
         # Index the content
         index_result = await self.rag_service.index_content(

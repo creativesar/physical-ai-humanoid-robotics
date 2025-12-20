@@ -317,6 +317,8 @@ const LuxuryChatbotWidget: React.FC = () => {
 
 
   const [isUrduMode, setIsUrduMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const quickActions = [
     { id: 'examples', label: 'Examples', icon: '💡', prompt: 'Can you provide practical examples related to our discussion?' },
@@ -335,13 +337,76 @@ const LuxuryChatbotWidget: React.FC = () => {
 
   const translateToUrdu = async (text: string): Promise<string> => {
     try {
-      // This is a placeholder implementation - in a real scenario, you would call
-      // an actual translation API or use a translation library
-      // For now, we'll just return the original text with a note
-      return `${text} [URDU TRANSLATION PLACEHOLDER]`;
+      // Call the backend translation API
+      const response = await fetch(`${API_URL}/api/translate/urdu`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: text,
+          source_language: 'en',
+          target_language: 'ur'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Translation API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.translated_content;
     } catch (error) {
       console.error('Translation error:', error);
-      return text;
+      return text; // Return original text if translation fails
+    }
+  };
+
+  const initializeSpeechRecognition = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in your browser. Please try Chrome or Edge.');
+      return null;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    return recognition;
+  };
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      // Stop listening
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+    } else {
+      // Start listening
+      const recognition = initializeSpeechRecognition();
+      if (recognition) {
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsListening(true);
+      }
     }
   };
 
@@ -560,11 +625,12 @@ const LuxuryChatbotWidget: React.FC = () => {
                 />
                 <div className={styles.inputActions}>
                   <button
-                    className={styles.voiceButton}
-                    aria-label="Voice input"
-                    title="Premium Voice Input"
+                    className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}
+                    onClick={toggleVoiceInput}
+                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                    title={isListening ? "Stop voice input" : "Start voice input"}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill={isListening ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
                     </svg>
