@@ -267,7 +267,8 @@
       "Bash(find backend -name \"*.py\" -type f -exec git status --porcelain {} ;)",
       "Bash(mkdir -p backend/dist)",
       "Bash(mkdir -p backend/api_functions)",
-      "Bash(python -c \"from index import app, handler; print\\(''API functions imported successfully''\\)\")"
+      "Bash(python -c \"from index import app, handler; print\\(''API functions imported successfully''\\)\")",
+      "Bash(ls -la *.json)"
     ]
   }
 }
