@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import i18n from '../i18n/i18n';
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 export type Language = 'english' | 'urdu';
@@ -31,7 +32,7 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
   const [difficultyLevel, setDifficultyLevelState] = useState<DifficultyLevel>('intermediate');
   const [language, setLanguageState] = useState<Language>('english');
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount and set i18n language
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -40,10 +41,19 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
           const data = JSON.parse(stored);
           setUserProfile(data.userProfile || null);
           setDifficultyLevelState(data.difficultyLevel || 'intermediate');
-          setLanguageState(data.language || 'english');
+
+          const storedLanguage = data.language || 'english';
+          setLanguageState(storedLanguage);
+
+          // Set the i18n language based on stored preference
+          const i18nLang = storedLanguage === 'urdu' ? 'ur' : 'en';
+          i18n.changeLanguage(i18nLang);
         } catch (error) {
           console.error('Failed to load personalization data:', error);
         }
+      } else {
+        // Set default language if no stored data
+        i18n.changeLanguage('en');
       }
     }
   }, []);
@@ -86,10 +96,13 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
   };
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    if (userProfile) {
-      setUserProfile({ ...userProfile, preferredLanguage: lang });
-    }
+    const i18nLang = lang === 'urdu' ? 'ur' : 'en';
+    i18n.changeLanguage(i18nLang).then(() => {
+      setLanguageState(lang);
+      if (userProfile) {
+        setUserProfile({ ...userProfile, preferredLanguage: lang });
+      }
+    });
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {

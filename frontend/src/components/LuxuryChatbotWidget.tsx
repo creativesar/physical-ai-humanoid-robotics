@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@site/src/hooks/useAuth';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { useTranslation } from 'react-i18next';
 import styles from './LuxuryChatbotWidget.module.css';
 
 interface Conversation {
@@ -65,14 +66,14 @@ const LuxuryChatbotWidget: React.FC = () => {
         }
       }
     }
-    // Default conversation
+    // Default conversation with fallback values before translations are available
     return [{
       id: '1',
-      title: 'Welcome Conversation',
+      title: 'Start Chat', // Will be updated after translations load
       messages: [
         {
           id: '1',
-          text: 'Welcome to Physical AI Humanoid Robotics Assistant! 👋\n\nI\'m here to help you master Physical AI and Humanoid Robotics. Ask me anything about ROS 2, Gazebo, NVIDIA Isaac™, or Vision-Language-Action systems.',
+          text: 'AI Assistant! 👋\n\nWelcome to the Physical AI & Humanoid Robotics knowledge base.', // Will be updated after translations load
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -137,15 +138,9 @@ const LuxuryChatbotWidget: React.FC = () => {
     const text = messageText || inputValue;
     if (!text.trim() || isLoading) return;
 
-    // Translate user message to Urdu if Urdu mode is enabled
-    let processedText = text;
-    if (isUrduMode) {
-      processedText = await translateToUrdu(text);
-    }
-
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: processedText,
+      text: text, // Send original text to backend
       sender: 'user',
       timestamp: new Date(),
     };
@@ -160,7 +155,7 @@ const LuxuryChatbotWidget: React.FC = () => {
           updatedAt: new Date(),
           // Update title if this is the first user message
           title: conv.title === 'Welcome Conversation' && updatedMessages.length === 2
-            ? processedText.substring(0, 30) + (processedText.length > 30 ? '...' : '')
+            ? text.substring(0, 30) + (text.length > 30 ? '...' : '')
             : conv.title
         };
       }
@@ -194,15 +189,9 @@ const LuxuryChatbotWidget: React.FC = () => {
 
       const data: ChatResponse = await response.json();
 
-      let botResponse = data.answer;
-      // Translate bot response to Urdu if Urdu mode is enabled
-      if (isUrduMode) {
-        botResponse = await translateToUrdu(data.answer);
-      }
-
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponse,
+        text: data.answer, // Backend response as is
         sender: 'bot',
         timestamp: new Date(),
         sources: data.sources,
@@ -223,14 +212,9 @@ const LuxuryChatbotWidget: React.FC = () => {
       setSelectedText(null);
     } catch (error) {
       console.error('Error sending message:', error);
-      let errorMessageText = '⚠️ I\'m having trouble connecting right now. Please ensure the backend server is running.';
-      if (isUrduMode) {
-        errorMessageText = await translateToUrdu(errorMessageText);
-      }
-
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: errorMessageText,
+        text: '⚠️ I\'m having trouble connecting right now. Please ensure the backend server is running.',
         sender: 'bot',
         timestamp: new Date(),
       };
@@ -283,12 +267,7 @@ const LuxuryChatbotWidget: React.FC = () => {
   };
 
 
-  const clearChat = async () => {
-    let welcomeMessage = 'Physical AI Humanoid Robotics chat cleared! How can I assist you today?';
-    if (isUrduMode) {
-      welcomeMessage = await translateToUrdu(welcomeMessage);
-    }
-
+  const clearChat = () => {
     setConversations(prev => prev.map(conv => {
       if (conv.id === currentConversationId) {
         return {
@@ -296,12 +275,12 @@ const LuxuryChatbotWidget: React.FC = () => {
           messages: [
             {
               id: '1',
-              text: welcomeMessage,
+              text: `${t('chatbot.chatbot_title')}! 👋\n\n${t('chatbot.chatbot_subtitle')}`,
               sender: 'bot',
               timestamp: new Date(),
             },
           ],
-          title: 'New Conversation',
+          title: t('chatbot.start_chat'),
           updatedAt: new Date(),
         };
       }
@@ -316,9 +295,34 @@ const LuxuryChatbotWidget: React.FC = () => {
 
 
 
+  const { t } = useTranslation('chatbot');
   const [isUrduMode, setIsUrduMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  // Update the initial conversation with translated values after translations are loaded
+  useEffect(() => {
+    if (conversations.length > 0 && conversations[0].title === 'Start Chat') {
+      setConversations(prev => prev.map((conv, index) => {
+        if (index === 0 && conv.title === 'Start Chat') {
+          return {
+            ...conv,
+            title: t('chatbot.start_chat'),
+            messages: conv.messages.map((msg, msgIndex) => {
+              if (msgIndex === 0 && msg.text.includes('Welcome to the Physical AI & Humanoid Robotics knowledge base.')) {
+                return {
+                  ...msg,
+                  text: `${t('chatbot.chatbot_title')}! 👋\n\n${t('chatbot.chatbot_subtitle')}`
+                };
+              }
+              return msg;
+            })
+          };
+        }
+        return conv;
+      }));
+    }
+  }, [t, conversations]);
 
   const quickActions = [
     { id: 'examples', label: 'Examples', icon: '💡', prompt: 'Can you provide practical examples related to our discussion?' },
@@ -332,34 +336,11 @@ const LuxuryChatbotWidget: React.FC = () => {
   };
 
   const toggleUrduMode = () => {
-    setIsUrduMode(!isUrduMode);
-  };
-
-  const translateToUrdu = async (text: string): Promise<string> => {
-    try {
-      // Call the backend translation API
-      const response = await fetch(`${API_URL}/api/translate/urdu`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: text,
-          source_language: 'en',
-          target_language: 'ur'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Translation API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.translated_content;
-    } catch (error) {
-      console.error('Translation error:', error);
-      return text; // Return original text if translation fails
-    }
+    const newLanguage = isUrduMode ? 'en' : 'ur';
+    // Use i18next to change the language
+    (window as any).i18next.changeLanguage(newLanguage).then(() => {
+      setIsUrduMode(!isUrduMode);
+    });
   };
 
   const initializeSpeechRecognition = () => {

@@ -268,7 +268,8 @@
       "Bash(mkdir -p backend/dist)",
       "Bash(mkdir -p backend/api_functions)",
       "Bash(python -c \"from index import app, handler; print\\(''API functions imported successfully''\\)\")",
-      "Bash(ls -la *.json)"
+      "Bash(ls -la *.json)",
+      "Bash(npm install react-i18next i18next i18next-http-backend i18next-browser-languagedetector)"
     ]
   }
 }
