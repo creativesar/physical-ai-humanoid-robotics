@@ -1,1656 +1,1673 @@
 ---
-sidebar_position: 4
-title: "Planning and Navigation"
+sidebar_position: 8
+title: "Nav2: Path Planning for Humanoid Movement"
 ---
 
-# Planning and Navigation
+# Nav2: Path Planning for Humanoid Movement
 
-## Introduction to Planning and Navigation in Humanoid Robotics
+## Introduction to Navigation 2 (Nav2)
 
-Planning and navigation form the cognitive core of humanoid robotics, enabling robots to move purposefully through complex environments. Unlike wheeled robots, humanoid robots must navigate with bipedal locomotion, requiring sophisticated path planning that accounts for balance, step constraints, and dynamic stability. NVIDIA Isaac™ provides powerful tools for implementing advanced planning and navigation systems that leverage GPU acceleration for real-time performance.
+Navigation 2 (Nav2) is the next-generation navigation framework for ROS 2, designed to provide advanced path planning, navigation, and obstacle avoidance capabilities. For humanoid robotics, Nav2 offers specialized features that address the unique challenges of bipedal locomotion, including complex kinematics, balance requirements, and anthropomorphic motion constraints.
 
-## Navigation Stack Architecture
+Nav2 provides a complete navigation stack including:
+- **Global Path Planning**: Long-term route planning from start to goal
+- **Local Path Planning**: Short-term obstacle avoidance and trajectory generation
+- **Controller Integration**: Integration with robot controllers for execution
+- **Recovery Behaviors**: Strategies for handling navigation failures
+- **Behavior Trees**: Flexible navigation behavior orchestration
 
-### 1. Overview of the Navigation System
+## Architecture of Nav2
 
-The navigation system for humanoid robots typically consists of several interconnected components:
+### Nav2 System Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Perception    │    │   World Model   │    │   Path Planner  │
-│   Module        │───▶│   (Costmap)     │───▶│                 │
-│                 │    │                 │    │   Global Planner│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Localization  │    │  Costmap        │    │   Local Planner │
-│   & Mapping     │    │  Management     │    │   (Trajectory   │
-│                 │    │                 │    │   Generation)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Motion Control Layer                         │
-│              (Step Planning, Balance Control)                   │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Nav2 Architecture                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│  │   Global        │  │   Local         │  │   Controller    │            │
+│  │   Planner       │  │   Planner       │  │   Server        │            │
+│  │   - A*          │  │   - DWA         │  │   - FollowPath  │            │
+│  │   - NavFn       │  │   - MPC         │  │   - Rotate      │            │
+│  │   - SmacPlanner │  │   - RPP         │  │   - Wait        │            │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+│                              │              │              │               │
+│                              ▼              ▼              ▼               │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    Behavior Tree Executor                          │   │
+│  │  - NavigateToPose                                                │   │
+│  │  - NavigateThroughPoses                                          │   │
+│  │  - ComputePathToPose                                             │   │
+│  │  - FollowPath                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                             │
+│                              ▼                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    Recovery System                                  │   │
+│  │  - BackUp                                                        │   │
+│  │  - Spin                                                          │   │
+│  │  - Wait                                                          │   │
+│  │  - ClearCostmap                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                             │
+│                              ▼                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐            │
+│  │   Costmap       │  │   Sensors       │  │   TF2           │            │
+│  │   Server        │  │   Server        │  │   Server        │            │
+│  │   - Global      │  │   - LaserScan   │  │   - Transform   │            │
+│  │   - Local       │  │   - PointCloud  │  │   Management    │            │
+│  │   - Updates     │  │   - Image       │  │                 │            │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘            │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Isaac ROS Navigation Components
+### Core Components
 
-Isaac ROS provides specialized navigation packages optimized for GPU acceleration:
+#### 1. Navigation Server
+- Coordinates navigation execution
+- Manages navigation lifecycle
+- Handles action requests
 
-#### Isaac ROS Navigation2 Integration
-```cpp
-// Isaac ROS Navigation2 integration
-#include "nav2_core/global_planner.hpp"
-#include "nav2_core/local_planner.hpp"
-#include "isaac_ros_nav2_babylon/global_planner.hpp"
+#### 2. Global Planner
+- Generates long-term path
+- Considers global costmap
+- Produces optimal route
 
-class IsaacNavigationPlanner : public nav2_core::GlobalPlanner
-{
-public:
-    IsaacNavigationPlanner() = default;
+#### 3. Local Planner
+- Performs short-term planning
+- Handles obstacle avoidance
+- Generates executable trajectories
 
-    void configure(
-        const rclcpp_lifecycle::LifecycleNode::WeakPtr& parent,
-        std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
-        std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override
-    {
-        node_ = parent.lock();
-        name_ = name;
-        tf_ = tf;
-        costmap_ros_ = costmap_ros;
-        costmap_ = costmap_ros_->getCostmap();
+#### 4. Controller Server
+- Executes navigation commands
+- Tracks planned paths
+- Interfaces with robot drivers
 
-        // Initialize GPU-accelerated planning components
-        InitializeGPUPlanners();
-    }
+## Nav2 for Humanoid Robotics
 
-    void cleanup() override
-    {
-        CleanupGPUPlanners();
-    }
+### Unique Challenges for Humanoid Navigation
 
-    void activate() override
-    {
-        RCLCPP_INFO(node_->get_logger(), "IsaacNavigationPlanner is active");
-    }
+Humanoid robots present specific navigation challenges that require specialized approaches:
 
-    void deactivate() override
-    {
-        RCLCPP_INFO(node_->get_logger(), "IsaacNavigationPlanner is inactive");
-    }
+#### 1. Bipedal Kinematics
+- Complex inverse kinematics for walking
+- Balance constraints during motion
+- Step planning for stable locomotion
 
-    nav_msgs::msg::Path createPlan(
-        const geometry_msgs::msg::PoseStamped& start,
-        const geometry_msgs::msg::PoseStamped& goal) override
-    {
-        nav_msgs::msg::Path path;
+#### 2. Anthropomorphic Motion
+- Human-like movement patterns
+- Social navigation considerations
+- Interaction with human environments
 
-        // Use GPU-accelerated path planning
-        if (UseGPUPlanning()) {
-            path = CreateGPUPlan(start, goal);
-        } else {
-            path = CreateCPUPlan(start, goal);
-        }
+#### 3. Stability Requirements
+- Maintaining center of mass
+- Avoiding falls during navigation
+- Dynamic balance during motion
 
-        return path;
-    }
+### Humanoid-Specific Nav2 Configuration
 
-private:
-    bool UseGPUPlanning() const
-    {
-        // Check if GPU is available and beneficial for current planning task
-        return IsGPUAvailable() && costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY() > 10000;
-    }
+```yaml
+# humanoid_nav2_params.yaml
+amcl:
+  ros__parameters:
+    use_sim_time: False
+    alpha1: 0.2
+    alpha2: 0.2
+    alpha3: 0.2
+    alpha4: 0.2
+    alpha5: 0.2
+    base_frame_id: "base_link"
+    beam_skip_distance: 0.5
+    beam_skip_error_threshold: 0.9
+    beam_skip_threshold: 0.3
+    do_beamskip: false
+    global_frame_id: "map"
+    lambda_short: 0.1
+    laser_likelihood_max_dist: 2.0
+    laser_max_range: 100.0
+    laser_min_range: -1.0
+    laser_model_type: "likelihood_field"
+    max_beams: 60
+    max_particles: 2000
+    min_particles: 500
+    odom_frame_id: "odom"
+    pf_err: 0.05
+    pf_z: 0.5
+    recovery_alpha_fast: 0.0
+    recovery_alpha_slow: 0.0
+    resample_interval: 1
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    save_pose_rate: 0.5
+    sigma_hit: 0.2
+    tf_broadcast: true
+    transform_tolerance: 1.0
+    update_min_a: 0.2
+    update_min_d: 0.2
+    z_hit: 0.5
+    z_max: 0.05
+    z_rand: 0.5
+    z_short: 0.05
 
-    nav_msgs::msg::Path CreateGPUPlan(
-        const geometry_msgs::msg::PoseStamped& start,
-        const geometry_msgs::msg::PoseStamped& goal)
-    {
-        nav_msgs::msg::Path path;
+bt_navigator:
+  ros__parameters:
+    use_sim_time: False
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: /odom
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    enable_groot_monitoring: True
+    groot_zmq_publisher_port: 1666
+    groot_zmq_server_port: 1667
+    # Humanoid-specific behavior tree
+    default_nav_to_pose_bt_xml: "humanoid_navigate_to_pose_w_replanning_and_recovery.xml"
+    plugin_lib_names:
+    - nav2_compute_path_to_pose_action_bt_node
+    - nav2_compute_path_through_poses_action_bt_node
+    - nav2_follow_path_action_bt_node
+    - nav2_back_up_action_bt_node
+    - nav2_spin_action_bt_node
+    - nav2_wait_action_bt_node
+    - nav2_clear_costmap_service_bt_node
+    - nav2_is_stuck_condition_bt_node
+    - nav2_goal_reached_condition_bt_node
+    - nav2_goal_updated_condition_bt_node
+    - nav2_initial_pose_received_condition_bt_node
+    - nav2_reinitialize_global_localization_service_bt_node
+    - nav2_rate_controller_bt_node
+    - nav2_distance_controller_bt_node
+    - nav2_speed_controller_bt_node
+    - nav2_truncate_path_action_bt_node
+    - nav2_truncate_path_local_action_bt_node
+    - nav2_goal_updater_node_bt_node
+    - nav2_recovery_node_bt_node
+    - nav2_pipeline_sequence_bt_node
+    - nav2_round_robin_node_bt_node
+    - nav2_transform_available_condition_bt_node
+    - nav2_time_expired_condition_bt_node
+    - nav2_path_expiring_timer_condition
+    - nav2_distance_traveled_condition_bt_node
+    - nav2_single_trigger_bt_node
+    - nav2_is_battery_low_condition_bt_node
+    - nav2_navigate_through_poses_action_bt_node
+    - nav2_navigate_to_pose_action_bt_node
+    - nav2_remove_passed_goals_action_bt_node
+    - nav2_planner_selector_bt_node
+    - nav2_controller_selector_bt_node
+    - nav2_goal_checker_selector_bt_node
+    - nav2_controller_cancel_bt_node
+    - nav2_path_longer_on_approach_bt_node
+    - nav2_wait_cancel_bt_node
+    - nav2_spin_cancel_bt_node
+    - nav2_back_up_cancel_bt_node
+    - nav2_assisted_teleop_cancel_bt_node
+    - nav2_follow_path_cancel_bt_node
 
-        // Convert costmap to GPU-friendly format
-        auto gpu_costmap = ConvertCostmapToGPU();
+controller_server:
+  ros__parameters:
+    use_sim_time: False
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
+    controller_plugins: ["FollowPath"]
 
-        // Run GPU-accelerated path planning (e.g., A* or Dijkstra)
-        auto gpu_path = RunGPUPathPlanner(gpu_costmap, start, goal);
+    # Humanoid-specific controller
+    FollowPath:
+      plugin: "nav2_mppi_controller::MppiController"
+      time_steps: 20
+      control_horizon: 5
+      trajectory_dt: 0.2
+      discretization: 0.5
+      penalty_scaling: 1.0
+      obstacle_weight: 1.0
+      goal_weight: 1.0
+      reference_weight: 1.0
+      curvature_weight: 0.1
+      rate_limits_enabled: true
+      vx_max: 0.5
+      vx_min: -0.2
+      vy_max: 0.3
+      vy_min: -0.3
+      wz_max: 0.6
+      wz_min: -0.6
+      ax_max: 2.5
+      ay_max: 2.5
+      wz_max_acc: 3.2
+      progress_checker:
+        plugin: "nav2_controller::SimpleProgressChecker"
+        required_movement_radius: 0.5
+        movement_time_allowance: 10.0
+      goal_checker:
+        plugin: "nav2_controller::SimpleGoalChecker"
+        xy_goal_tolerance: 0.25
+        yaw_goal_tolerance: 0.25
+        stateful: True
 
-        // Convert result back to ROS format
-        path = ConvertGPUPathToROS(gpu_path);
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 5.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: base_link
+      use_sim_time: False
+      rolling_window: true
+      width: 6
+      height: 6
+      resolution: 0.05
+      robot_radius: 0.35  # Humanoid-specific radius
+      plugins: ["voxel_layer", "inflation_layer"]
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
+      voxel_layer:
+        plugin: "nav2_costmap_2d::VoxelLayer"
+        enabled: True
+        publish_voxel_map: False
+        origin_z: 0.0
+        z_resolution: 0.2
+        z_voxels: 10
+        max_obstacle_height: 2.0
+        mark_threshold: 0
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
 
-        return path;
-    }
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: map
+      robot_base_frame: base_link
+      use_sim_time: False
+      robot_radius: 0.35  # Humanoid-specific radius
+      resolution: 0.05
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: scan
+        scan:
+          topic: /scan
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.0
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 3.0
+        inflation_radius: 0.55
 
-    std::shared_ptr<GPUPathPlanner> gpu_planner_;
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-    std::string name_;
-    std::shared_ptr<tf2_ros::Buffer> tf_;
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-    nav2_costmap_2d::Costmap2D* costmap_;
-};
+planner_server:
+  ros__parameters:
+    expected_planner_frequency: 20.0
+    use_sim_time: False
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_navfn_planner::NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false
+      allow_unknown: true
+      visualize_potential: false
+
+smoother_server:
+  ros__parameters:
+    use_sim_time: False
+    smoother_plugins: ["simple_smoother"]
+    simple_smoother:
+      plugin: "nav2_smoother::SimpleSmoother"
+      tolerance: 1.0e-10
+      max_its: 1000
+      do_refinement: True
+
+behavior_server:
+  ros__parameters:
+    costmap_topic: local_costmap/costmap_raw
+    footprint_topic: local_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+      spin_dist: 1.57
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+      backup_dist: 0.15
+      backup_speed: 0.025
+    wait:
+      plugin: "nav2_behaviors::Wait"
+      wait_duration: 1.0
+
+waypoint_follower:
+  ros__parameters:
+    loop_rate: 20
+    stop_on_failure: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: true
+      waypoint_pause_duration: 200
 ```
 
-## Global Path Planning
+## Global Path Planning for Humanoid Robots
 
-### 1. GPU-Accelerated Path Planning Algorithms
+### Global Planners
 
-#### A* Algorithm with GPU Acceleration
-```cpp
-// GPU-accelerated A* path planning
-#include <cuda_runtime.h>
-#include <device_launch_parameters.h>
+#### Navfn Planner
+The Navfn planner uses the Dijkstra algorithm to find optimal paths:
 
-class GPUAStarPlanner
-{
-public:
-    GPUAStarPlanner(int width, int height)
-        : width_(width), height_(height), size_(width * height)
-    {
-        // Allocate GPU memory
-        cudaMalloc(&costmap_d_, size_ * sizeof(unsigned char));
-        cudaMalloc(&g_score_d_, size_ * sizeof(float));
-        cudaMalloc(&f_score_d_, size_ * sizeof(float));
-        cudaMalloc(&came_from_d_, size_ * sizeof(int));
-        cudaMalloc(&open_set_d_, size_ * sizeof(bool));
-        cudaMalloc(&closed_set_d_, size_ * sizeof(bool));
+```python
+import rclpy
+from rclpy.node import Node
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped, Point
+from nav2_msgs.srv import ComputePathToPose
+from sensor_msgs.msg import LaserScan
+import numpy as np
 
-        // Initialize device pointers
-        InitializeDeviceMemory();
-    }
+class HumanoidGlobalPlanner(Node):
+    def __init__(self):
+        super().__init__('humanoid_global_planner')
 
-    ~GPUAStarPlanner()
-    {
-        cudaFree(costmap_d_);
-        cudaFree(g_score_d_);
-        cudaFree(f_score_d_);
-        cudaFree(came_from_d_);
-        cudaFree(open_set_d_);
-        cudaFree(closed_set_d_);
-    }
+        # Service client for path computation
+        self.path_client = self.create_client(
+            ComputePathToPose, 'compute_path_to_pose')
 
-    std::vector<geometry_msgs::msg::Point> PlanPath(
-        const std::vector<std::vector<unsigned char>>& costmap,
-        const geometry_msgs::msg::Point& start,
-        const geometry_msgs::msg::Point& goal)
-    {
-        // Copy costmap to GPU
-        CopyCostmapToGPU(costmap);
+        # Publishers
+        self.global_plan_pub = self.create_publisher(Path, '/humanoid/global_plan', 10)
 
-        // Initialize planning parameters
-        int start_idx = PointToIndex(start);
-        int goal_idx = PointToIndex(goal);
+        # Parameters
+        self.declare_parameter('robot_radius', 0.35)
+        self.declare_parameter('step_height', 0.15)  # Maximum step height for humanoid
+        self.declare_parameter('max_slope', 0.3)     # Maximum slope angle
 
-        // Launch GPU A* kernel
-        LaunchAStarKernel(start_idx, goal_idx);
+        self.robot_radius = self.get_parameter('robot_radius').value
+        self.max_step_height = self.get_parameter('step_height').value
+        self.max_slope = self.get_parameter('max_slope').value
 
-        // Retrieve path from GPU
-        auto path_indices = RetrievePathFromGPU(start_idx, goal_idx);
+        self.get_logger().info('Humanoid Global Planner initialized')
 
-        // Convert to world coordinates
-        return ConvertIndicesToWorld(path_indices);
-    }
+    def compute_path_to_pose(self, start_pose, goal_pose):
+        """Compute global path considering humanoid constraints"""
+        # Wait for service
+        while not self.path_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for compute_path_to_pose service...')
 
-private:
-    void LaunchAStarKernel(int start_idx, int goal_idx)
-    {
-        // Configure kernel launch parameters
-        int block_size = 256;
-        int grid_size = (size_ + block_size - 1) / block_size;
+        # Create request
+        request = ComputePathToPose.Request()
+        request.start = start_pose
+        request.goal = goal_pose
 
-        // Launch A* planning kernel
-        a_star_kernel<<<grid_size, block_size>>>(
-            costmap_d_, g_score_d_, f_score_d_, came_from_d_,
-            open_set_d_, closed_set_d_, size_, width_, height_,
-            start_idx, goal_idx
-        );
+        # Call service
+        future = self.path_client.call_async(request)
+        rclpy.spin_until_future_complete(self, future)
 
-        // Wait for kernel completion
-        cudaDeviceSynchronize();
-    }
+        if future.result() is not None:
+            path = future.result().path
 
-    std::vector<int> RetrievePathFromGPU(int start_idx, int goal_idx)
-    {
-        std::vector<int> path_indices;
-        std::vector<int> temp_path;
+            # Apply humanoid-specific constraints
+            constrained_path = self.apply_humanoid_constraints(path)
 
-        // Copy came_from array to host
-        std::vector<int> came_from_h(size_);
-        cudaMemcpy(came_from_h.data(), came_from_d_, size_ * sizeof(int), cudaMemcpyDeviceToHost);
+            # Publish global plan
+            self.global_plan_pub.publish(constrained_path)
 
-        // Reconstruct path by following came_from pointers
-        int current = goal_idx;
-        while (current != start_idx && current != -1) {
-            temp_path.push_back(current);
-            current = came_from_h[current];
-        }
-        temp_path.push_back(start_idx);
+            return constrained_path
+        else:
+            self.get_logger().error('Failed to compute path')
+            return None
 
-        // Reverse to get path from start to goal
-        std::reverse(temp_path.begin(), temp_path.end());
-        return temp_path;
-    }
+    def apply_humanoid_constraints(self, path):
+        """Apply humanoid-specific constraints to path"""
+        # Check for step height constraints
+        constrained_poses = []
+        for i, pose in enumerate(path.poses):
+            if i == 0:
+                constrained_poses.append(pose)
+                continue
 
-    geometry_msgs::msg::Point IndexToPoint(int idx)
-    {
-        geometry_msgs::msg::Point point;
-        point.x = (idx % width_) * resolution_;
-        point.y = (idx / width_) * resolution_;
-        point.z = 0.0;
-        return point;
-    }
+            # Calculate height difference between consecutive poses
+            prev_pose = path.poses[i-1]
+            height_diff = abs(pose.pose.position.z - prev_pose.pose.position.z)
 
-    int PointToIndex(const geometry_msgs::msg::Point& point)
-    {
-        int x = static_cast<int>(point.x / resolution_);
-        int y = static_cast<int>(point.y / resolution_);
-        return y * width_ + x;
-    }
+            # Check if step height is acceptable
+            if height_diff <= self.max_step_height:
+                constrained_poses.append(pose)
+            else:
+                # Need to find alternative path around obstacle
+                self.get_logger().warn(
+                    f'Step height constraint violated at pose {i}, height diff: {height_diff}'
+                )
+                # In practice, this would trigger replanning or alternative pathfinding
 
-    std::vector<geometry_msgs::msg::Point> ConvertIndicesToWorld(const std::vector<int>& indices)
-    {
-        std::vector<geometry_msgs::msg::Point> world_path;
-        for (int idx : indices) {
-            world_path.push_back(IndexToPoint(idx));
-        }
-        return world_path;
-    }
+        # Create new path with constrained poses
+        constrained_path = Path()
+        constrained_path.header = path.header
+        constrained_path.poses = constrained_poses
 
-    void CopyCostmapToGPU(const std::vector<std::vector<unsigned char>>& costmap)
-    {
-        // Flatten 2D costmap to 1D array
-        std::vector<unsigned char> flat_costmap;
-        for (const auto& row : costmap) {
-            flat_costmap.insert(flat_costmap.end(), row.begin(), row.end());
-        }
+        return constrained_path
 
-        // Copy to GPU
-        cudaMemcpy(costmap_d_, flat_costmap.data(), size_ * sizeof(unsigned char), cudaMemcpyHostToDevice);
-    }
+    def validate_path_feasibility(self, path):
+        """Validate path feasibility for humanoid locomotion"""
+        for i in range(len(path.poses) - 1):
+            current_pose = path.poses[i]
+            next_pose = path.poses[i + 1]
 
-    void InitializeDeviceMemory()
-    {
-        // Initialize GPU memory with default values
-        cudaMemset(g_score_d_, 0xFF, size_ * sizeof(float)); // Initialize with infinity
-        cudaMemset(f_score_d_, 0xFF, size_ * sizeof(float)); // Initialize with infinity
-        cudaMemset(came_from_d_, -1, size_ * sizeof(int));   // Initialize with -1 (no parent)
-        cudaMemset(open_set_d_, 0, size_ * sizeof(bool));    // Initialize as false
-        cudaMemset(closed_set_d_, 0, size_ * sizeof(bool));  // Initialize as false
-    }
+            # Calculate distance between poses
+            dx = next_pose.pose.position.x - current_pose.pose.position.x
+            dy = next_pose.pose.position.y - current_pose.pose.position.y
+            dz = next_pose.pose.position.z - current_pose.pose.position.z
+            distance = np.sqrt(dx*dx + dy*dy)
 
-    // CUDA kernel for A* path planning (simplified)
-    __global__ void a_star_kernel(
-        unsigned char* costmap,
-        float* g_score,
-        float* f_score,
-        int* came_from,
-        bool* open_set,
-        bool* closed_set,
-        int size,
-        int width,
-        int height,
-        int start_idx,
-        int goal_idx)
-    {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= size) return;
+            # Check slope constraints
+            if distance > 0:
+                slope = abs(dz) / distance
+                if slope > self.max_slope:
+                    self.get_logger().warn(
+                        f'Slope constraint violated between poses {i} and {i+1}, slope: {slope}'
+                    )
+                    return False
 
-        // A* algorithm implementation on GPU
-        // This is a simplified version - real implementation would be more complex
-        if (idx == start_idx) {
-            g_score[idx] = 0.0f;
-            f_score[idx] = heuristic(idx, goal_idx);
-            open_set[idx] = true;
-        }
-    }
+            # Check for obstacles in path
+            if self.check_path_for_obstacles(current_pose, next_pose):
+                self.get_logger().warn(f'Obstacle detected in path between poses {i} and {i+1}')
+                return False
 
-    __device__ float heuristic(int idx1, int idx2)
-    {
-        // Manhattan distance heuristic
-        int x1 = idx1 % width_;
-        int y1 = idx1 / width_;
-        int x2 = idx2 % width_;
-        int y2 = idx2 / width_;
-        return abs(x1 - x2) + abs(y1 - y2);
-    }
+        return True
 
-    unsigned char* costmap_d_;
-    float* g_score_d_;
-    float* f_score_d_;
-    int* came_from_d_;
-    bool* open_set_d_;
-    bool* closed_set_d_;
-
-    int width_, height_, size_;
-    double resolution_ = 0.05; // 5cm resolution
-};
+    def check_path_for_obstacles(self, start_pose, end_pose):
+        """Check if path segment has obstacles"""
+        # This would check local costmap for obstacles along the path
+        # Implementation would depend on costmap access
+        return False  # Simplified for example
 ```
 
-### 2. Humanoid-Specific Path Planning
+#### Smac Planner
+For more complex path planning, the SMAC (Search with Motion Primitives) planner can be used:
 
-#### Bipedal Path Planning with Step Constraints
-```cpp
-// Humanoid-specific path planning considering bipedal constraints
-class BipedalPathPlanner
-{
-public:
-    struct StepConstraint {
-        double max_step_length = 0.3;     // 30cm max step
-        double max_step_width = 0.2;      // 20cm max step width
-        double max_step_height = 0.1;     // 10cm max step height
-        double min_step_length = 0.1;     // 10cm min step
-        double step_spacing = 0.15;       // 15cm between steps
-    };
+```yaml
+# smac_planner_config.yaml
+planner_server:
+  ros__parameters:
+    use_sim_time: False
+    planner_plugins: ["GridBased"]
+    GridBased:
+      plugin: "nav2_smac_planner::SmacPlanner"
+      tolerance: 0.5
+      downsample_costmap: false
+      downsampling_factor: 1
+      allow_unknown: true
+      max_iterations: 1000000
+      motion_model_for_search: "DUBIN"
+      cost_penalty: 1.5
+      reverse_penalty: 2.0
+      change_penalty: 0.5
+      non_straight_penalty: 1.2
+      heuristic_scale: 1.0
+      cache_obstacle_heuristic: true
+```
 
-    struct StepSequence {
-        std::vector<Step> steps;
-        double total_energy;
-        double stability_score;
-    };
+## Local Path Planning and Control
 
-    struct Step {
-        geometry_msgs::msg::Point position;
-        double orientation;
-        StepType type; // LEFT_FOOT, RIGHT_FOOT
-        double support_time;
-    };
+### Local Planner Configuration
 
-    enum class StepType { LEFT_FOOT, RIGHT_FOOT };
+```yaml
+# local_planner_config.yaml
+controller_server:
+  ros__parameters:
+    use_sim_time: False
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5
+    min_theta_velocity_threshold: 0.001
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugin: "goal_checker"
+    controller_plugins: ["FollowPath"]
 
-    StepSequence PlanBipedalPath(
-        const nav_msgs::msg::Path& global_path,
-        const geometry_msgs::msg::Pose& start_pose)
-    {
-        StepSequence sequence;
-        Step current_step;
+    # MPPI Controller for humanoid robots
+    FollowPath:
+      plugin: "nav2_mppi_controller::MppiController"
+      time_steps: 15
+      control_horizon: 5
+      trajectory_dt: 0.1
+      discretization: 0.3
+      penalty_scaling: 1.0
+      obstacle_weight: 1.5
+      goal_weight: 1.0
+      reference_weight: 0.5
+      curvature_weight: 0.2
+      rate_limits_enabled: true
+      vx_max: 0.3    # Slower for humanoid stability
+      vx_min: -0.15
+      vy_max: 0.2
+      vy_min: -0.2
+      wz_max: 0.4    # Slower turning for balance
+      wz_min: -0.4
+      ax_max: 1.0    # Softer acceleration for balance
+      ay_max: 1.0
+      wz_max_acc: 1.5
+      progress_checker:
+        plugin: "nav2_controller::SimpleProgressChecker"
+        required_movement_radius: 0.3
+        movement_time_allowance: 15.0
+      goal_checker:
+        plugin: "nav2_controller::SimpleGoalChecker"
+        xy_goal_tolerance: 0.3  # Larger for humanoid
+        yaw_goal_tolerance: 0.3
+        stateful: True
+```
 
-        // Initialize with starting pose
-        current_step.position = start_pose.position;
-        current_step.orientation = tf2::getYaw(start_pose.orientation);
-        current_step.type = StepType::LEFT_FOOT;
-        current_step.support_time = 0.0;
+### Humanoid-Specific Local Planner
 
-        sequence.steps.push_back(current_step);
+```python
+import rclpy
+from rclpy.node import Node
+from nav_msgs.msg import Path
+from geometry_msgs.msg import Twist, PoseStamped
+from sensor_msgs.msg import LaserScan
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+import numpy as np
 
-        // Generate step sequence following the global path
-        for (size_t i = 0; i < global_path.poses.size(); i += step_sampling_rate_) {
-            auto target_pose = global_path.poses[i].pose.position;
+class HumanoidLocalPlanner(Node):
+    def __init__(self):
+        super().__init__('humanoid_local_planner')
 
-            // Generate next step based on constraints
-            auto next_step = GenerateNextStep(current_step, target_pose);
+        # Subscribers
+        self.global_plan_sub = self.create_subscription(
+            Path, '/humanoid/global_plan', self.global_plan_callback, 10)
+        self.laser_sub = self.create_subscription(
+            LaserScan, '/scan', self.laser_callback, 10)
 
-            if (IsStepValid(next_step, sequence.steps)) {
-                sequence.steps.push_back(next_step);
-                current_step = next_step;
-            } else {
-                // Adjust path to accommodate step constraints
-                auto adjusted_step = AdjustStepForConstraints(current_step, target_pose);
-                sequence.steps.push_back(adjusted_step);
-                current_step = adjusted_step;
-            }
+        # Publishers
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.local_plan_pub = self.create_publisher(Path, '/humanoid/local_plan', 10)
+
+        # TF
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # Parameters
+        self.declare_parameter('local_plan_lookahead', 1.0)
+        self.declare_parameter('obstacle_threshold', 0.5)
+        self.declare_parameter('humanoid_width', 0.35)
+        self.declare_parameter('balance_margin', 0.1)
+
+        self.local_plan_lookahead = self.get_parameter('local_plan_lookahead').value
+        self.obstacle_threshold = self.get_parameter('obstacle_threshold').value
+        self.humanoid_width = self.get_parameter('humanoid_width').value
+        self.balance_margin = self.get_parameter('balance_margin').value
+
+        # State variables
+        self.global_plan = None
+        self.latest_scan = None
+        self.current_pose = None
+
+        # Timer for control loop
+        self.control_timer = self.create_timer(0.05, self.control_loop)  # 20 Hz
+
+        self.get_logger().info('Humanoid Local Planner initialized')
+
+    def global_plan_callback(self, msg):
+        """Receive global plan"""
+        self.global_plan = msg
+
+    def laser_callback(self, msg):
+        """Receive laser scan data"""
+        self.latest_scan = msg
+
+    def control_loop(self):
+        """Main control loop for humanoid navigation"""
+        if self.global_plan is None or self.latest_scan is None:
+            return
+
+        # Get current robot pose
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                'map', 'base_link', rclpy.time.Time())
+            self.current_pose = transform
+        except TransformException as ex:
+            self.get_logger().warn(f'Could not transform: {ex}')
+            return
+
+        # Generate local plan considering obstacles
+        local_plan = self.generate_local_plan(self.global_plan)
+
+        # Check for obstacles in local plan
+        if self.has_obstacles_in_local_plan(local_plan):
+            # Trigger obstacle avoidance
+            cmd_vel = self.avoid_obstacles()
+        else:
+            # Follow local plan
+            cmd_vel = self.follow_local_plan(local_plan)
+
+        # Publish velocity command
+        self.cmd_vel_pub.publish(cmd_vel)
+
+        # Publish local plan for visualization
+        self.local_plan_pub.publish(local_plan)
+
+    def generate_local_plan(self, global_plan):
+        """Generate local plan from global plan"""
+        if not global_plan.poses:
+            return Path()
+
+        # Find closest point on global plan to current pose
+        closest_idx = self.find_closest_pose(global_plan)
+        if closest_idx is None:
+            return Path()
+
+        # Extract local segment of plan
+        local_plan = Path()
+        local_plan.header = global_plan.header
+
+        start_idx = closest_idx
+        end_idx = min(
+            start_idx + int(self.local_plan_lookahead / 0.1),  # Assume 0.1m resolution
+            len(global_plan.poses)
+        )
+
+        local_plan.poses = global_plan.poses[start_idx:end_idx]
+
+        return local_plan
+
+    def find_closest_pose(self, plan):
+        """Find closest pose on plan to current robot position"""
+        if not plan.poses or self.current_pose is None:
+            return None
+
+        current_pos = self.current_pose.transform.translation
+        min_dist = float('inf')
+        closest_idx = 0
+
+        for i, pose in enumerate(plan.poses):
+            dist = np.sqrt(
+                (pose.pose.position.x - current_pos.x) ** 2 +
+                (pose.pose.position.y - current_pos.y) ** 2
+            )
+            if dist < min_dist:
+                min_dist = dist
+                closest_idx = i
+
+        return closest_idx
+
+    def has_obstacles_in_local_plan(self, local_plan):
+        """Check if there are obstacles in the local plan path"""
+        if not local_plan.poses or self.latest_scan is None:
+            return False
+
+        # Convert laser scan to points in robot frame
+        laser_points = self.laser_scan_to_points(self.latest_scan)
+
+        # Check each segment of local plan
+        for i in range(len(local_plan.poses) - 1):
+            start = local_plan.poses[i].pose.position
+            end = local_plan.poses[i + 1].pose.position
+
+            # Check for obstacles along this segment
+            for point in laser_points:
+                if self.is_point_in_path_segment(point, start, end, self.humanoid_width):
+                    if np.sqrt(point.x**2 + point.y**2) < self.obstacle_threshold:
+                        return True
+
+        return False
+
+    def laser_scan_to_points(self, scan):
+        """Convert laser scan to points in robot frame"""
+        points = []
+        angle = scan.angle_min
+
+        for range_val in scan.ranges:
+            if scan.range_min <= range_val <= scan.range_max:
+                x = range_val * np.cos(angle)
+                y = range_val * np.sin(angle)
+                points.append(Point(x=x, y=y, z=0.0))
+            angle += scan.angle_increment
+
+        return points
+
+    def is_point_in_path_segment(self, point, start, end, width):
+        """Check if a point is near a path segment within a certain width"""
+        # Calculate distance from point to line segment
+        # This is a simplified version - in practice, you'd use more sophisticated geometry
+        line_vec = np.array([end.x - start.x, end.y - start.y])
+        point_vec = np.array([point.x - start.x, point.y - start.y])
+
+        line_len_sq = np.dot(line_vec, line_vec)
+        if line_len_sq == 0:
+            # Line segment is actually a point
+            dist_sq = np.dot(point_vec, point_vec)
+        else:
+            # Calculate projection of point onto line
+            t = max(0, min(1, np.dot(point_vec, line_vec) / line_len_sq))
+            projection = start + t * line_vec
+            dist_sq = np.sum((np.array([point.x, point.y]) - np.array([projection.x, projection.y])) ** 2)
+
+        return np.sqrt(dist_sq) <= width
+
+    def avoid_obstacles(self):
+        """Generate velocity commands to avoid obstacles"""
+        cmd_vel = Twist()
+
+        # Simple obstacle avoidance strategy
+        # In practice, this would use more sophisticated local planning
+        if self.latest_scan is not None:
+            # Find the safest direction based on scan data
+            left_clear = self.check_direction_clear(self.latest_scan, -1.0, 0.5)  # Left
+            right_clear = self.check_direction_clear(self.latest_scan, 0.5, 1.0)  # Right
+
+            if left_clear and not right_clear:
+                cmd_vel.angular.z = 0.3  # Turn left
+                cmd_vel.linear.x = 0.1   # Move forward slowly
+            elif right_clear and not left_clear:
+                cmd_vel.angular.z = -0.3  # Turn right
+                cmd_vel.linear.x = 0.1    # Move forward slowly
+            else:
+                # Both sides clear, turn towards the wider opening
+                left_avg = self.average_range_in_sector(self.latest_scan, -1.0, 0.0)
+                right_avg = self.average_range_in_sector(self.latest_scan, 0.0, 1.0)
+
+                if left_avg > right_avg:
+                    cmd_vel.angular.z = 0.2
+                else:
+                    cmd_vel.angular.z = -0.2
+
+                cmd_vel.linear.x = 0.1
+
+        return cmd_vel
+
+    def check_direction_clear(self, scan, min_angle, max_angle):
+        """Check if a direction is clear of obstacles"""
+        min_idx = int((min_angle - scan.angle_min) / scan.angle_increment)
+        max_idx = int((max_angle - scan.angle_min) / scan.angle_increment)
+
+        min_idx = max(0, min_idx)
+        max_idx = min(len(scan.ranges) - 1, max_idx)
+
+        for i in range(min_idx, max_idx + 1):
+            if scan.ranges[i] < self.obstacle_threshold:
+                return False
+
+        return True
+
+    def average_range_in_sector(self, scan, min_angle, max_angle):
+        """Calculate average range in a sector"""
+        min_idx = int((min_angle - scan.angle_min) / scan.angle_increment)
+        max_idx = int((max_angle - scan.angle_min) / scan.angle_increment)
+
+        min_idx = max(0, min_idx)
+        max_idx = min(len(scan.ranges) - 1, max_idx)
+
+        valid_ranges = [r for r in scan.ranges[min_idx:max_idx+1]
+                       if scan.range_min <= r <= scan.range_max]
+
+        return sum(valid_ranges) / len(valid_ranges) if valid_ranges else 0.0
+
+    def follow_local_plan(self, local_plan):
+        """Generate velocity commands to follow local plan"""
+        cmd_vel = Twist()
+
+        if not local_plan.poses:
+            return cmd_vel
+
+        # Calculate desired direction to next waypoint
+        target = local_plan.poses[0].pose.position
+        target_angle = np.arctan2(target.y, target.x)  # In robot frame
+
+        # PID-like control for direction
+        cmd_vel.angular.z = 2.0 * target_angle  # Proportional control
+
+        # Move forward if facing approximately the right direction
+        if abs(target_angle) < 0.5:  # Within 28 degrees
+            cmd_vel.linear.x = 0.2  # Move forward
+        else:
+            cmd_vel.linear.x = 0.05  # Move slowly when turning
+
+        # Apply humanoid-specific constraints
+        cmd_vel.linear.x = min(cmd_vel.linear.x, 0.3)  # Max speed for humanoid stability
+        cmd_vel.angular.z = max(min(cmd_vel.angular.z, 0.4), -0.4)  # Max turning rate
+
+        return cmd_vel
+```
+
+## Behavior Trees for Humanoid Navigation
+
+### Custom Behavior Tree Nodes
+
+```xml
+<!-- humanoid_navigate_to_pose_w_replanning_and_recovery.xml -->
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <SequenceStar name="NavigateToPose">
+            <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+                <PipelineSequence name="NavigateWithReplanning">
+                    <RateController hz="1.0" name="NavigationRate">
+                        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+                    </RateController>
+                    <FollowPath path="{path}" controller_id="FollowPath"/>
+                </PipelineSequence>
+                <ReactiveFallback name="RecoveryFallback">
+                    <GoalUpdated/>
+                    <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
+                    <ClearEntireCostmap name="ClearGlobalCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+                    <RecoveryNode number_of_retries="2" name="LocalRecovery">
+                        <ReactiveFallback name="LocalFallback">
+                            <Spin recovery_behavior_enabled="{local_spin_enabled}"/>
+                            <Backup recovery_behavior_enabled="{local_backup_enabled}"/>
+                        </ReactiveFallback>
+                    </RecoveryNode>
+                </ReactiveFallback>
+            </RecoveryNode>
+        </SequenceStar>
+    </BehaviorTree>
+</root>
+```
+
+### Custom Humanoid Behavior Tree Nodes
+
+```python
+import rclpy
+from rclpy.node import Node
+from py_trees_ros.trees import BehaviourTree
+from py_trees_ros.interfaces import BlackBox
+from py_trees.common import Status
+import py_trees
+
+class HumanoidStepPlanningNode(py_trees.behaviour.Behaviour):
+    """
+    Custom behavior tree node for humanoid step planning
+    """
+    def __init__(self, name="HumanoidStepPlanning"):
+        super(HumanoidStepPlanningNode, self).__init__(name)
+        self.blackboard = self.attach_blackboard_client(name=name)
+        self.blackboard.register_key("step_plan", access=py_trees.common.Access.WRITE)
+
+    def setup(self, **kwargs):
+        """Setup the behavior node"""
+        try:
+            self.node = kwargs['node']
+        except KeyError:
+            raise KeyError('A ROS node wasn\'t passed into the setup function')
+        self.logger.debug(f"Created node: {self.name}")
+
+    def update(self):
+        """Update the behavior node"""
+        # Generate step plan for humanoid locomotion
+        step_plan = self.generate_step_plan()
+        self.blackboard.set("step_plan", step_plan)
+
+        if step_plan is not None:
+            return Status.SUCCESS
+        else:
+            return Status.FAILURE
+
+    def generate_step_plan(self):
+        """Generate a plan for humanoid steps"""
+        # This would implement humanoid-specific step planning
+        # considering balance, step constraints, and terrain
+        return {
+            'left_foot_steps': [],
+            'right_foot_steps': [],
+            'balance_checks': [],
+            'timing': []
         }
 
-        // Optimize step sequence for energy efficiency and stability
-        sequence = OptimizeStepSequence(sequence);
+class HumanoidBalanceCheckNode(py_trees.behaviour.Behaviour):
+    """
+    Custom behavior tree node for humanoid balance checking
+    """
+    def __init__(self, name="HumanoidBalanceCheck"):
+        super(HumanoidBalanceCheckNode, self).__init__(name)
+        self.blackboard = self.attach_blackboard_client(name=name)
+        self.blackboard.register_key("balance_status", access=py_trees.common.Access.READ)
 
-        // Calculate sequence metrics
-        sequence.total_energy = CalculateEnergy(sequence);
-        sequence.stability_score = CalculateStability(sequence);
+    def setup(self, **kwargs):
+        """Setup the behavior node"""
+        try:
+            self.node = kwargs['node']
+        except KeyError:
+            raise KeyError('A ROS node wasn\'t passed into the setup function')
 
-        return sequence;
-    }
+    def update(self):
+        """Update the behavior node"""
+        balance_ok = self.check_balance()
 
-private:
-    Step GenerateNextStep(const Step& current_step, const geometry_msgs::msg::Point& target)
-    {
-        Step next_step;
+        if balance_ok:
+            return Status.SUCCESS
+        else:
+            return Status.FAILURE
 
-        // Calculate direction to target
-        double dx = target.x - current_step.position.x;
-        double dy = target.y - current_step.position.y;
-        double distance = sqrt(dx * dx + dy * dy);
+    def check_balance(self):
+        """Check if humanoid is balanced"""
+        # This would check balance based on IMU, ZMP, or other sensors
+        # For now, return True as a placeholder
+        return True
+```
 
-        if (distance > step_constraint_.max_step_length) {
-            // Scale step to maximum allowed length
-            next_step.position.x = current_step.position.x +
-                                   (dx / distance) * step_constraint_.max_step_length;
-            next_step.position.y = current_step.position.y +
-                                   (dy / distance) * step_constraint_.max_step_length;
-        } else {
-            // Move toward target with appropriate step length
-            double step_length = std::max(step_constraint_.min_step_length,
-                                        std::min(distance, step_constraint_.max_step_length));
-            next_step.position.x = current_step.position.x +
-                                   (dx / distance) * step_length;
-            next_step.position.y = current_step.position.y +
-                                   (dy / distance) * step_length;
-        }
+## Humanoid-Specific Navigation Behaviors
 
-        // Alternate foot placement
-        next_step.type = (current_step.type == StepType::LEFT_FOOT) ?
-                        StepType::RIGHT_FOOT : StepType::LEFT_FOOT;
+### Social Navigation
 
-        // Set orientation to face direction of movement
-        next_step.orientation = atan2(dy, dx);
+```python
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import PoseStamped, Point
+from people_msgs.msg import People
+from visualization_msgs.msg import MarkerArray
+import numpy as np
 
-        // Set support time based on step length
-        next_step.support_time = CalculateSupportTime(next_step.position, current_step.position);
+class HumanoidSocialNavigation(Node):
+    def __init__(self):
+        super().__init__('humanoid_social_navigation')
 
-        return next_step;
-    }
+        # Subscribers
+        self.people_sub = self.create_subscription(
+            People, '/people', self.people_callback, 10)
+        self.goal_sub = self.create_subscription(
+            PoseStamped, '/move_base_simple/goal', self.goal_callback, 10)
 
-    bool IsStepValid(const Step& step, const std::vector<Step>& existing_steps)
-    {
-        // Check if step is within constraints
-        if (!IsWithinStepConstraints(step, existing_steps)) {
-            return false;
-        }
+        # Publishers
+        self.social_markers_pub = self.create_publisher(
+            MarkerArray, '/social_navigation_markers', 10)
 
-        // Check for collisions with environment
-        if (IsStepInCollision(step)) {
-            return false;
-        }
+        # Parameters
+        self.declare_parameter('personal_space_radius', 1.0)
+        self.declare_parameter('social_zone_radius', 2.0)
+        self.declare_parameter('comfortable_distance', 1.5)
 
-        // Check for balance constraints
-        if (!IsStepBalanced(step, existing_steps)) {
-            return false;
-        }
+        self.personal_space_radius = self.get_parameter('personal_space_radius').value
+        self.social_zone_radius = self.get_parameter('social_zone_radius').value
+        self.comfortable_distance = self.get_parameter('comfortable_distance').value
 
-        return true;
-    }
+        # State
+        self.people_positions = []
+        self.current_goal = None
 
-    bool IsWithinStepConstraints(const Step& step, const std::vector<Step>& existing_steps)
-    {
-        if (existing_steps.empty()) {
-            return true; // First step is always valid
-        }
+        self.get_logger().info('Humanoid Social Navigation initialized')
 
-        const Step& last_step = existing_steps.back();
+    def people_callback(self, msg):
+        """Process people detection messages"""
+        self.people_positions = [
+            person.position for person in msg.people
+        ]
 
-        // Calculate step length
-        double step_length = sqrt(pow(step.position.x - last_step.position.x, 2) +
-                                 pow(step.position.y - last_step.position.y, 2));
+    def goal_callback(self, msg):
+        """Process goal messages"""
+        self.current_goal = msg.pose
 
-        // Check step length constraints
-        if (step_length > step_constraint_.max_step_length ||
-            step_length < step_constraint_.min_step_length) {
-            return false;
-        }
+    def adjust_path_for_social_navigation(self, original_path):
+        """Adjust navigation path considering social zones"""
+        if not self.people_positions:
+            return original_path
 
-        return true;
-    }
+        adjusted_path = []
+        for i, pose in enumerate(original_path.poses):
+            # Calculate distances to all people
+            min_distance = float('inf')
+            closest_person = None
 
-    Step AdjustStepForConstraints(const Step& current_step, const geometry_msgs::msg::Point& target)
-    {
-        Step adjusted_step = current_step;
+            for person_pos in self.people_positions:
+                dist = np.sqrt(
+                    (pose.pose.position.x - person_pos.x) ** 2 +
+                    (pose.pose.position.y - person_pos.y) ** 2
+                )
+                if dist < min_distance:
+                    min_distance = dist
+                    closest_person = person_pos
 
-        // Find closest valid position to target that satisfies constraints
-        double min_distance = std::numeric_limits<double>::max();
-        geometry_msgs::msg::Point best_position = current_step.position;
+            # If too close to a person, adjust the pose
+            if min_distance < self.comfortable_distance:
+                # Calculate vector away from person
+                direction_vector = np.array([
+                    pose.pose.position.x - closest_person.x,
+                    pose.pose.position.y - closest_person.y
+                ])
+                direction_unit = direction_vector / np.linalg.norm(direction_vector)
 
-        // Sample positions in a circle around current position
-        for (double angle = 0; angle < 2 * M_PI; angle += M_PI / 8) {
-            for (double radius = step_constraint_.min_step_length;
-                 radius <= step_constraint_.max_step_length;
-                 radius += 0.05) {
+                # Move the pose away from the person
+                adjustment_distance = self.comfortable_distance - min_distance + 0.1
+                new_x = pose.pose.position.x + direction_unit[0] * adjustment_distance
+                new_y = pose.pose.position.y + direction_unit[1] * adjustment_distance
 
-                geometry_msgs::msg::Point candidate;
-                candidate.x = current_step.position.x + radius * cos(angle);
-                candidate.y = current_step.position.y + radius * sin(angle);
+                # Create new pose with adjusted position
+                adjusted_pose = PoseStamped()
+                adjusted_pose.header = pose.header
+                adjusted_pose.pose.position.x = new_x
+                adjusted_pose.pose.position.y = new_y
+                adjusted_pose.pose.position.z = pose.pose.position.z
 
-                double distance_to_target = sqrt(pow(candidate.x - target.x, 2) +
-                                               pow(candidate.y - target.y, 2));
+                # Maintain original orientation
+                adjusted_pose.pose.orientation = pose.pose.orientation
 
-                if (distance_to_target < min_distance) {
-                    // Check if this position is valid
-                    Step temp_step;
-                    temp_step.position = candidate;
-                    if (IsStepValid(temp_step, {current_step})) {
-                        min_distance = distance_to_target;
-                        best_position = candidate;
+                adjusted_path.append(adjusted_pose)
+            else:
+                adjusted_path.append(pose)
+
+        # Create new path with adjusted poses
+        social_path = original_path
+        social_path.poses = adjusted_path
+
+        return social_path
+
+    def create_social_markers(self):
+        """Create visualization markers for social navigation"""
+        markers = MarkerArray()
+        marker_id = 0
+
+        # Personal space circles around people
+        for i, person_pos in enumerate(self.people_positions):
+            marker = self.create_circle_marker(
+                person_pos, self.personal_space_radius,
+                [1.0, 0.0, 0.0, 0.3], marker_id
+            )
+            marker_id += 1
+            markers.markers.append(marker)
+
+        # Social zone circles around people
+        for i, person_pos in enumerate(self.people_positions):
+            marker = self.create_circle_marker(
+                person_pos, self.social_zone_radius,
+                [1.0, 1.0, 0.0, 0.2], marker_id
+            )
+            marker_id += 1
+            markers.markers.append(marker)
+
+        # Comfortable distance circles around people
+        for i, person_pos in enumerate(self.people_positions):
+            marker = self.create_circle_marker(
+                person_pos, self.comfortable_distance,
+                [0.0, 1.0, 0.0, 0.3], marker_id
+            )
+            marker_id += 1
+            markers.markers.append(marker)
+
+        return markers
+
+    def create_circle_marker(self, center, radius, color, marker_id):
+        """Create a circle marker for visualization"""
+        from visualization_msgs.msg import Marker
+
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.header.stamp = self.get_clock().now().to_msg()
+        marker.ns = "social_navigation"
+        marker.id = marker_id
+        marker.type = Marker.CYLINDER
+        marker.action = Marker.ADD
+
+        marker.pose.position.x = center.x
+        marker.pose.position.y = center.y
+        marker.pose.position.z = 0.5  # Height
+        marker.pose.orientation.w = 1.0
+
+        marker.scale.x = 2 * radius
+        marker.scale.y = 2 * radius
+        marker.scale.z = 0.1  # Thickness
+
+        marker.color.r = color[0]
+        marker.color.g = color[1]
+        marker.color.b = color[2]
+        marker.color.a = color[3]
+
+        return marker
+```
+
+### Stair and Step Navigation
+
+```python
+class HumanoidStairNavigation(Node):
+    def __init__(self):
+        super().__init__('humanoid_stair_navigation')
+
+        # Subscribers
+        self.depth_sub = self.create_subscription(
+            Image, '/camera/depth/image_rect_raw', self.depth_callback, 10)
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo, '/camera/depth/camera_info', self.camera_info_callback, 10)
+
+        # Publishers
+        self.stair_plan_pub = self.create_publisher(Path, '/stair_navigation_plan', 10)
+
+        # Parameters
+        self.declare_parameter('step_height_threshold', 0.1)
+        self.declare_parameter('step_depth_threshold', 0.2)
+        self.declare_parameter('max_climbable_height', 0.15)
+
+        self.step_height_threshold = self.get_parameter('step_height_threshold').value
+        self.step_depth_threshold = self.get_parameter('step_depth_threshold').value
+        self.max_climbable_height = self.get_parameter('max_climbable_height').value
+
+        # Camera parameters
+        self.camera_matrix = None
+        self.latest_depth = None
+
+    def depth_callback(self, msg):
+        """Process depth image for stair detection"""
+        # Convert depth image to numpy array
+        if msg.encoding == '32FC1':
+            depth_array = np.frombuffer(msg.data, dtype=np.float32).reshape(msg.height, msg.width)
+        elif msg.encoding == '16UC1':
+            depth_array = np.frombuffer(msg.data, dtype=np.uint16).reshape(msg.height, msg.width).astype(np.float32) / 1000.0
+        else:
+            self.get_logger().error(f'Unsupported depth encoding: {msg.encoding}')
+            return
+
+        self.latest_depth = depth_array
+
+        # Detect stairs/steps
+        stair_regions = self.detect_stairs(depth_array)
+
+        if stair_regions:
+            # Generate navigation plan for stairs
+            stair_plan = self.generate_stair_navigation_plan(stair_regions)
+            self.stair_plan_pub.publish(stair_plan)
+
+    def detect_stairs(self, depth_array):
+        """Detect stairs and steps in depth image"""
+        # Calculate depth gradients to find step edges
+        grad_x = np.gradient(depth_array, axis=1)
+        grad_y = np.gradient(depth_array, axis=0)
+
+        # Find regions with significant depth changes
+        depth_change = np.sqrt(grad_x**2 + grad_y**2)
+
+        # Threshold to find potential step locations
+        step_mask = depth_change > self.step_height_threshold
+
+        # Find connected components (potential step regions)
+        from scipy import ndimage
+        labeled_array, num_features = ndimage.label(step_mask)
+
+        stair_regions = []
+        for i in range(1, num_features + 1):
+            region_mask = labeled_array == i
+            region_coords = np.where(region_mask)
+
+            if len(region_coords[0]) > 10:  # Minimum region size
+                # Calculate average depth change in region
+                avg_change = np.mean(depth_change[region_mask])
+
+                if avg_change > self.step_height_threshold:
+                    # Calculate region properties
+                    y_center = int(np.mean(region_coords[0]))
+                    x_center = int(np.mean(region_coords[1]))
+
+                    # Project to 3D world coordinates
+                    if self.camera_matrix is not None:
+                        world_x = (x_center - self.camera_matrix[0, 2]) * depth_array[y_center, x_center] / self.camera_matrix[0, 0]
+                        world_y = (y_center - self.camera_matrix[1, 2]) * depth_array[y_center, x_center] / self.camera_matrix[1, 1]
+                        world_z = depth_array[y_center, x_center]
+
+                        stair_regions.append({
+                            'center': (world_x, world_y, world_z),
+                            'depth_change': avg_change,
+                            'pixel_region': region_coords
+                        })
+
+        return stair_regions
+
+    def generate_stair_navigation_plan(self, stair_regions):
+        """Generate navigation plan for traversing stairs"""
+        path = Path()
+        path.header.frame_id = "map"
+        path.header.stamp = self.get_clock().now().to_msg()
+
+        # This would generate a plan that accounts for step climbing
+        # with proper foot placement and balance considerations
+        for region in stair_regions:
+            if region['depth_change'] <= self.max_climbable_height:
+                # Add waypoints for safe navigation around step
+                waypoint = PoseStamped()
+                # Calculate safe position in front of step
+                waypoint.pose.position.x = region['center'][0] - 0.3  # 30cm before step
+                waypoint.pose.position.y = region['center'][1]
+                waypoint.pose.position.z = region['center'][2]
+
+                path.poses.append(waypoint)
+
+        return path
+
+    def camera_info_callback(self, msg):
+        """Store camera intrinsic parameters"""
+        self.camera_matrix = np.array(msg.k).reshape(3, 3)
+```
+
+## Integration with Isaac ROS
+
+### Isaac ROS Perception Integration
+
+```python
+class IsaacROSNavIntegration(Node):
+    def __init__(self):
+        super().__init__('isaac_ros_nav_integration')
+
+        # Isaac ROS perception subscribers
+        self.detection_sub = self.create_subscription(
+            Detection2DArray, '/detectnet/detections', self.detection_callback, 10)
+        self.segmentation_sub = self.create_subscription(
+            Image, '/segmentation/image', self.segmentation_callback, 10)
+
+        # Navigation publishers
+        self.nav_goal_pub = self.create_publisher(PoseStamped, '/goal', 10)
+
+        # Parameters
+        self.declare_parameter('person_detection_class', 1)  # Person class ID
+        self.declare_parameter('navigation_timeout', 30.0)
+
+        self.person_class_id = self.get_parameter('person_detection_class').value
+        self.navigation_timeout = self.get_parameter('navigation_timeout').value
+
+        # State
+        self.detected_objects = []
+        self.navigation_start_time = None
+
+        self.get_logger().info('Isaac ROS Navigation Integration initialized')
+
+    def detection_callback(self, msg):
+        """Process object detections from Isaac ROS"""
+        self.detected_objects = []
+
+        for detection in msg.detections:
+            # Check if this is a person (or other relevant object)
+            for result in detection.results:
+                if result.hypothesis.class_id == self.person_class_id and result.hypothesis.score > 0.7:
+                    # Store person detection with confidence
+                    person_info = {
+                        'bbox': detection.bbox,
+                        'confidence': result.hypothesis.score,
+                        'position': self.bbox_to_world_coordinates(detection.bbox)
                     }
-                }
-            }
-        }
+                    self.detected_objects.append(person_info)
 
-        adjusted_step.position = best_position;
-        adjusted_step.type = (current_step.type == StepType::LEFT_FOOT) ?
-                            StepType::RIGHT_FOOT : StepType::LEFT_FOOT;
-        adjusted_step.orientation = atan2(best_position.y - current_step.position.y,
-                                         best_position.x - current_step.position.x);
+    def segmentation_callback(self, msg):
+        """Process segmentation results"""
+        # This could be used for more detailed scene understanding
+        # For example, identifying walkable surfaces, obstacles, etc.
+        pass
 
-        return adjusted_step;
-    }
+    def bbox_to_world_coordinates(self, bbox):
+        """Convert bounding box to world coordinates"""
+        # This would require camera calibration and depth information
+        # to convert 2D image coordinates to 3D world coordinates
+        # Simplified for example:
+        return (bbox.center.x, bbox.center.y, 0.0)  # Placeholder
 
-    StepSequence OptimizeStepSequence(const StepSequence& sequence)
-    {
-        StepSequence optimized = sequence;
+    def generate_navigation_goals_from_detections(self):
+        """Generate navigation goals based on detections"""
+        goals = []
 
-        // Optimize for energy efficiency
-        for (size_t i = 1; i < optimized.steps.size(); ++i) {
-            // Smooth step positions to reduce energy consumption
-            auto& current_step = optimized.steps[i];
-            auto& prev_step = optimized.steps[i-1];
+        for obj in self.detected_objects:
+            if obj['confidence'] > 0.8:  # High confidence detection
+                # Create goal that navigates toward the detected object
+                # but maintains safe distance
+                goal = PoseStamped()
+                goal.header.frame_id = "map"
+                goal.header.stamp = self.get_clock().now().to_msg()
 
-            // Apply smoothing based on previous and next steps
-            if (i < optimized.steps.size() - 1) {
-                auto& next_step = optimized.steps[i+1];
+                # Calculate goal position (slightly offset from object)
+                goal.pose.position.x = obj['position'][0] - 1.0  # 1m in front
+                goal.pose.position.y = obj['position'][1]
+                goal.pose.position.z = 0.0
 
-                // Smooth position
-                current_step.position.x = 0.25 * prev_step.position.x +
-                                         0.5 * current_step.position.x +
-                                         0.25 * next_step.position.x;
-                current_step.position.y = 0.25 * prev_step.position.y +
-                                         0.5 * current_step.position.y +
-                                         0.25 * next_step.position.y;
-            }
-        }
+                # Look toward the object
+                direction = np.arctan2(
+                    obj['position'][1] - goal.pose.position.y,
+                    obj['position'][0] - goal.pose.position.x
+                )
+                goal.pose.orientation.z = np.sin(direction / 2)
+                goal.pose.orientation.w = np.cos(direction / 2)
 
-        return optimized;
-    }
+                goals.append(goal)
 
-    double CalculateEnergy(const StepSequence& sequence)
-    {
-        double total_energy = 0.0;
-
-        for (size_t i = 1; i < sequence.steps.size(); ++i) {
-            const auto& prev_step = sequence.steps[i-1];
-            const auto& curr_step = sequence.steps[i];
-
-            // Calculate step energy (proportional to step length and height)
-            double step_length = sqrt(pow(curr_step.position.x - prev_step.position.x, 2) +
-                                     pow(curr_step.position.y - prev_step.position.y, 2));
-
-            total_energy += step_length * energy_cost_per_meter_;
-        }
-
-        return total_energy;
-    }
-
-    double CalculateStability(const StepSequence& sequence)
-    {
-        double stability_score = 0.0;
-
-        for (size_t i = 2; i < sequence.steps.size(); ++i) {
-            // Calculate Zero Moment Point (ZMP) based stability
-            const auto& prev_step = sequence.steps[i-2];
-            const auto& curr_step = sequence.steps[i-1];
-            const auto& next_step = sequence.steps[i];
-
-            // Simplified stability calculation based on step pattern
-            double support_polygon_area = CalculateSupportPolygonArea(prev_step, curr_step);
-            double ZMP_deviation = CalculateZMPDeviation(prev_step, curr_step, next_step);
-
-            stability_score += support_polygon_area / (1.0 + ZMP_deviation);
-        }
-
-        return stability_score / std::max(1.0, static_cast<double>(sequence.steps.size()));
-    }
-
-    StepConstraint step_constraint_;
-    int step_sampling_rate_ = 5; // Sample every 5th point from global path
-    double energy_cost_per_meter_ = 10.0; // Energy cost per meter of step
-};
+        return goals
 ```
 
-## Local Path Planning and Obstacle Avoidance
+## Performance Optimization and Tuning
 
-### 1. Dynamic Window Approach (DWA) with GPU Acceleration
+### Navigation Parameter Tuning
 
-```cpp
-// GPU-accelerated local path planning using Dynamic Window Approach
-#include "isaac_ros_nitros/types/nitros_format_agent.hpp"
+```python
+class Nav2ParameterTuner(Node):
+    def __init__(self):
+        super().__init__('nav2_parameter_tuner')
 
-class GPULocalPlanner
-{
-public:
-    struct VelocitySample {
-        double linear_vel;
-        double angular_vel;
-        double cost;
-        bool valid;
-    };
+        # Service clients for dynamic parameter updates
+        self.param_client = self.create_client(SetParameters, '/navigation_server/set_parameters')
+        self.planner_client = self.create_client(SetParameters, '/planner_server/set_parameters')
+        self.controller_client = self.create_client(SetParameters, '/controller_server/set_parameters')
 
-    struct Trajectory {
-        std::vector<geometry_msgs::msg::Pose> poses;
-        double time_to_execute;
-        double clearance;
-        double goal_distance;
-        double heading_alignment;
-    };
-
-    geometry_msgs::msg::Twist ComputeVelocityCommands(
-        const geometry_msgs::msg::PoseStamped& robot_pose,
-        const geometry_msgs::msg::PoseStamped& goal_pose,
-        const std::vector<geometry_msgs::msg::Point>& obstacles)
-    {
-        geometry_msgs::msg::Twist cmd_vel;
-
-        // Sample velocity space
-        auto velocity_samples = SampleVelocitySpace();
-
-        // Evaluate trajectories for each velocity sample
-        auto valid_trajectories = EvaluateTrajectories(
-            velocity_samples, robot_pose, goal_pose, obstacles);
-
-        // Select best trajectory
-        auto best_trajectory = SelectBestTrajectory(valid_trajectories, goal_pose);
-
-        // Convert to velocity command
-        cmd_vel = ConvertTrajectoryToVelocity(best_trajectory);
-
-        return cmd_vel;
-    }
-
-private:
-    std::vector<VelocitySample> SampleVelocitySpace()
-    {
-        std::vector<VelocitySample> samples;
-
-        // Sample linear velocities
-        for (double v = min_linear_vel_; v <= max_linear_vel_; v += linear_vel_resolution_) {
-            // Sample angular velocities
-            for (double w = min_angular_vel_; w <= max_angular_vel_; w += angular_vel_resolution_) {
-                VelocitySample sample;
-                sample.linear_vel = v;
-                sample.angular_vel = w;
-                sample.valid = true;
-                samples.push_back(sample);
-            }
+        # Parameters to tune
+        self.tunable_params = {
+            'planner_frequency': [0.5, 10.0, 2.0],
+            'controller_frequency': [10.0, 50.0, 20.0],
+            'min_x_velocity_threshold': [0.001, 0.1, 0.01],
+            'min_y_velocity_threshold': [0.1, 1.0, 0.5],
+            'min_theta_velocity_threshold': [0.001, 0.1, 0.01],
+            'robot_radius': [0.2, 0.5, 0.35],
+            'inflation_radius': [0.3, 1.0, 0.55],
+            'tolerance': [0.1, 1.0, 0.5],
+            'xy_goal_tolerance': [0.1, 0.5, 0.25],
+            'yaw_goal_tolerance': [0.1, 0.5, 0.25]
         }
 
-        return samples;
-    }
-
-    std::vector<Trajectory> EvaluateTrajectories(
-        const std::vector<VelocitySample>& samples,
-        const geometry_msgs::msg::PoseStamped& robot_pose,
-        const geometry_msgs::msg::PoseStamped& goal_pose,
-        const std::vector<geometry_msgs::msg::Point>& obstacles)
-    {
-        std::vector<Trajectory> valid_trajectories;
-
-        // Use GPU to evaluate trajectories in parallel
-        auto gpu_trajectories = EvaluateTrajectoriesGPU(samples, robot_pose, goal_pose, obstacles);
-
-        // Filter valid trajectories
-        for (const auto& trajectory : gpu_trajectories) {
-            if (IsTrajectoryValid(trajectory, obstacles)) {
-                valid_trajectories.push_back(trajectory);
-            }
+        # Performance metrics
+        self.performance_metrics = {
+            'navigation_success_rate': 0.0,
+            'average_time_to_goal': 0.0,
+            'path_efficiency': 0.0,
+            'collision_rate': 0.0
         }
 
-        return valid_trajectories;
-    }
+        self.get_logger().info('Nav2 Parameter Tuner initialized')
 
-    std::vector<Trajectory> EvaluateTrajectoriesGPU(
-        const std::vector<VelocitySample>& samples,
-        const geometry_msgs::msg::PoseStamped& robot_pose,
-        const geometry_msgs::msg::PoseStamped& goal_pose,
-        const std::vector<geometry_msgs::msg::Point>& obstacles)
-    {
-        // Copy data to GPU
-        CopyTrajectoryDataToGPU(samples, robot_pose, goal_pose, obstacles);
+    def tune_parameters(self, tuning_method='bayesian'):
+        """Tune navigation parameters using specified method"""
+        if tuning_method == 'bayesian':
+            self.bayesian_optimization_tuning()
+        elif tuning_method == 'grid_search':
+            self.grid_search_tuning()
+        elif tuning_method == 'genetic':
+            self.genetic_algorithm_tuning()
+        else:
+            self.get_logger().error(f'Unknown tuning method: {tuning_method}')
 
-        // Launch GPU kernel to evaluate all trajectories in parallel
-        int num_samples = samples.size();
-        int block_size = 256;
-        int grid_size = (num_samples + block_size - 1) / block_size;
+    def bayesian_optimization_tuning(self):
+        """Use Bayesian optimization for parameter tuning"""
+        from skopt import gp_minimize
+        from skopt.space import Real
 
-        evaluate_trajectories_kernel<<<grid_size, block_size>>>(
-            velocity_samples_d_, obstacles_d_, obstacles_count_,
-            robot_pose_d_, goal_pose_d_, trajectories_d_, num_samples
-        );
+        # Define search space
+        dimensions = []
+        param_names = []
 
-        // Copy results back to CPU
-        return CopyTrajectoriesFromGPU(num_samples);
-    }
+        for param_name, (low, high, default) in self.tunable_params.items():
+            dimensions.append(Real(low, high, name=param_name))
+            param_names.append(param_name)
 
-    Trajectory PredictTrajectory(const VelocitySample& sample, double dt, int steps)
-    {
-        Trajectory trajectory;
-        geometry_msgs::msg::Pose current_pose;
+        # Objective function
+        def objective(params):
+            # Set parameters
+            param_dict = dict(zip(param_names, params))
+            self.set_navigation_parameters(param_dict)
 
-        // Initialize with robot pose
-        current_pose = robot_pose_.pose;
+            # Run navigation trials
+            metrics = self.evaluate_navigation_performance()
 
-        for (int i = 0; i < steps; ++i) {
-            // Integrate motion model
-            double dx = sample.linear_vel * cos(current_pose.orientation.z) * dt;
-            double dy = sample.linear_vel * sin(current_pose.orientation.z) * dt;
-            double dtheta = sample.angular_vel * dt;
+            # Return negative success rate (to minimize)
+            return -metrics['navigation_success_rate']
 
-            current_pose.position.x += dx;
-            current_pose.position.y += dy;
-            current_pose.orientation.z += dtheta;
+        # Run optimization
+        result = gp_minimize(
+            func=objective,
+            dimensions=dimensions,
+            n_calls=50,
+            random_state=42
+        )
 
-            trajectory.poses.push_back(current_pose);
+        # Apply best parameters
+        best_params = dict(zip(param_names, result.x))
+        self.set_navigation_parameters(best_params)
+
+        self.get_logger().info(f'Best parameters found: {best_params}')
+
+    def set_navigation_parameters(self, param_dict):
+        """Set navigation parameters"""
+        # Convert to ROS parameters and send to servers
+        for param_name, param_value in param_dict.items():
+            param = Parameter()
+            param.name = param_name
+            param.value = ParameterValue()
+            param.value.double_value = param_value
+
+            # Send to appropriate server based on parameter
+            if param_name in ['planner_frequency', 'tolerance']:
+                self.planner_client.call_async(param)
+            elif param_name in ['controller_frequency', 'robot_radius']:
+                self.controller_client.call_async(param)
+            else:
+                self.param_client.call_async(param)
+
+    def evaluate_navigation_performance(self):
+        """Evaluate navigation performance with current parameters"""
+        # This would run navigation trials and collect metrics
+        # For now, return placeholder metrics
+        return {
+            'navigation_success_rate': np.random.random(),
+            'average_time_to_goal': np.random.uniform(10, 60),
+            'path_efficiency': np.random.uniform(0.5, 1.0),
+            'collision_rate': np.random.uniform(0, 0.1)
         }
-
-        return trajectory;
-    }
-
-    bool IsTrajectoryValid(const Trajectory& trajectory,
-                          const std::vector<geometry_msgs::msg::Point>& obstacles)
-    {
-        for (const auto& pose : trajectory.poses) {
-            for (const auto& obstacle : obstacles) {
-                double distance = sqrt(pow(pose.position.x - obstacle.x, 2) +
-                                     pow(pose.position.y - obstacle.y, 2));
-
-                if (distance < min_clearance_) {
-                    return false; // Collision detected
-                }
-            }
-        }
-
-        return true;
-    }
-
-    Trajectory SelectBestTrajectory(const std::vector<Trajectory>& trajectories,
-                                   const geometry_msgs::msg::PoseStamped& goal_pose)
-    {
-        if (trajectories.empty()) {
-            // Return zero velocity if no valid trajectories found
-            Trajectory empty_traj;
-            return empty_traj;
-        }
-
-        // Score trajectories based on multiple criteria
-        Trajectory best_trajectory = trajectories[0];
-        double best_score = CalculateTrajectoryScore(best_trajectory, goal_pose);
-
-        for (size_t i = 1; i < trajectories.size(); ++i) {
-            double score = CalculateTrajectoryScore(trajectories[i], goal_pose);
-            if (score > best_score) {
-                best_score = score;
-                best_trajectory = trajectories[i];
-            }
-        }
-
-        return best_trajectory;
-    }
-
-    double CalculateTrajectoryScore(const Trajectory& trajectory,
-                                   const geometry_msgs::msg::PoseStamped& goal_pose)
-    {
-        if (trajectory.poses.empty()) {
-            return -1.0; // Invalid trajectory
-        }
-
-        // Calculate multiple scores and combine them
-        double goal_distance_score = CalculateGoalDistanceScore(trajectory, goal_pose);
-        double clearance_score = CalculateClearanceScore(trajectory);
-        double velocity_score = CalculateVelocityScore(trajectory);
-        double heading_score = CalculateHeadingScore(trajectory, goal_pose);
-
-        // Weighted combination of scores
-        return 0.4 * goal_distance_score +
-               0.3 * clearance_score +
-               0.2 * velocity_score +
-               0.1 * heading_score;
-    }
-
-    geometry_msgs::msg::Twist ConvertTrajectoryToVelocity(const Trajectory& trajectory)
-    {
-        geometry_msgs::msg::Twist cmd_vel;
-
-        if (!trajectory.poses.empty()) {
-            // Calculate velocity based on first segment of trajectory
-            const auto& pose1 = trajectory.poses[0];
-            const auto& pose2 = trajectory.poses[1];
-
-            double dt = 0.1; // Time step
-            cmd_vel.linear.x = sqrt(pow(pose2.position.x - pose1.position.x, 2) +
-                                   pow(pose2.position.y - pose1.position.y, 2)) / dt;
-            cmd_vel.angular.z = (pose2.orientation.z - pose1.orientation.z) / dt;
-        }
-
-        return cmd_vel;
-    }
-
-    // GPU kernel for trajectory evaluation
-    __global__ void evaluate_trajectories_kernel(
-        VelocitySample* samples,
-        geometry_msgs::msg::Point* obstacles,
-        int obstacles_count,
-        geometry_msgs::msg::Pose robot_pose,
-        geometry_msgs::msg::Pose goal_pose,
-        Trajectory* trajectories,
-        int num_samples)
-    {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= num_samples) return;
-
-        // Evaluate trajectory for this velocity sample
-        VelocitySample sample = samples[idx];
-        Trajectory trajectory;
-
-        // Predict trajectory using motion model
-        geometry_msgs::msg::Pose current_pose = robot_pose;
-        for (int step = 0; step < trajectory_prediction_steps_; ++step) {
-            // Integrate motion model
-            double dx = sample.linear_vel * cos(current_pose.orientation.z) * trajectory_dt_;
-            double dy = sample.linear_vel * sin(current_pose.orientation.z) * trajectory_dt_;
-            double dtheta = sample.angular_vel * trajectory_dt_;
-
-            current_pose.position.x += dx;
-            current_pose.position.y += dy;
-            current_pose.orientation.z += dtheta;
-
-            trajectory.poses[step] = current_pose;
-
-            // Check for collisions with obstacles
-            for (int obs_idx = 0; obs_idx < obstacles_count; ++obs_idx) {
-                double distance = sqrt(pow(current_pose.position.x - obstacles[obs_idx].x, 2) +
-                                     pow(current_pose.position.y - obstacles[obs_idx].y, 2));
-                if (distance < min_clearance_) {
-                    trajectory.valid = false;
-                    break;
-                }
-            }
-
-            if (!trajectory.valid) break;
-        }
-
-        trajectories[idx] = trajectory;
-    }
-
-    geometry_msgs::msg::Pose robot_pose_;
-    double min_linear_vel_ = 0.0;
-    double max_linear_vel_ = 1.0;
-    double min_angular_vel_ = -1.0;
-    double max_angular_vel_ = 1.0;
-    double linear_vel_resolution_ = 0.1;
-    double angular_vel_resolution_ = 0.1;
-    double min_clearance_ = 0.5;
-    double trajectory_dt_ = 0.1;
-    int trajectory_prediction_steps_ = 20;
-};
 ```
 
-### 2. Humanoid-Specific Local Planning
-
-#### Balance-Aware Local Planning
-```cpp
-// Balance-aware local planning for humanoid robots
-class BalanceAwareLocalPlanner
-{
-public:
-    struct BalanceConstraint {
-        double max_zmp_deviation = 0.05;  // 5cm max ZMP deviation
-        double min_support_polygon_area = 0.01; // 100cm² min support area
-        double max_com_height_variation = 0.1; // 10cm max CoM height change
-        double balance_threshold = 0.8;   // 80% balance confidence required
-    };
-
-    struct BalanceAwareTrajectory {
-        std::vector<geometry_msgs::msg::Pose> poses;
-        std::vector<BalanceState> balance_states;
-        double balance_score;
-        bool is_stable;
-    };
-
-    struct BalanceState {
-        geometry_msgs::msg::Point zmp;      // Zero Moment Point
-        geometry_msgs::msg::Point com;      // Center of Mass
-        double support_polygon_area;
-        double balance_margin;
-        bool is_balanced;
-    };
-
-    geometry_msgs::msg::Twist PlanBalancedTrajectory(
-        const geometry_msgs::msg::PoseStamped& robot_pose,
-        const geometry_msgs::msg::PoseStamped& goal_pose,
-        const std::vector<geometry_msgs::msg::Point>& obstacles)
-    {
-        geometry_msgs::msg::Twist cmd_vel;
-
-        // Generate candidate trajectories
-        auto candidate_trajectories = GenerateCandidateTrajectories(robot_pose, goal_pose);
-
-        // Evaluate balance for each trajectory
-        auto balanced_trajectories = EvaluateBalanceConstraints(candidate_trajectories);
-
-        // Select trajectory with best balance score
-        auto best_trajectory = SelectBalancedTrajectory(balanced_trajectories, goal_pose);
-
-        // Generate velocity command
-        cmd_vel = GenerateVelocityCommand(best_trajectory, robot_pose);
-
-        return cmd_vel;
-    }
-
-private:
-    std::vector<BalanceAwareTrajectory> GenerateCandidateTrajectories(
-        const geometry_msgs::msg::PoseStamped& robot_pose,
-        const geometry_msgs::msg::PoseStamped& goal_pose)
-    {
-        std::vector<BalanceAwareTrajectory> candidates;
-
-        // Generate trajectories with different walking patterns
-        // 1. Straight line trajectory
-        auto straight_traj = GenerateStraightTrajectory(robot_pose, goal_pose);
-        candidates.push_back(straight_traj);
-
-        // 2. Curved trajectory for obstacle avoidance
-        auto curved_traj = GenerateCurvedTrajectory(robot_pose, goal_pose);
-        candidates.push_back(curved_traj);
-
-        // 3. Step-by-step trajectory for precise positioning
-        auto step_traj = GenerateStepTrajectory(robot_pose, goal_pose);
-        candidates.push_back(step_traj);
-
-        return candidates;
-    }
-
-    BalanceAwareTrajectory GenerateStraightTrajectory(
-        const geometry_msgs::msg::PoseStamped& start,
-        const geometry_msgs::msg::PoseStamped& goal)
-    {
-        BalanceAwareTrajectory trajectory;
-
-        // Calculate straight-line path
-        double dx = goal.pose.position.x - start.pose.position.x;
-        double dy = goal.pose.position.y - start.pose.position.y;
-        double distance = sqrt(dx * dx + dy * dy);
-        double steps = distance / step_size_;
-
-        for (int i = 0; i <= static_cast<int>(steps); ++i) {
-            geometry_msgs::msg::Pose pose;
-            pose.position.x = start.pose.position.x + (dx / steps) * i;
-            pose.position.y = start.pose.position.y + (dy / steps) * i;
-            pose.position.z = nominal_com_height_; // Maintain nominal CoM height
-            pose.orientation = goal.pose.orientation; // Face goal direction
-
-            trajectory.poses.push_back(pose);
-
-            // Calculate balance state for this pose
-            BalanceState balance_state = CalculateBalanceState(pose, trajectory.poses);
-            trajectory.balance_states.push_back(balance_state);
-        }
-
-        return trajectory;
-    }
-
-    BalanceAwareTrajectory GenerateCurvedTrajectory(
-        const geometry_msgs::msg::PoseStamped& start,
-        const geometry_msgs::msg::PoseStamped& goal)
-    {
-        BalanceAwareTrajectory trajectory;
-
-        // Generate curved path (e.g., cubic spline) to avoid obstacles
-        // This is a simplified implementation
-        for (double t = 0; t <= 1.0; t += 0.1) {
-            geometry_msgs::msg::Pose pose;
-
-            // Cubic Bezier curve
-            double x = (1-t)*(1-t)*(1-t)*start.pose.position.x +
-                      3*(1-t)*(1-t)*t*start.pose.position.x +
-                      3*(1-t)*t*t*goal.pose.position.x +
-                      t*t*t*goal.pose.position.x;
-
-            double y = (1-t)*(1-t)*(1-t)*start.pose.position.y +
-                      3*(1-t)*(1-t)*t*start.pose.position.y +
-                      3*(1-t)*t*t*goal.pose.position.y +
-                      t*t*t*goal.pose.position.y;
-
-            pose.position.x = x;
-            pose.position.y = y;
-            pose.position.z = nominal_com_height_;
-            pose.orientation = goal.pose.orientation;
-
-            trajectory.poses.push_back(pose);
-
-            BalanceState balance_state = CalculateBalanceState(pose, trajectory.poses);
-            trajectory.balance_states.push_back(balance_state);
-        }
-
-        return trajectory;
-    }
-
-    std::vector<BalanceAwareTrajectory> EvaluateBalanceConstraints(
-        const std::vector<BalanceAwareTrajectory>& candidates)
-    {
-        std::vector<BalanceAwareTrajectory> valid_trajectories;
-
-        for (auto trajectory : candidates) {
-            bool is_trajectory_balanced = true;
-            double total_balance_score = 0.0;
-
-            for (size_t i = 0; i < trajectory.balance_states.size(); ++i) {
-                const auto& balance_state = trajectory.balance_states[i];
-
-                // Check balance constraints
-                if (!balance_state.is_balanced) {
-                    is_trajectory_balanced = false;
-                    break;
-                }
-
-                if (balance_state.support_polygon_area < balance_constraint_.min_support_polygon_area) {
-                    is_trajectory_balanced = false;
-                    break;
-                }
-
-                total_balance_score += balance_state.balance_margin;
-            }
-
-            if (is_trajectory_balanced) {
-                trajectory.balance_score = total_balance_score / trajectory.balance_states.size();
-                trajectory.is_stable = true;
-                valid_trajectories.push_back(trajectory);
-            }
-        }
-
-        return valid_trajectories;
-    }
-
-    BalanceState CalculateBalanceState(const geometry_msgs::msg::Pose& pose,
-                                      const std::vector<geometry_msgs::msg::Pose>& all_poses)
-    {
-        BalanceState state;
-
-        // Calculate Zero Moment Point (ZMP)
-        state.zmp = CalculateZMP(pose, all_poses);
-
-        // Calculate Center of Mass (simplified)
-        state.com = CalculateCoM(pose);
-
-        // Calculate support polygon area (simplified - assume feet positions)
-        state.support_polygon_area = CalculateSupportPolygonArea(pose);
-
-        // Calculate balance margin
-        state.balance_margin = CalculateBalanceMargin(state.zmp, state.support_polygon_area);
-
-        // Determine if balanced
-        state.is_balanced = state.balance_margin > balance_constraint_.balance_threshold;
-
-        return state;
-    }
-
-    geometry_msgs::msg::Point CalculateZMP(const geometry_msgs::msg::Pose& pose,
-                                          const std::vector<geometry_msgs::msg::Pose>& all_poses)
-    {
-        geometry_msgs::msg::Point zmp;
-
-        // Simplified ZMP calculation
-        // In reality, this would involve complex dynamics and foot placement
-        zmp.x = pose.position.x;
-        zmp.y = pose.position.y;
-
-        // ZMP should be within support polygon for balance
-        return zmp;
-    }
-
-    geometry_msgs::msg::Point CalculateCoM(const geometry_msgs::msg::Pose& pose)
-    {
-        geometry_msgs::msg::Point com;
-
-        // Simplified CoM calculation - in reality, this depends on robot kinematics
-        com.x = pose.position.x;
-        com.y = pose.position.y;
-        com.z = nominal_com_height_; // Nominal CoM height for humanoid
-
-        return com;
-    }
-
-    double CalculateSupportPolygonArea(const geometry_msgs::msg::Pose& pose)
-    {
-        // Calculate area of support polygon based on foot positions
-        // For bipedal walking, this is typically the area between feet
-        // Simplified calculation assuming feet are 20cm apart
-        double foot_separation = 0.2; // 20cm between feet
-        double foot_size = 0.15; // 15cm foot length
-
-        return foot_separation * foot_size; // Simplified area
-    }
-
-    double CalculateBalanceMargin(const geometry_msgs::msg::Point& zmp, double support_area)
-    {
-        // Calculate how much the ZMP is within the support polygon
-        // Return value between 0 and 1 (1 = perfectly balanced)
-        double distance_to_boundary = CalculateDistanceToSupportBoundary(zmp);
-
-        // Normalize based on support polygon size
-        double normalized_distance = distance_to_boundary / sqrt(support_area);
-
-        // Convert to balance margin (higher is better)
-        return std::min(1.0, normalized_distance * 10.0); // Scale factor
-    }
-
-    double CalculateDistanceToSupportBoundary(const geometry_msgs::msg::Point& zmp)
-    {
-        // Calculate minimum distance from ZMP to support polygon boundary
-        // Simplified as distance to center of support polygon
-        double center_x = 0.0; // Would be actual support polygon center
-        double center_y = 0.0;
-
-        return sqrt(pow(zmp.x - center_x, 2) + pow(zmp.y - center_y, 2));
-    }
-
-    BalanceAwareTrajectory SelectBalancedTrajectory(
-        const std::vector<BalanceAwareTrajectory>& trajectories,
-        const geometry_msgs::msg::PoseStamped& goal_pose)
-    {
-        if (trajectories.empty()) {
-            // Return zero velocity if no balanced trajectories found
-            BalanceAwareTrajectory empty_traj;
-            return empty_traj;
-        }
-
-        // Select trajectory with best balance score and closest to goal
-        BalanceAwareTrajectory best_trajectory = trajectories[0];
-        double best_score = CalculateTrajectoryScore(best_trajectory, goal_pose);
-
-        for (size_t i = 1; i < trajectories.size(); ++i) {
-            double score = CalculateTrajectoryScore(trajectories[i], goal_pose);
-            if (score > best_score) {
-                best_score = score;
-                best_trajectory = trajectories[i];
-            }
-        }
-
-        return best_trajectory;
-    }
-
-    double CalculateTrajectoryScore(const BalanceAwareTrajectory& trajectory,
-                                   const geometry_msgs::msg::PoseStamped& goal_pose)
-    {
-        if (trajectory.poses.empty()) {
-            return -1.0;
-        }
-
-        // Calculate goal proximity score
-        const auto& last_pose = trajectory.poses.back();
-        double goal_distance = sqrt(pow(last_pose.position.x - goal_pose.pose.position.x, 2) +
-                                   pow(last_pose.position.y - goal_pose.pose.position.y, 2));
-        double goal_score = 1.0 / (1.0 + goal_distance);
-
-        // Calculate balance score
-        double balance_score = trajectory.balance_score;
-
-        // Calculate smoothness score
-        double smoothness_score = CalculateTrajectorySmoothness(trajectory);
-
-        // Weighted combination
-        return 0.4 * goal_score + 0.4 * balance_score + 0.2 * smoothness_score;
-    }
-
-    double CalculateTrajectorySmoothness(const BalanceAwareTrajectory& trajectory)
-    {
-        if (trajectory.poses.size() < 3) {
-            return 1.0; // Single point is perfectly smooth
-        }
-
-        double total_curvature = 0.0;
-        int segments = 0;
-
-        for (size_t i = 1; i < trajectory.poses.size() - 1; ++i) {
-            const auto& p1 = trajectory.poses[i-1];
-            const auto& p2 = trajectory.poses[i];
-            const auto& p3 = trajectory.poses[i+1];
-
-            // Calculate curvature using three consecutive points
-            double dx1 = p2.position.x - p1.position.x;
-            double dy1 = p2.position.y - p1.position.y;
-            double dx2 = p3.position.x - p2.position.x;
-            double dy2 = p3.position.y - p2.position.y;
-
-            // Approximate curvature
-            double angle_change = atan2(dy2, dx2) - atan2(dy1, dx1);
-            total_curvature += abs(angle_change);
-            segments++;
-        }
-
-        if (segments > 0) {
-            double average_curvature = total_curvature / segments;
-            // Convert to smoothness (lower curvature = higher smoothness)
-            return std::max(0.0, 1.0 - average_curvature);
-        }
-
-        return 1.0;
-    }
-
-    geometry_msgs::msg::Twist GenerateVelocityCommand(
-        const BalanceAwareTrajectory& trajectory,
-        const geometry_msgs::msg::PoseStamped& current_pose)
-    {
-        geometry_msgs::msg::Twist cmd_vel;
-
-        if (trajectory.poses.size() < 2) {
-            // Stop if trajectory is too short
-            cmd_vel.linear.x = 0.0;
-            cmd_vel.angular.z = 0.0;
-            return cmd_vel;
-        }
-
-        // Calculate velocity to follow the trajectory
-        const auto& next_pose = trajectory.poses[1]; // Next point in trajectory
-
-        // Calculate linear velocity
-        double dx = next_pose.position.x - current_pose.pose.position.x;
-        double dy = next_pose.position.y - current_pose.pose.position.y;
-        double distance = sqrt(dx * dx + dy * dy);
-
-        cmd_vel.linear.x = std::min(max_linear_vel_, distance / trajectory_time_step_);
-
-        // Calculate angular velocity to face the next direction
-        double target_yaw = atan2(dy, dx);
-        double current_yaw = tf2::getYaw(current_pose.pose.orientation);
-        double yaw_error = target_yaw - current_yaw;
-
-        // Normalize yaw error to [-π, π]
-        while (yaw_error > M_PI) yaw_error -= 2 * M_PI;
-        while (yaw_error < -M_PI) yaw_error += 2 * M_PI;
-
-        cmd_vel.angular.z = std::max(-max_angular_vel_,
-                                   std::min(max_angular_vel_, yaw_error / trajectory_time_step_));
-
-        return cmd_vel;
-    }
-
-    BalanceConstraint balance_constraint_;
-    double step_size_ = 0.1; // 10cm steps
-    double nominal_com_height_ = 0.8; // 80cm nominal CoM height
-    double trajectory_time_step_ = 0.1; // 100ms time step
-    double max_linear_vel_ = 0.5; // 0.5 m/s max linear velocity
-    double max_angular_vel_ = 0.5; // 0.5 rad/s max angular velocity
-};
+## Safety and Recovery Behaviors
+
+### Advanced Recovery Behaviors
+
+```python
+class HumanoidRecoveryBehaviors(Node):
+    def __init__(self):
+        super().__init__('humanoid_recovery_behaviors')
+
+        # Subscribers
+        self.odom_sub = self.create_subscription(
+            Odometry, '/odom', self.odom_callback, 10)
+        self.imu_sub = self.create_subscription(
+            Imu, '/imu/data', self.imu_callback, 10)
+
+        # Publishers
+        self.recovery_cmd_pub = self.create_publisher(Twist, '/recovery_cmd_vel', 10)
+
+        # Parameters
+        self.declare_parameter('fall_threshold_angle', 0.5)
+        self.declare_parameter('stuck_threshold_time', 10.0)
+        self.declare_parameter('balance_recovery_time', 5.0)
+
+        self.fall_threshold_angle = self.get_parameter('fall_threshold_angle').value
+        self.stuck_threshold_time = self.get_parameter('stuck_threshold_time').value
+        self.balance_recovery_time = self.get_parameter('balance_recovery_time').value
+
+        # State
+        self.current_odom = None
+        self.current_imu = None
+        self.last_position = None
+        self.stuck_start_time = None
+        self.recovery_mode = False
+
+        self.get_logger().info('Humanoid Recovery Behaviors initialized')
+
+    def odom_callback(self, msg):
+        """Process odometry for stuck detection"""
+        self.current_odom = msg
+
+        # Check if robot is stuck
+        current_pos = np.array([
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+            msg.pose.pose.position.z
+        ])
+
+        if self.last_position is not None:
+            distance_moved = np.linalg.norm(current_pos - self.last_position)
+
+            if distance_moved < 0.05:  # Less than 5cm in some time
+                if self.stuck_start_time is None:
+                    self.stuck_start_time = self.get_clock().now()
+                elif (self.get_clock().now() - self.stuck_start_time).nanoseconds / 1e9 > self.stuck_threshold_time:
+                    # Robot is stuck, trigger recovery
+                    self.handle_stuck_recovery()
+            else:
+                # Robot moved, reset stuck timer
+                self.stuck_start_time = None
+
+        self.last_position = current_pos
+
+    def imu_callback(self, msg):
+        """Process IMU data for fall detection"""
+        self.current_imu = msg
+
+        # Convert quaternion to roll/pitch angles
+        orientation = msg.orientation
+        roll, pitch, _ = self.quaternion_to_euler(
+            orientation.x, orientation.y, orientation.z, orientation.w
+        )
+
+        # Check if robot is falling
+        if abs(roll) > self.fall_threshold_angle or abs(pitch) > self.fall_threshold_angle:
+            self.handle_fall_recovery(roll, pitch)
+
+    def handle_stuck_recovery(self):
+        """Handle robot stuck situation"""
+        self.get_logger().warn('Robot is stuck, initiating recovery')
+
+        # Try backing up
+        cmd_vel = Twist()
+        cmd_vel.linear.x = -0.1  # Back up slowly
+        cmd_vel.angular.z = 0.0
+
+        self.recovery_cmd_pub.publish(cmd_vel)
+
+        # Wait for a bit
+        self.get_logger().info('Backing up for 2 seconds')
+        self.wait_for_duration(2.0)
+
+        # Try turning
+        cmd_vel.linear.x = 0.0
+        cmd_vel.angular.z = 0.3  # Turn slowly
+
+        self.recovery_cmd_pub.publish(cmd_vel)
+
+        self.get_logger().info('Turning for 2 seconds')
+        self.wait_for_duration(2.0)
+
+        # Stop
+        cmd_vel.linear.x = 0.0
+        cmd_vel.angular.z = 0.0
+        self.recovery_cmd_pub.publish(cmd_vel)
+
+    def handle_fall_recovery(self, roll, pitch):
+        """Handle robot fall situation"""
+        self.get_logger().error(f'Robot falling! Roll: {roll}, Pitch: {pitch}')
+
+        # Emergency stop
+        cmd_vel = Twist()
+        cmd_vel.linear.x = 0.0
+        cmd_vel.linear.y = 0.0
+        cmd_vel.linear.z = 0.0
+        cmd_vel.angular.x = 0.0
+        cmd_vel.angular.y = 0.0
+        cmd_vel.angular.z = 0.0
+
+        self.recovery_cmd_pub.publish(cmd_vel)
+
+        # This would trigger more complex recovery like:
+        # - Fall protection behaviors
+        # - Self-righting if possible
+        # - Emergency shutdown if necessary
+
+    def quaternion_to_euler(self, x, y, z, w):
+        """Convert quaternion to Euler angles"""
+        import math
+
+        # Roll (x-axis rotation)
+        sinr_cosp = 2 * (w * x + y * z)
+        cosr_cosp = 1 - 2 * (x * x + y * y)
+        roll = math.atan2(sinr_cosp, cosr_cosp)
+
+        # Pitch (y-axis rotation)
+        sinp = 2 * (w * y - z * x)
+        if abs(sinp) >= 1:
+            pitch = math.copysign(math.pi / 2, sinp)  # Use 90 degrees if out of range
+        else:
+            pitch = math.asin(sinp)
+
+        # Yaw (z-axis rotation)
+        siny_cosp = 2 * (w * z + x * y)
+        cosy_cosp = 1 - 2 * (y * y + z * z)
+        yaw = math.atan2(siny_cosp, cosy_cosp)
+
+        return roll, pitch, yaw
+
+    def wait_for_duration(self, duration_sec):
+        """Wait for specified duration"""
+        start_time = self.get_clock().now()
+        while (self.get_clock().now() - start_time).nanoseconds / 1e9 < duration_sec:
+            rclpy.spin_once(self, timeout_sec=0.1)
 ```
 
-## Integration with Isaac Sim
-
-### 1. Simulation-Based Planning Validation
-
-```cpp
-// Integration with Isaac Sim for planning validation
-#include "isaac_ros_managed_nh/managed_node_handle.hpp"
-
-class IsaacSimNavigationValidator
-{
-public:
-    IsaacSimNavigationValidator(rclcpp::Node* node) : node_(node)
-    {
-        // Initialize Isaac Sim interface
-        InitializeSimInterface();
-
-        // Create validation topics
-        validation_result_pub_ = node_->create_publisher<isaac_ros_nav_msgs::msg::NavigationValidation>(
-            "/navigation/validation_result", 10);
-    }
-
-    NavigationValidationResult ValidateNavigationPlan(
-        const nav_msgs::msg::Path& path,
-        const std::string& environment_name)
-    {
-        NavigationValidationResult result;
-
-        // Set up simulation environment
-        SetupSimulationEnvironment(environment_name);
-
-        // Execute navigation plan in simulation
-        auto sim_result = ExecuteNavigationInSimulation(path);
-
-        // Collect validation metrics
-        result.success_rate = CalculateSuccessRate(sim_result);
-        result.average_time = CalculateAverageTime(sim_result);
-        result.collision_rate = CalculateCollisionRate(sim_result);
-        result.energy_efficiency = CalculateEnergyEfficiency(sim_result);
-        result.balance_stability = CalculateBalanceStability(sim_result);
-
-        // Publish validation results
-        PublishValidationResult(result);
-
-        return result;
-    }
-
-private:
-    struct NavigationValidationResult {
-        double success_rate;
-        double average_time;
-        double collision_rate;
-        double energy_efficiency;
-        double balance_stability;
-        std::vector<geometry_msgs::msg::Pose> executed_path;
-    };
-
-    struct SimulationResult {
-        std::vector<geometry_msgs::msg::Pose> robot_poses;
-        std::vector<double> time_stamps;
-        std::vector<bool> collision_flags;
-        std::vector<double> energy_consumption;
-        std::vector<double> balance_metrics;
-        bool navigation_successful;
-    };
-
-    void InitializeSimInterface()
-    {
-        // Initialize connection to Isaac Sim
-        // This would typically involve setting up USD stage loading,
-        // robot spawning, and sensor configuration
-    }
-
-    void SetupSimulationEnvironment(const std::string& environment_name)
-    {
-        // Load the specified environment in Isaac Sim
-        // Configure obstacles, lighting, and other environmental factors
-    }
-
-    SimulationResult ExecuteNavigationInSimulation(const nav_msgs::msg::Path& path)
-    {
-        SimulationResult result;
-
-        // Spawn humanoid robot in simulation
-        SpawnHumanoidRobot();
-
-        // Execute path following controller
-        for (const auto& pose : path.poses) {
-            // Send navigation goal to controller
-            SendNavigationGoal(pose.pose);
-
-            // Simulate robot movement
-            auto robot_pose = SimulateRobotMovement(pose.pose);
-            result.robot_poses.push_back(robot_pose);
-
-            // Record metrics
-            result.time_stamps.push_back(GetSimulationTime());
-            result.collision_flags.push_back(CheckCollision());
-            result.energy_consumption.push_back(CalculateEnergy());
-            result.balance_metrics.push_back(CalculateBalanceMetric());
-
-            // Check if navigation is still successful
-            if (CheckCollision() || !IsBalanced()) {
-                result.navigation_successful = false;
-                break;
-            }
-        }
-
-        result.navigation_successful = true;
-        return result;
-    }
-
-    double CalculateSuccessRate(const SimulationResult& result)
-    {
-        // Success if robot reaches goal without collisions and maintains balance
-        int successful_runs = 0;
-        int total_runs = 1; // For single path validation
-
-        if (result.navigation_successful) {
-            successful_runs = 1;
-        }
-
-        return static_cast<double>(successful_runs) / total_runs;
-    }
-
-    double CalculateCollisionRate(const SimulationResult& result)
-    {
-        int collision_count = 0;
-        for (bool collision : result.collision_flags) {
-            if (collision) {
-                collision_count++;
-            }
-        }
-
-        return static_cast<double>(collision_count) / result.collision_flags.size();
-    }
-
-    double CalculateBalanceStability(const SimulationResult& result)
-    {
-        if (result.balance_metrics.empty()) {
-            return 0.0;
-        }
-
-        double total_balance = 0.0;
-        for (double balance : result.balance_metrics) {
-            total_balance += balance;
-        }
-
-        return total_balance / result.balance_metrics.size();
-    }
-
-    void SpawnHumanoidRobot()
-    {
-        // Spawn humanoid robot model in Isaac Sim
-        // Configure initial position, sensors, and controllers
-    }
-
-    geometry_msgs::msg::Pose SimulateRobotMovement(const geometry_msgs::msg::Pose& target_pose)
-    {
-        // Simulate robot movement toward target pose
-        // This would involve physics simulation and controller execution
-        return target_pose; // Simplified return
-    }
-
-    bool CheckCollision()
-    {
-        // Check for collisions in simulation
-        return false; // Simplified
-    }
-
-    bool IsBalanced()
-    {
-        // Check if robot maintains balance
-        return true; // Simplified
-    }
-
-    double CalculateEnergy()
-    {
-        // Calculate energy consumption in simulation
-        return 0.0; // Simplified
-    }
-
-    double CalculateBalanceMetric()
-    {
-        // Calculate balance metric in simulation
-        return 1.0; // Simplified (perfectly balanced)
-    }
-
-    double GetSimulationTime()
-    {
-        // Get current simulation time
-        return 0.0; // Simplified
-    }
-
-    void SendNavigationGoal(const geometry_msgs::msg::Pose& pose)
-    {
-        // Send navigation goal to the robot's navigation stack in simulation
-    }
-
-    rclcpp::Node* node_;
-    rclcpp::Publisher<isaac_ros_nav_msgs::msg::NavigationValidation>::SharedPtr validation_result_pub_;
-};
-```
-
-## Performance Optimization and Real-time Considerations
-
-### 1. Multi-Level Planning Hierarchy
-
-```cpp
-// Multi-level planning hierarchy for computational efficiency
-class HierarchicalNavigationPlanner
-{
-public:
-    struct PlanningLevel {
-        std::string name;
-        double resolution;
-        double update_rate;
-        std::function<nav_msgs::msg::Path(const geometry_msgs::msg::Pose&,
-                                        const geometry_msgs::msg::Pose&)> planner_func;
-    };
-
-    HierarchicalNavigationPlanner()
-    {
-        InitializePlanningHierarchy();
-    }
-
-    nav_msgs::msg::Path PlanPath(const geometry_msgs::msg::PoseStamped& start,
-                                const geometry_msgs::msg::PoseStamped& goal)
-    {
-        nav_msgs::msg::Path final_path;
-
-        // Execute planning at different levels
-        for (auto& level : planning_levels_) {
-            if (ShouldExecuteLevel(level, start, goal)) {
-                auto level_path = level.planner_func(start.pose, goal.pose);
-
-                if (!level_path.poses.empty()) {
-                    // Refine path for lower levels if needed
-                    final_path = RefinePathForLevel(final_path, level_path, level);
-                }
-            }
-        }
-
-        return final_path;
-    }
-
-private:
-    void InitializePlanningHierarchy()
-    {
-        // Global planning level (low resolution, infrequent updates)
-        PlanningLevel global_level;
-        global_level.name = "global";
-        global_level.resolution = 1.0;  // 1m resolution
-        global_level.update_rate = 0.1; // 0.1 Hz (every 10 seconds)
-        global_level.planner_func = [this](const geometry_msgs::msg::Pose& start,
-                                         const geometry_msgs::msg::Pose& goal) {
-            return this->GlobalPlan(start, goal);
-        };
-        planning_levels_.push_back(global_level);
-
-        // Mid-level planning (medium resolution, moderate updates)
-        PlanningLevel mid_level;
-        mid_level.name = "mid";
-        mid_level.resolution = 0.2;   // 20cm resolution
-        mid_level.update_rate = 1.0;  // 1 Hz
-        mid_level.planner_func = [this](const geometry_msgs::msg::Pose& start,
-                                      const geometry_msgs::msg::Pose& goal) {
-            return this->MidPlan(start, goal);
-        };
-        planning_levels_.push_back(mid_level);
-
-        // Local planning level (high resolution, frequent updates)
-        PlanningLevel local_level;
-        local_level.name = "local";
-        local_level.resolution = 0.05; // 5cm resolution
-        local_level.update_rate = 10.0; // 10 Hz
-        local_level.planner_func = [this](const geometry_msgs::msg::Pose& start,
-                                        const geometry_msgs::msg::Pose& goal) {
-            return this->LocalPlan(start, goal);
-        };
-        planning_levels_.push_back(local_level);
-    }
-
-    bool ShouldExecuteLevel(const PlanningLevel& level,
-                           const geometry_msgs::msg::PoseStamped& start,
-                           const geometry_msgs::msg::PoseStamped& goal)
-    {
-        // Check if enough time has passed for this level
-        auto current_time = std::chrono::steady_clock::now();
-        auto time_since_last = std::chrono::duration_cast<std::chrono::milliseconds>(
-            current_time - last_execution_time_[level.name]).count();
-
-        double required_interval_ms = 1000.0 / level.update_rate;
-        if (time_since_last < required_interval_ms) {
-            return false;
-        }
-
-        // Check if goal has changed significantly
-        double goal_distance = sqrt(pow(goal.pose.position.x - last_goals_[level.name].x, 2) +
-                                   pow(goal.pose.position.y - last_goals_[level.name].y, 2));
-        if (level.name == "global" && goal_distance < 0.5) { // 50cm threshold for global replanning
-            return false;
-        }
-
-        // Update last execution time and goal
-        last_execution_time_[level.name] = current_time;
-        last_goals_[level.name] = goal.pose.position;
-
-        return true;
-    }
-
-    nav_msgs::msg::Path GlobalPlan(const geometry_msgs::msg::Pose& start,
-                                  const geometry_msgs::msg::Pose& goal)
-    {
-        // Use GPU-accelerated global planner for coarse path
-        return gpu_global_planner_.Plan(start, goal);
-    }
-
-    nav_msgs::msg::Path MidPlan(const geometry_msgs::msg::Pose& start,
-                               const geometry_msgs::msg::Pose& goal)
-    {
-        // Mid-level planner for path refinement
-        return mid_level_planner_.Plan(start, goal);
-    }
-
-    nav_msgs::msg::Path LocalPlan(const geometry_msgs::msg::Pose& start,
-                                 const geometry_msgs::msg::Pose& goal)
-    {
-        // Local planner for obstacle avoidance and fine adjustments
-        return local_planner_.Plan(start, goal);
-    }
-
-    nav_msgs::msg::Path RefinePathForLevel(const nav_msgs::msg::Path& existing_path,
-                                          const nav_msgs::msg::Path& level_path,
-                                          const PlanningLevel& level)
-    {
-        if (level.name == "global") {
-            // Global path becomes the base path
-            return level_path;
-        } else if (level.name == "mid") {
-            // Mid-level refines global path
-            return RefineGlobalWithMid(existing_path, level_path);
-        } else if (level.name == "local") {
-            // Local level provides fine adjustments to mid-level path
-            return RefineMidWithLocal(existing_path, level_path);
-        }
-
-        return existing_path;
-    }
-
-    nav_msgs::msg::Path RefineGlobalWithMid(const nav_msgs::msg::Path& global_path,
-                                           const nav_msgs::msg::Path& mid_path)
-    {
-        // Combine global and mid-level paths
-        nav_msgs::msg::Path refined_path = global_path;
-
-        // Replace sections of global path with mid-level refinements
-        for (size_t i = 0; i < mid_path.poses.size(); ++i) {
-            if (i < refined_path.poses.size()) {
-                refined_path.poses[i] = mid_path.poses[i];
-            } else {
-                refined_path.poses.push_back(mid_path.poses[i]);
-            }
-        }
-
-        return refined_path;
-    }
-
-    nav_msgs::msg::Path RefineMidWithLocal(const nav_msgs::msg::Path& mid_path,
-                                          const nav_msgs::msg::Path& local_path)
-    {
-        // Apply local adjustments to mid-level path
-        nav_msgs::msg::Path refined_path = mid_path;
-
-        // For the immediate future path, use local planning results
-        for (size_t i = 0; i < local_path.poses.size() && i < refined_path.poses.size(); ++i) {
-            refined_path.poses[i] = local_path.poses[i];
-        }
-
-        return refined_path;
-    }
-
-    std::vector<PlanningLevel> planning_levels_;
-    std::map<std::string, std::chrono::steady_clock::time_point> last_execution_time_;
-    std::map<std::string, geometry_msgs::msg::Point> last_goals_;
-
-    // Planner instances
-    GPUAStarPlanner gpu_global_planner_;
-    MidLevelPlanner mid_level_planner_;
-    LocalPlanner local_planner_;
-};
-```
-
-## Next Steps
-
-In the next section, we'll explore AI model deployment and execution in Isaac ROS, learning how to leverage NVIDIA's AI frameworks for perception, planning, and control tasks in humanoid robotics applications.
+## Best Practices for Humanoid Navigation
+
+### 1. Parameter Configuration
+- Adjust robot radius for humanoid dimensions
+- Set appropriate velocity limits for stability
+- Configure costmap inflation for safety margins
+- Tune planners for humanoid-specific constraints
+
+### 2. Sensor Integration
+- Use multiple sensors for redundancy
+- Integrate IMU data for balance awareness
+- Consider stereo vision for 3D obstacle detection
+- Plan for sensor failures with fallback behaviors
+
+### 3. Performance Optimization
+- Optimize costmap resolution for humanoid size
+- Use appropriate planning frequencies
+- Implement efficient obstacle detection
+- Monitor and tune performance metrics
+
+### 4. Safety Considerations
+- Implement comprehensive recovery behaviors
+- Use IMU for fall detection
+- Set conservative velocity limits
+- Plan for emergency stops
+
+## Troubleshooting Common Issues
+
+### 1. Local Planner Oscillation
+- **Problem**: Robot oscillates back and forth
+- **Solution**: Increase minimum velocity thresholds, tune controller parameters
+
+### 2. Global Planner Failure
+- **Problem**: Cannot find path to goal
+- **Solution**: Check costmap inflation, adjust tolerance parameters
+
+### 3. Collision Issues
+- **Problem**: Robot collides with obstacles
+- **Solution**: Increase robot radius, tune costmap inflation, improve sensor coverage
+
+### 4. Performance Issues
+- **Problem**: Slow navigation or high CPU usage
+- **Solution**: Optimize costmap resolution, adjust planning frequencies, tune parameters
+
+## Summary
+
+Nav2 provides a comprehensive navigation framework that can be adapted for humanoid robotics with several key considerations:
+
+- **Humanoid Kinematics**: Account for bipedal locomotion constraints
+- **Balance Requirements**: Integrate IMU and balance data into navigation
+- **Anthropomorphic Motion**: Consider human-like movement patterns
+- **Social Navigation**: Respect personal space and social norms
+- **Safety Systems**: Implement comprehensive safety and recovery behaviors
+- **Sensor Integration**: Leverage Isaac ROS perception capabilities
+
+The combination of Nav2's flexible architecture with humanoid-specific modifications enables robots to navigate complex environments safely and effectively. Proper parameter tuning and integration with perception systems ensures robust navigation performance that accounts for the unique challenges of bipedal locomotion.
+
+In the next section, we'll explore AI-enhanced robot control systems that build upon the navigation capabilities we've discussed.

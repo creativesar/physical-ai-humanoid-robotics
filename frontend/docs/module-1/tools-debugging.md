@@ -1,490 +1,514 @@
 ---
 sidebar_position: 5
-title: "ROS 2 Tools and Debugging"
+title: "Launch Files and Parameter Management"
 ---
 
-# ROS 2 Tools and Debugging
+# Launch Files and Parameter Management
 
-## Essential ROS 2 Command Line Tools
+## Launch Files
 
-ROS 2 provides a comprehensive set of command-line tools for inspecting, debugging, and managing your robotic systems. These tools are crucial for developing and maintaining humanoid robotics applications.
+Launch files in ROS 2 allow you to start multiple nodes with a single command and configure them with specific parameters. They provide a convenient way to manage complex robotic systems.
 
-## Core Command Line Tools
+### Python Launch Files
 
-### 1. Node Management
+Python launch files are the recommended approach in ROS 2. They offer more flexibility and are easier to maintain than XML launch files.
 
-#### Listing Nodes
-```bash
-# List all active nodes
-ros2 node list
+#### Basic Launch File Structure
 
-# Get information about a specific node
-ros2 node info /humanoid_controller
+```python
+# launch/my_robot_system.py
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
+def generate_launch_description():
+    # Declare launch arguments
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    robot_name = LaunchConfiguration('robot_name')
+
+    # Declare launch arguments
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation clock if true'
+    )
+
+    robot_name_arg = DeclareLaunchArgument(
+        'robot_name',
+        default_value='my_robot',
+        description='Name of the robot'
+    )
+
+    # Get configuration file path
+    config = os.path.join(
+        get_package_share_directory('my_robot_package'),
+        'config',
+        'robot_config.yaml'
+    )
+
+    # Define nodes
+    robot_driver = Node(
+        package='my_robot_package',
+        executable='robot_driver',
+        name='robot_driver',
+        parameters=[
+            config,
+            {'robot_name': robot_name},
+            {'use_sim_time': use_sim_time}
+        ],
+        output='screen',
+        respawn=True,  # Restart if node dies
+        respawn_delay=2  # Wait 2 seconds before restarting
+    )
+
+    robot_controller = Node(
+        package='my_robot_package',
+        executable='robot_controller',
+        name='robot_controller',
+        parameters=[config],
+        output='screen'
+    )
+
+    return LaunchDescription([
+        use_sim_time_arg,
+        robot_name_arg,
+        robot_driver,
+        robot_controller
+    ])
 ```
 
-#### Node Execution
-```bash
-# Run a node directly
-ros2 run package_name executable_name
+### Advanced Launch File Features
 
-# Run with parameters
-ros2 run package_name executable_name --ros-args --param-file params.yaml
+#### Conditional Launch
 
-# Run with remappings
-ros2 run package_name executable_name --ros-args --remap old_topic:=new_topic
+```python
+from launch import LaunchDescription, LaunchCondition
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
+
+def generate_launch_description():
+    # Launch argument to enable/disable a node
+    enable_camera = LaunchConfiguration('enable_camera')
+
+    camera_node = Node(
+        package='camera_package',
+        executable='camera_node',
+        name='camera_node',
+        condition=LaunchCondition(
+            expression=['"', enable_camera, '" == "true"']
+        )
+    )
+
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'enable_camera',
+            default_value='false',
+            description='Enable camera node'
+        ),
+        camera_node
+    ])
 ```
 
-### 2. Topic Management
+#### Including Other Launch Files
 
-#### Inspecting Topics
+```python
+from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
+def generate_launch_description():
+    # Include another launch file
+    navigation_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('nav2_bringup'),
+                'launch',
+                'navigation_launch.py'
+            )
+        ]),
+        launch_arguments={
+            'use_sim_time': 'true'
+        }.items()
+    )
+
+    return LaunchDescription([
+        navigation_launch
+    ])
+```
+
+## Parameter Management
+
+### Parameter Declaration and Usage
+
+```python
+import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import ParameterDescriptor
+from rcl_interfaces.msg import ParameterType
+
+
+class ParameterExampleNode(Node):
+    def __init__(self):
+        super().__init__('parameter_example_node')
+
+        # Declare parameters with descriptors
+        self.declare_parameter(
+            'robot_name',
+            'default_robot',
+            ParameterDescriptor(
+                description='Name of the robot',
+                type=ParameterType.PARAMETER_STRING
+            )
+        )
+
+        self.declare_parameter(
+            'max_velocity',
+            1.0,
+            ParameterDescriptor(
+                description='Maximum velocity of the robot',
+                type=ParameterType.PARAMETER_DOUBLE,
+                floating_point_range=[ParameterDescriptor(
+                    from_value=0.0,
+                    to_value=10.0,
+                    step=0.1
+                )]
+            )
+        )
+
+        # Get parameter values
+        self.robot_name = self.get_parameter('robot_name').value
+        self.max_velocity = self.get_parameter('max_velocity').value
+
+        # Add parameter callback
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
+    def parameters_callback(self, parameters):
+        """Callback for parameter changes"""
+        from rcl_interfaces.msg import SetParametersResult
+
+        for param in parameters:
+            if param.name == 'max_velocity':
+                if param.value > 5.0:
+                    self.get_logger().warn('Max velocity is quite high!')
+                elif param.value <= 0.0:
+                    return SetParametersResult(successful=False, reason='Max velocity must be positive')
+
+        return SetParametersResult(successful=True)
+```
+
+### YAML Parameter Files
+
+YAML parameter files provide a clean way to organize and manage parameters:
+
+```yaml
+# config/robot_params.yaml
+/**:  # Global namespace
+  ros__parameters:
+    use_sim_time: false
+    log_level: "info"
+
+robot_driver:
+  ros__parameters:
+    robot_name: "my_robot"
+    max_velocity: 1.0
+    wheel_diameter: 0.15
+    encoder_resolution: 4096
+    control_frequency: 50.0
+
+robot_controller:
+  ros__parameters:
+    kp: 1.0
+    ki: 0.1
+    kd: 0.05
+    max_integral: 10.0
+    max_output: 100.0
+
+navigation:
+  ros__parameters:
+    planner_frequency: 5.0
+    controller_frequency: 20.0
+    recovery_enabled: true
+    clear_costmap_timeout: 2.0
+    oscillation_timeout: 0.0
+    oscillation_distance: 0.5
+
+sensors:
+  ros__parameters:
+    lidar_topic: "/scan"
+    camera_topic: "/camera/image_raw"
+    imu_topic: "/imu/data"
+    lidar_enabled: true
+    camera_enabled: true
+```
+
+### Loading Parameters in Launch Files
+
+```python
+# launch/parameter_example.py
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
+def generate_launch_description():
+    # Get parameter file path
+    param_file = os.path.join(
+        get_package_share_directory('my_robot_package'),
+        'config',
+        'robot_params.yaml'
+    )
+
+    robot_node = Node(
+        package='my_robot_package',
+        executable='robot_node',
+        name='robot_node',
+        parameters=[param_file],
+        output='screen'
+    )
+
+    # Or load parameters with overrides
+    robot_node_with_override = Node(
+        package='my_robot_package',
+        executable='robot_node',
+        name='robot_node_with_override',
+        parameters=[
+            param_file,
+            {'robot_name': 'overridden_robot'},  # Override specific parameter
+            {'max_velocity': 2.5}
+        ],
+        output='screen'
+    )
+
+    return LaunchDescription([
+        robot_node,
+        robot_node_with_override
+    ])
+```
+
+## ROS 2 Tools for Debugging
+
+### ros2 topic
+
 ```bash
 # List all topics
 ros2 topic list
 
 # Get information about a specific topic
-ros2 topic info /joint_states
+ros2 topic info /cmd_vel
 
-# Echo topic data (view messages in real-time)
-ros2 topic echo /joint_states
+# Echo messages from a topic
+ros2 topic echo /scan
 
 # Echo with specific number of messages
-ros2 topic echo /joint_states --field position --field velocity -n 5
+ros2 topic echo /cmd_vel --field linear.x -n 10
+
+# Publish to a topic
+ros2 topic pub /cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'
 
 # Show topic statistics
 ros2 topic hz /camera/image_raw
 ```
 
-#### Publishing to Topics
-```bash
-# Publish a single message
-ros2 topic pub /cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'
+### ros2 service
 
-# Publish with a specific rate
-ros2 topic pub -r 10 /cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}}'
-```
-
-### 3. Service Management
-
-#### Service Calls
 ```bash
 # List all services
 ros2 service list
 
 # Call a service
-ros2 service call /reset_positions std_srvs/srv/Empty
+ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts '{a: 1, b: 2}'
 
-# Call with parameters
-ros2 service call /set_parameters rcl_interfaces/srv/SetParameters '{parameters: [{name: "control_frequency", value: {type: 3, double_value: 100.0}}]}'
+# Get service type
+ros2 service type /set_parameters
 ```
 
-### 4. Action Management
+### ros2 action
 
-#### Action Commands
 ```bash
 # List all actions
 ros2 action list
 
-# Send a goal to an action server
-ros2 action send_goal /move_joint control_msgs/action/FollowJointTrajectory trajectory.yaml
-
-# Get action info
-ros2 action info /move_joint
+# Send a goal to an action
+ros2 action send_goal /fibonacci example_interfaces/action/Fibonacci '{order: 5}'
 ```
 
-### 5. Parameter Management
+### ros2 node
 
-#### Parameter Operations
 ```bash
+# List all nodes
+ros2 node list
+
+# Get information about a specific node
+ros2 node info /robot_driver
+
 # List parameters of a node
-ros2 param list /humanoid_controller
+ros2 param list /robot_driver
 
 # Get parameter value
-ros2 param get /humanoid_controller control_frequency
+ros2 param get /robot_driver robot_name
 
 # Set parameter value
-ros2 param set /humanoid_controller control_frequency 200
-
-# Load parameters from file
-ros2 param load /humanoid_controller params.yaml
+ros2 param set /robot_driver max_velocity 2.0
 ```
 
-## Graph Visualization
+### rqt Tools
 
-### ros2 graph
-Visualize the communication graph between nodes:
+rqt is a Qt-based framework for GUI plugins in ROS 2:
+
 ```bash
-# Install graphviz first
-sudo apt install graphviz
+# Start rqt
+rqt
 
-# Generate graph
-ros2 graph --output-format png --show-arguments
-
-# Generate graph for specific nodes
-ros2 graph --include-hidden-nodes
+# Start specific rqt plugins
+rqt_graph          # Shows node graph
+rqt_plot           # Plot numeric values
+rqt_console        # Shows log messages
+rqt_bag            # Record and play back data
+rqt_publisher      # Publish messages manually
+rqt_subscriber     # Monitor topics
 ```
 
 ## Advanced Debugging Techniques
 
-### 1. Logging and Diagnostics
+### Logging
 
-#### RCLCPP Logging
-```cpp
-#include "rclcpp/rclcpp.hpp"
+```python
+import rclpy
+from rclpy.node import Node
+import logging
 
-class DebugNode : public rclcpp::Node
-{
-public:
-    DebugNode() : Node("debug_node")
-    {
-        // Different log levels
-        RCLCPP_INFO(this->get_logger(), "This is an info message");
-        RCLCPP_WARN(this->get_logger(), "This is a warning");
-        RCLCPP_ERROR(this->get_logger(), "This is an error");
-        RCLCPP_DEBUG(this->get_logger(), "This is a debug message");
 
-        // Conditional logging
-        RCLCPP_INFO_EXPRESSION(
-            this->get_logger(),
-            (some_condition == true),
-            "Conditional log message"
-        );
-    }
-};
+class LoggingExampleNode(Node):
+    def __init__(self):
+        super().__init__('logging_example_node')
+
+        # Different log levels
+        self.get_logger().debug('Debug message')
+        self.get_logger().info('Info message')
+        self.get_logger().warn('Warning message')
+        self.get_logger().error('Error message')
+        self.get_logger().fatal('Fatal message')
+
+        # Log with parameters
+        robot_name = 'my_robot'
+        self.get_logger().info(f'Robot {robot_name} initialized')
+
+        # Set log level programmatically
+        self.get_logger().set_level(logging.DEBUG)
 ```
 
-#### Custom Logger Configuration
-```cpp
-// Configure logger settings
-auto logger = rclcpp::get_logger("custom_logger");
-RCLCPP_LOG_SEVERITY_THRESHOLD(logger, RCLCPP_DEBUG);
+### Performance Monitoring
+
+```python
+import time
+from rclpy.node import Node
+
+
+class PerformanceNode(Node):
+    def __init__(self):
+        super().__init__('performance_node')
+        self.timer = self.create_timer(0.1, self.performance_callback)
+
+    def performance_callback(self):
+        start_time = time.time()
+
+        # Your processing code here
+        self.process_data()
+
+        end_time = time.time()
+        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+
+        if execution_time > 50:  # Warn if execution takes more than 50ms
+            self.get_logger().warn(f'Processing took {execution_time:.2f}ms')
+        else:
+            self.get_logger().info(f'Processing took {execution_time:.2f}ms')
+
+    def process_data(self):
+        # Simulate processing
+        time.sleep(0.01)  # Simulate 10ms of processing
 ```
 
-### 2. Memory and Performance Monitoring
+### Memory Management
 
-#### Using ros2 doctor
-Check the health of your ROS 2 system:
+```python
+import psutil
+import os
+from rclpy.node import Node
+
+
+class MemoryMonitoringNode(Node):
+    def __init__(self):
+        super().__init__('memory_monitoring_node')
+        self.process = psutil.Process(os.getpid())
+        self.memory_timer = self.create_timer(5.0, self.memory_callback)
+
+    def memory_callback(self):
+        memory_info = self.process.memory_info()
+        memory_percent = self.process.memory_percent()
+
+        self.get_logger().info(
+            f'Memory usage: RSS={memory_info.rss / 1024 / 1024:.2f}MB, '
+            f'Percent={memory_percent:.2f}%'
+        )
+```
+
+## Common Debugging Scenarios
+
+### Topic Connection Issues
+
 ```bash
-# Basic health check
-ros2 doctor
+# Check if nodes are publishing/subscribing to topics
+ros2 topic info /topic_name
 
-# Detailed check
-ros2 doctor --report
+# Check if nodes are alive
+ros2 node list
+
+# Verify message types match
+ros2 topic type /topic_name
+ros2 interface show msg_type
 ```
 
-#### Performance Analysis
+### Parameter Issues
+
 ```bash
-# Monitor CPU and memory usage
-htop
+# Check current parameter values
+ros2 param list node_name
+ros2 param get node_name param_name
 
-# Monitor network usage (for distributed systems)
-nethogs
+# Set parameters at runtime
+ros2 param set node_name param_name value
+```
 
-# Monitor ROS 2 communication
+### Performance Issues
+
+```bash
+# Monitor topic frequency
 ros2 topic hz /topic_name
+
+# Monitor CPU usage of nodes
+top -p $(pgrep -f node_name)
+
+# Check for memory leaks
+watch -n 1 'ps aux | grep node_name'
 ```
 
-### 3. Profiling Tools
+## Summary
 
-#### Using tracetools
-For detailed performance analysis:
-```bash
-# Install tracetools
-sudo apt install ros-humble-tracetools
+Launch files and parameter management are crucial for effectively managing ROS 2 systems:
 
-# Record trace data
-ros2 trace my_trace_directory
+- Launch files provide a way to start multiple nodes with proper configuration
+- Parameters allow runtime configuration of nodes
+- ROS 2 provides various tools for debugging and monitoring
+- Proper logging and performance monitoring help maintain system health
 
-# Launch your application
-ros2 launch my_package my_launch.py
-
-# Stop tracing with Ctrl+C
-```
-
-## Debugging Humanoid Robotics Systems
-
-### 1. Sensor Data Validation
-
-#### Validating Joint States
-```bash
-# Monitor joint states for consistency
-ros2 topic echo /joint_states --field name --field position | head -n 20
-
-# Check for NaN values in sensor data
-ros2 topic echo /imu/data --field orientation_covariance | grep -E 'nan|inf'
-```
-
-#### Visualizing Sensor Data
-```bash
-# Use rviz2 for visualization
-ros2 run rviz2 rviz2
-
-# Add displays for joint states, IMU data, etc.
-```
-
-### 2. Control Loop Debugging
-
-#### Monitoring Control Frequencies
-```bash
-# Check the frequency of control commands
-ros2 topic hz /joint_commands
-
-# Monitor feedback loops
-ros2 topic hz /feedback_topic
-```
-
-### 3. Synchronization Issues
-
-#### Time Synchronization
-```cpp
-// Use synchronized time in simulation
-this->declare_parameter("use_sim_time", false);
-bool use_sim_time = this->get_parameter("use_sim_time").as_bool();
-
-// For simulation environments
-if (use_sim_time) {
-    // Use simulation time instead of system time
-    rclcpp::Time current_time = this->now();
-}
-```
-
-## Debugging Tools and Techniques
-
-### 1. Interactive Debugging
-
-#### Using rqt tools
-```bash
-# Install rqt tools
-sudo apt install ros-humble-rqt ros-humble-rqt-common-plugins
-
-# Launch rqt
-rqt
-
-# Use various plugins:
-# - rqt_graph: Visualize node connections
-# - rqt_plot: Plot numeric values
-# - rqt_console: View log messages
-# - rqt_bag: Play and record bag files
-```
-
-### 2. Bag Files for Data Recording
-
-#### Recording Data
-```bash
-# Record all topics
-ros2 bag record -a
-
-# Record specific topics
-ros2 bag record /joint_states /imu/data /camera/image_raw
-
-# Record with compression
-ros2 bag record --compression-mode file --compression-format zstd /joint_states
-
-# Record with duration limit
-ros2 bag record -d 60 /joint_states  # Record for 60 seconds
-```
-
-#### Playing Back Data
-```bash
-# Play back a bag file
-ros2 bag play my_bag_file
-
-# Play with playback rate
-ros2 bag play my_bag_file --rate 0.5  # Play at half speed
-
-# Play specific topics
-ros2 bag play my_bag_file --topics /joint_states
-```
-
-### 3. Remote Debugging
-
-#### SSH for Remote Systems
-```bash
-# Set up ROS 2 environment on remote robot
-export ROS_DOMAIN_ID=1
-export ROS_LOCALHOST_ONLY=0
-export RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
-
-# Connect to remote robot from development machine
-export ROS_DOMAIN_ID=1
-export ROS_LOCALHOST_ONLY=0
-export RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
-```
-
-## Common Debugging Scenarios in Humanoid Robotics
-
-### 1. Joint Control Issues
-
-#### Troubleshooting Joint Commands
-```bash
-# Check if joint command topics are being published
-ros2 topic echo /position_commands
-
-# Verify joint state feedback
-ros2 topic echo /joint_states --field position --field velocity
-
-# Check controller status
-ros2 service call /controller_manager/list_controllers controller_manager_msgs/srv/ListControllers
-```
-
-### 2. Balance and Stability Problems
-
-#### IMU and Sensor Validation
-```bash
-# Monitor IMU data for drift
-ros2 topic echo /imu/data --field angular_velocity --field linear_acceleration
-
-# Check orientation stability
-ros2 topic echo /imu/data --field orientation
-```
-
-### 3. Communication Latency
-
-#### Measuring Latency
-```bash
-# Use timestamp comparison
-ros2 topic echo /topic_name --field header.stamp
-
-# Monitor for dropped messages
-ros2 topic hz /critical_topic --window 100
-```
-
-## Advanced Debugging Setup
-
-### 1. Custom Diagnostic Nodes
-
-```cpp
-#include "diagnostic_updater/diagnostic_updater.hpp"
-#include "diagnostic_msgs/msg/diagnostic_array.hpp"
-
-class HumanoidDiagnostics : public rclcpp::Node
-{
-public:
-    HumanoidDiagnostics() : Node("humanoid_diagnostics")
-    {
-        updater_.setHardwareID("humanoid_robot_v1.0");
-        updater_.add("Joint Controller Status", this, &HumanoidDiagnostics::check_joints);
-        updater_.add("Sensor Status", this, &HumanoidDiagnostics::check_sensors);
-        updater_.add("Communication Status", this, &HumanoidDiagnostics::check_communication);
-
-        // Timer for periodic updates
-        timer_ = this->create_wall_timer(
-            std::chrono::seconds(1),
-            std::bind(&HumanoidDiagnostics::update_diagnostics, this));
-    }
-
-private:
-    void check_joints(diagnostic_updater::DiagnosticStatusWrapper & stat)
-    {
-        // Custom diagnostic logic
-        stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "All joints operational");
-        stat.add("Joint Count", 28);
-        stat.add("Position Errors", 0);
-    }
-
-    void check_sensors(diagnostic_updater::DiagnosticStatusWrapper & stat)
-    {
-        // Sensor diagnostic logic
-        stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "All sensors operational");
-    }
-
-    void check_communication(diagnostic_updater::DiagnosticStatusWrapper & stat)
-    {
-        // Communication diagnostic logic
-        stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "Communication nominal");
-    }
-
-    void update_diagnostics()
-    {
-        updater_.update();
-    }
-
-    diagnostic_updater::Updater updater_;
-    rclcpp::TimerBase::SharedPtr timer_;
-};
-```
-
-### 2. Logging Best Practices
-
-#### Structured Logging
-```cpp
-// Use structured logging for better analysis
-RCLCPP_INFO(
-    this->get_logger(),
-    "Joint %s position: %.3f, velocity: %.3f, effort: %.3f",
-    joint_name.c_str(),
-    position,
-    velocity,
-    effort
-);
-
-// Log with context
-RCLCPP_INFO_STREAM(
-    this->get_logger(),
-    "Control cycle " << cycle_count <<
-    " - Position error: " << position_error <<
-    " - Velocity error: " << velocity_error
-);
-```
-
-## Troubleshooting Common Issues
-
-### 1. Node Discovery Problems
-```bash
-# Check if nodes can discover each other
-export ROS_DOMAIN_ID=0  # Ensure same domain ID
-export RMW_IMPLEMENTATION=  # Use same DDS implementation
-
-# Check network configuration
-ifconfig  # Verify network interfaces
-netstat -tulpn | grep -i ros  # Check ROS ports
-```
-
-### 2. Permission Issues
-```bash
-# Check ROS log directory permissions
-ls -la ~/.ros/log/
-sudo chown -R $USER:$USER ~/.ros/
-```
-
-### 3. Memory Issues
-```bash
-# Monitor memory usage
-ros2 run top top  # Or use system tools like htop
-# Set memory limits in launch files if needed
-```
-
-## Development Workflow Integration
-
-### 1. IDE Integration
-
-Most modern IDEs support ROS 2 development:
-- **VS Code**: With ROS extension
-- **CLion**: With ROS plugins
-- **Qt Creator**: For C++ development
-
-### 2. Continuous Integration
-
-Example GitHub Actions workflow:
-```yaml
-name: ROS 2 CI
-on: [push, pull_request]
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup ROS 2
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: humble
-      - name: Build and Test
-        uses: ros-tooling/action-ros-ci@v0.3
-        with:
-          package-name: humanoid_controller
-          target-ros2-distro: humble
-```
-
-## Next Steps
-
-In the next section, we'll explore how ROS 2 is specifically applied to humanoid robotics, covering topics like joint control, balance algorithms, and human-robot interaction patterns.
+In the next section, we'll explore bridging Python agents to ROS controllers using rclpy.

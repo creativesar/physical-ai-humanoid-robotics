@@ -1,250 +1,194 @@
-# Physical AI & Humanoid Robotics Textbook - Feature Specification
+# Physical AI & Humanoid Robotics Textbook - Specification
 
 ## 1. Overview
 
-### 1.1 Feature Name
-Physical AI & Humanoid Robotics Interactive Textbook with AI Integration
+### 1.1 Purpose
+Create an interactive, AI-powered textbook for teaching Physical AI & Humanoid Robotics using Docusaurus, with integrated RAG chatbot, user authentication, and personalization features.
 
-### 1.2 Description
-A comprehensive, interactive textbook platform built with Docusaurus and deployed to GitHub Pages for teaching Physical AI & Humanoid Robotics. The platform includes an integrated RAG chatbot powered by Cohere (instead of OpenAI), user authentication with background assessment, personalized content delivery, and multi-language support.
-
-### 1.3 Business Objective
-To create an AI-native educational platform that teaches students how to bridge the gap between digital AI and physical robotics, focusing on embodied intelligence. The platform will prepare students for a future where AI agents and robots work in partnership with humans.
-
-### 1.4 Success Criteria
-- Deployed textbook covering all 4 modules (ROS 2, Gazebo, NVIDIA Isaac, VLA)
-- Fully functional Cohere-powered RAG chatbot answering textbook content questions
-- User authentication system with background assessment capability
-- Content personalization based on user skill level
-- Urdu translation functionality for all content
-- Up to 150 potential bonus points earned (50 from reusable intelligence, 50 from auth/personalization, 50 from translation)
+### 1.2 Scope
+- Build a Docusaurus-based textbook with 4 modules covering Physical AI & Humanoid Robotics
+- Implement a Mistral AI-powered RAG chatbot for content Q&A
+- Add user authentication with better-auth
+- Implement content personalization features
+- Add Urdu translation capability
+- Deploy to GitHub Pages with Docker support
 
 ## 2. Functional Requirements
 
-### 2.1 Core Textbook Platform
-**FR-1.1**: The system SHALL provide a Docusaurus-based interactive textbook covering the 4 core modules:
-- Module 1: The Robotic Nervous System (ROS 2)
-- Module 2: The Digital Twin (Gazebo & Unity)
-- Module 3: The AI-Robot Brain (NVIDIA Isaac™)
-- Module 4: Vision-Language-Action (VLA)
+### 2.1 Core Textbook Features
+- **Module Content**: Create comprehensive content for 4 modules:
+  - Module 1: The Robotic Nervous System (ROS 2)
+  - Module 2: The Digital Twin (Gazebo & Unity)
+  - Module 3: The AI-Robot Brain (NVIDIA Isaac™)
+  - Module 4: Vision-Language-Action (VLA)
+- **Weekly Breakdown**: Include detailed content for 13 weeks of learning
+- **Assessments**: Include assessment materials for each module
+- **Hardware Requirements**: Document hardware setup guides
 
-**FR-1.2**: The system SHALL deploy the textbook to GitHub Pages for public access.
+### 2.2 RAG Chatbot Integration
+- **Content Indexing**: Index all textbook content for retrieval
+- **Question Answering**: Use Mistral AI to answer questions about textbook content
+- **Contextual Responses**: Provide answers based on specific textbook sections
+- **Source Attribution**: Reference specific textbook sections in responses
+- **User Selection**: Allow answering based on user-selected text
 
-**FR-1.3**: The system SHALL support responsive design for multiple device types.
+### 2.3 User Authentication & Personalization
+- **Signup/Signin**: Implement with better-auth (frontend-only, no separate backend needed)
+- **Background Questions**: Collect user's software and hardware background during signup
+- **Personalized Content**: Content difficulty adaptation based on user's background (software/hardware experience)
+- **Chapter Personalization**: Button at start of each chapter to personalize content difficulty
+- **Urdu Translation**: Button at start of each chapter to translate to Urdu using Mistral AI API with fallback to basic text replacement
+- **Personalization Persistence**: Session-based with short-term caching for personalization context
 
-### 2.2 AI Integration (Cohere-based)
-**FR-2.1**: The system SHALL include an integrated RAG chatbot using Cohere (instead of OpenAI) that can answer questions based on textbook content.
-
-**FR-2.2**: The system SHALL use Neon Serverless Postgres database for storing embeddings and user data.
-
-**FR-2.3**: The system SHALL use Qdrant Cloud Free Tier for vector storage and semantic search.
-
-**FR-2.4**: The system SHALL ensure the chatbot only responds based on text selected by the user from the textbook content.
-
-### 2.3 User Management
-**FR-3.1**: The system SHALL implement user signup and signin functionality using Better-Auth.
-
-**FR-3.2**: During signup, the system SHALL ask users questions about their software and hardware background.
-
-**FR-3.3**: The system SHALL store user background information securely in the database.
-
-### 2.4 Content Personalization
-**FR-4.1**: For logged-in users, the system SHALL provide a button at the start of each chapter to personalize content based on their background.
-
-**FR-4.2**: The system SHALL adapt content complexity and examples based on user background information.
-
-**FR-4.3**: The system SHALL remember user preferences for personalized content delivery.
-
-### 2.5 Localization
-**FR-5.1**: For logged-in users, the system SHALL provide a button at the start of each chapter to translate content to Urdu.
-
-**FR-5.2**: The system SHALL maintain content accuracy during translation.
-
-**FR-5.3**: The system SHALL support seamless switching between English and Urdu content.
-
-### 2.6 Reusable Intelligence
-**FR-6.1**: The system SHALL implement reusable intelligence via Claude Code Subagents for enhanced learning experiences.
-
-**FR-6.2**: The system SHALL implement Agent Skills to provide additional educational capabilities.
+### 2.4 Technical Features
+- **Responsive Design**: Mobile-friendly interface using TailwindCSS
+- **TypeScript**: Full TypeScript support for type safety
+- **Docker Support**: Development and deployment containerization
+- **GitHub Pages Deployment**: Automated deployment pipeline
 
 ## 3. Non-Functional Requirements
 
 ### 3.1 Performance
-**NFR-1.1**: The system SHALL load pages in under 3 seconds.
-
-**NFR-1.2**: The Cohere-powered chatbot SHALL respond to queries in under 5 seconds.
-
-**NFR-1.3**: The system SHALL support concurrent users during peak usage without degradation.
+- Page load time under 3 seconds
+- Chatbot response time under 5 seconds
+- Support for 100+ concurrent users
 
 ### 3.2 Security
-**NFR-2.1**: The system SHALL implement secure authentication and authorization using Better-Auth.
+- Secure authentication with better-auth
+- Protected API endpoints
+- Safe handling of user data
+- Secure AI API key management
+- Comprehensive error handling with user notifications and graceful degradation
+- Rate limiting and usage monitoring for AI APIs with fallback responses
 
-**NFR-2.2**: The system SHALL encrypt user data at rest and in transit.
+### 3.3 Scalability
+- Modular architecture for easy content addition
+- Database design supporting large content volumes
+- Vector storage optimized for RAG operations
 
-**NFR-2.3**: The system SHALL implement protection against common web vulnerabilities (XSS, CSRF, etc.).
+### 3.4 Accessibility
+- WCAG 2.1 AA compliance
+- Screen reader support
+- Keyboard navigation
+- Color contrast compliance
 
-### 3.3 Availability
-**NFR-3.1**: The system SHALL be available 99% of the time during educational hours.
+## 4. Technical Architecture
 
-**NFR-3.2**: The system SHALL have a backup and recovery mechanism for user data.
-
-### 3.4 Scalability
-**NFR-4.1**: The system SHALL handle increasing user load as the platform grows.
-
-**NFR-4.2**: The system SHALL support additional content modules in the future.
-
-## 4. Technical Specifications
-
-### 4.1 Technology Stack
-- **Frontend**: Docusaurus for textbook presentation
-- **Type Safety**: TypeScript for enhanced development experience and error prevention
-- **Styling**: Tailwind CSS for responsive and consistent UI design
-- **AI Platform**: Cohere for RAG chatbot (instead of OpenAI)
+### 4.1 Frontend Stack
+- **Framework**: Docusaurus v3+
+- **Language**: TypeScript
+- **Styling**: TailwindCSS
 - **Authentication**: Better-Auth
+- **State Management**: React Context/Redux Toolkit
+
+### 4.2 Backend Stack
+- **AI Integration**: Mistral AI API (instead of OpenAI/Gemini)
+- **Backend Framework**: FastAPI (for RAG services only, no auth backend needed)
 - **Database**: Neon Serverless Postgres
-- **Vector Database**: Qdrant Cloud Free Tier
+- **Vector Storage**: Qdrant Cloud Free Tier
+- **Authentication**: Better-Auth (frontend-only, no separate backend needed)
+
+### 4.3 Infrastructure
+- **Containerization**: Docker
 - **Deployment**: GitHub Pages
-- **AI Tools**: Claude Code Subagents and Agent Skills
-
-### 4.2 Architecture Components
-1. **Textbook Module**: Docusaurus-based content delivery
-2. **AI Assistant Module**: Cohere-powered RAG chatbot
-3. **Authentication Module**: Better-Auth integration
-4. **Personalization Engine**: Content adaptation based on user background
-5. **Localization Module**: Urdu translation capabilities
-6. **Subagent Integration**: Claude Code reusable intelligence
-
-### 4.3 Data Models
-**User Profile**:
-- ID (unique identifier)
-- Email (authentication)
-- Software background (assessment responses)
-- Hardware background (assessment responses)
-- Preferred language (English/Urdu)
-- Personalization settings
-
-**Content**:
-- Chapter ID
-- Content blocks
-- Urdu translations
-- Personalization variants
+- **CDN**: GitHub Pages CDN
+- **Monitoring**: Basic logging and error tracking
 
 ## 5. User Stories
 
 ### 5.1 Student User Stories
-**US-1**: As a student, I want to access the textbook online so that I can learn about Physical AI & Humanoid Robotics at my own pace.
+- As a student, I want to access the textbook content easily so that I can learn about Physical AI & Humanoid Robotics
+- As a student, I want to ask questions about the content to the AI chatbot so that I can get immediate clarification
+- As a student, I want to personalize the content based on my background so that I can focus on relevant material
+- As a student, I want to translate content to Urdu so that I can better understand the material
+- As a student, I want to access the textbook on mobile devices so that I can study anywhere
 
-**US-2**: As a student, I want to ask questions about the textbook content to an AI assistant so that I can get immediate clarification on complex topics.
+### 5.2 Instructor User Stories
+- As an instructor, I want to track student progress through the textbook so that I can provide appropriate support
+- As an instructor, I want to update content easily so that I can keep the material current
 
-**US-3**: As a student, I want to sign up with my background information so that the content can be personalized to my skill level.
+### 5.3 Administrator User Stories
+- As an administrator, I want to manage user accounts so that I can maintain security
+- As an administrator, I want to monitor system performance so that I can ensure reliability
 
-**US-4**: As a student, I want to personalize content in each chapter so that I can focus on areas most relevant to my background.
+## 6. Content Structure
 
-**US-5**: As a student, I want to translate content to Urdu so that I can better understand complex concepts in my native language.
+### 6.1 Module 1: The Robotic Nervous System (ROS 2)
+- ROS 2 architecture and core concepts
+- Nodes, topics, services, and actions
+- Building ROS 2 packages with Python
+- Launch files and parameter management
+- Bridging Python Agents to ROS controllers using rclpy
+- Understanding URDF (Unified Robot Description Format) for humanoids
 
-### 5.2 Educator User Stories
-**US-6**: As an educator, I want the textbook to cover all 4 required modules so that students receive comprehensive education in Physical AI.
+### 6.2 Module 2: The Digital Twin (Gazebo & Unity)
+- Gazebo simulation environment setup
+- URDF and SDF robot description formats
+- Physics simulation and sensor simulation
+- Introduction to Unity for robot visualization
+- Simulating physics, gravity, and collisions in Gazebo
+- High-fidelity rendering and human-robot interaction in Unity
+- Simulating sensors: LiDAR, Depth Cameras, and IMUs
 
-**US-7**: As an educator, I want the AI assistant to be accurate and reliable so that it provides valuable support to students.
+### 6.3 Module 3: The AI-Robot Brain (NVIDIA Isaac™)
+- NVIDIA Isaac SDK and Isaac Sim
+- AI-powered perception and manipulation
+- Reinforcement learning for robot control
+- Sim-to-real transfer techniques
+- NVIDIA Isaac Sim: Photorealistic simulation and synthetic data generation
+- Isaac ROS: Hardware-accelerated VSLAM (Visual SLAM) and navigation
+- Nav2: Path planning for bipedal humanoid movement
 
-## 6. Acceptance Criteria
+### 6.4 Module 4: Vision-Language-Action (VLA)
+- Voice-to-Action: Using OpenAI Whisper for voice commands
+- Cognitive Planning: Using LLMs to translate natural language into ROS 2 actions
+- Capstone Project: The Autonomous Humanoid
+- The convergence of LLMs and Robotics
 
-### 6.1 Core Functionality
-- [ ] Textbook deployed to GitHub Pages with all 4 modules complete
-- [ ] Cohere-powered RAG chatbot integrated and responding to content-based questions
-- [ ] Better-Auth signup/signin implemented with background assessment
-- [ ] Personalization button available at chapter start with content adaptation
-- [ ] Urdu translation button available at chapter start with accurate translation
+## 7. Integration Points
 
-### 6.2 Bonus Features
-- [ ] Claude Code Subagents implemented for reusable intelligence (50 bonus points)
-- [ ] Better-Auth personalization features fully functional (50 bonus points)
-- [ ] Urdu translation system complete (50 bonus points)
+### 7.1 AI Integration
+- Mistral AI API for chatbot responses
+- Text embedding for RAG functionality
+- Content summarization capabilities
 
-### 6.3 Quality Standards
-- [ ] All components tested and functioning without errors
-- [ ] Performance requirements met (load times, response times)
-- [ ] Security standards implemented and validated
-- [ ] Mobile-responsive design verified
-- [ ] Cross-browser compatibility confirmed
+### 7.2 Database Integration
+- Neon Postgres for user management
+- Qdrant for vector storage of textbook content
+- Session management with better-auth
 
-## 7. Constraints and Limitations
+### 7.3 External Services
+- GitHub Pages for static hosting
+- Docker for containerization
+- Mistral AI for AI services
 
-### 7.1 Technical Constraints
-- Hardware requirements favor high-performance systems (RTX 4070 Ti+, 64GB RAM) for simulation components
-- Dependency on NVIDIA Isaac platform for advanced robotics simulations
-- Cloud service limitations for vector database and AI processing
+## 8. Success Criteria
 
-### 7.2 Timeline Constraints
-- Submission deadline: Sunday, Nov 30, 2025 at 06:00 PM
-- Live presentations beginning at 6:00 PM on the same day
+### 8.1 Base Functionality (100 points)
+- [ ] Docusaurus-based textbook deployed to GitHub Pages
+- [ ] Integrated RAG chatbot using Mistral AI
+- [ ] FastAPI backend for RAG services only (no auth backend needed) with Neon Postgres and Qdrant
+- [ ] All 4 modules with comprehensive content
 
-### 7.3 Resource Constraints
-- Utilization of free tier services where possible (Qdrant Cloud Free Tier)
-- Balancing performance with cost-effective deployment solutions
+### 8.2 Bonus Features (up to 50 points each)
+- [ ] Reusable intelligence via Claude Code Subagents and Agent Skills
+- [ ] Signup/Signin with better-auth and background questions
+- [ ] Personalized content based on user background
+- [ ] Urdu translation capability for chapters
 
-## 8. Risk Assessment
+## 9. Clarifications
 
-### 8.1 Technical Risks
-- Cohere API availability and rate limiting
-- Complex integration between multiple platforms
-- Performance issues with large-scale content and AI processing
+### Session 2025-12-19
+- Q: How should personalization work? → A: Content difficulty adaptation based on user's background
+- Q: What approach for Urdu translation? → A: Mistral AI API for translation with fallback to basic text replacement
+- Q: How to handle errors/failures? → A: Comprehensive error handling with user notifications and graceful degradation
+- Q: How to persist personalization? → A: Session-based with short-term caching for personalization context
+- Q: How to handle API rate limits? → A: Implement rate limiting and usage monitoring with fallback responses
 
-### 8.2 Mitigation Strategies
-- Fallback mechanisms for AI service outages
-- Comprehensive testing at each integration point
-- Performance monitoring and optimization
-- Gradual rollout and staging environment for testing
-
-## 9. Dependencies
-
-### 9.1 External Dependencies
-- Cohere API for AI services
-- Better-Auth for authentication
-- Neon Serverless Postgres for database
-- Qdrant Cloud for vector storage
-- NVIDIA Isaac platform for robotics simulation
-- ROS 2, Gazebo, and Unity for robotics modules
-
-### 9.2 Internal Dependencies
-- Claude Code for development automation
-- Spec-Kit Plus for structured development
-- GitHub for version control and deployment
-
-## 10. Success Metrics
-
-### 10.1 Functional Metrics
-- Complete coverage of all 4 course modules
-- Successful Cohere AI integration with accurate responses
-- Working authentication and personalization features
-- Fully functional Urdu translation system
-
-### 10.2 Performance Metrics
-- Page load time under 3 seconds
-- AI response time under 5 seconds
-- Support for concurrent users during peak usage
-
-### 10.3 Educational Impact
-- Student engagement with interactive features
-- Effectiveness of personalized content delivery
-- Success of multilingual support in improving comprehension
-
-## 11. Project Plan
-
-### Phase 1: Foundation (Completed)
-- Docusaurus setup
-- Basic structure
-- Tailwind integration
-
-### Phase 2: Elegant Luxury UI/UX Development (Current Priority)
-- Implement pure black background site-wide
-- Design premium hero section with deep black base and elegant gold accents
-- Create sophisticated card components with subtle gold borders and soft shadows
-- Add minimal grain texture and gentle scroll/hover animations
-- Use warm amber/gold gradients for text and buttons
-- Ensure timeless luxury feel – no futuristic elements
-- Polish responsiveness and subtle interactions
-
-### Phase 3–4: Content & Launch
-- Module writing
-- Final review and release
+## 10. Constraints
+- Must use Mistral AI instead of OpenAI/Gemini
+- Must use TypeScript and TailwindCSS with Docusaurus
+- Must include Docker configuration
+- Must use better-auth for frontend authentication
+- Must deploy to GitHub Pages
+- Must support Qdrant Cloud Free Tier for vector storage

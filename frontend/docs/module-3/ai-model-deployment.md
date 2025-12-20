@@ -1,1684 +1,1488 @@
 ---
-sidebar_position: 5
-title: "AI Model Deployment"
+sidebar_position: 9
+title: "AI-Enhanced Robot Control Systems"
 ---
 
-# AI Model Deployment
+# AI-Enhanced Robot Control Systems
 
-## Introduction to AI Model Deployment in Isaac ROS
+## Introduction to AI-Enhanced Control
 
-AI model deployment in Isaac ROS involves the process of taking trained machine learning models and integrating them into real-time robotic applications. For humanoid robotics, this deployment must be optimized for low-latency inference on embedded hardware while maintaining the accuracy required for safe and effective robot operation. NVIDIA Isaac™ provides specialized tools and frameworks to streamline this process, leveraging GPU acceleration and TensorRT optimization.
+AI-enhanced robot control systems represent the convergence of traditional control theory with artificial intelligence techniques, creating adaptive, intelligent control mechanisms that can handle complex, uncertain, and dynamic environments. These systems leverage machine learning, neural networks, and other AI techniques to enhance traditional control approaches, enabling robots to learn from experience, adapt to changing conditions, and make intelligent decisions in real-time.
 
-## Isaac ROS AI Framework Overview
+Traditional control systems rely on mathematical models and predetermined control laws, while AI-enhanced systems can learn and improve their performance over time, making them particularly valuable for complex robotic systems like humanoid robots that must operate in unpredictable environments.
 
-### 1. Isaac ROS DNN Inference Architecture
+## Types of AI-Enhanced Control Systems
 
-The Isaac ROS Deep Neural Network (DNN) inference framework provides GPU-accelerated model execution:
+### 1. Learning-Based Control
 
-```cpp
-// Isaac ROS DNN Inference Node
-#include "isaac_ros_dnn_inference/dnn_inference_base_node.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/image.hpp"
-#include "std_msgs/msg/string.hpp"
+Learning-based control systems use machine learning algorithms to learn control policies from data:
 
-class IsaacAIPerceptionNode : public isaac_ros::dnn_inference::DnnInferenceBaseNode
-{
-public:
-    explicit IsaacAIPerceptionNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
-        : DnnInferenceBaseNode("ai_perception_node", options)
-    {
-        // Initialize input and output topics
-        image_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "input_image", 10,
-            std::bind(&IsaacAIPerceptionNode::ImageCallback, this, std::placeholders::_1));
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+from collections import deque
+import random
 
-        detection_publisher_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
-            "detections", 10);
+class LearningBasedController(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_dim=256):
+        super(LearningBasedController, self).__init__()
 
-        // Initialize TensorRT engine
-        InitializeTensorRTEngine();
-    }
+        # Actor network (policy network)
+        self.actor = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim),
+            nn.Tanh()  # Output actions between -1 and 1
+        )
 
-private:
-    void ImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Preprocess image for inference
-        auto preprocessed_image = PreprocessImage(*msg);
+        # Critic network (value network)
+        self.critic = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)  # Output Q-value
+        )
 
-        // Perform inference using TensorRT
-        auto inference_result = PerformInference(preprocessed_image);
+    def forward(self, state):
+        """Forward pass for policy evaluation"""
+        action = self.actor(state)
+        return action
 
-        // Postprocess results
-        auto detections = PostprocessResults(inference_result, msg->header);
+    def evaluate(self, state, action):
+        """Evaluate state-action pair"""
+        state_action = torch.cat([state, action], dim=-1)
+        value = self.critic(state_action)
+        return value
 
-        // Publish detections
-        detection_publisher_->publish(detections);
-    }
+class DDPGController:
+    def __init__(self, state_dim, action_dim, max_action, lr_actor=1e-4, lr_critic=1e-3):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.max_action = max_action
 
-    std::vector<uint8_t> PreprocessImage(const sensor_msgs::msg::Image& image_msg)
-    {
-        // Convert ROS image to format expected by TensorRT
-        cv::Mat image = cv_bridge::toCvShare(image_msg, "bgr8")->image;
+        # Initialize networks
+        self.actor = LearningBasedController(state_dim, action_dim)
+        self.actor_target = LearningBasedController(state_dim, action_dim)
+        self.critic = LearningBasedController(state_dim, action_dim)
+        self.critic_target = LearningBasedController(state_dim, action_dim)
 
-        // Resize to model input dimensions
-        cv::resize(image, image, cv::Size(input_width_, input_height_));
+        # Copy weights to target networks
+        self.actor_target.load_state_dict(self.actor.state_dict())
+        self.critic_target.load_state_dict(self.critic.state_dict())
 
-        // Normalize pixel values (0-255 to 0-1 range)
-        image.convertTo(image, CV_32F, 1.0 / 255.0);
+        # Optimizers
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr_actor)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr_critic)
 
-        // Convert to NCHW format (batch, channels, height, width)
-        std::vector<cv::Mat> channels;
-        cv::split(image, channels);
+        # Replay buffer
+        self.replay_buffer = deque(maxlen=100000)
+        self.batch_size = 100
 
-        std::vector<uint8_t> input_tensor(input_size_);
-        size_t channel_size = input_height_ * input_width_ * sizeof(float);
+        # Hyperparameters
+        self.gamma = 0.99  # Discount factor
+        self.tau = 0.005   # Soft update parameter
+        self.noise_std = 0.2  # Exploration noise
 
-        for (int c = 0; c < 3; ++c) {
-            memcpy(input_tensor.data() + c * channel_size,
-                   channels[c].data,
-                   channel_size);
-        }
+    def select_action(self, state, add_noise=True):
+        """Select action using the current policy"""
+        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        action = self.actor(state_tensor).cpu().data.numpy().flatten()
 
-        return input_tensor;
-    }
+        if add_noise:
+            noise = np.random.normal(0, self.noise_std, size=self.action_dim)
+            action = action + noise
+            action = np.clip(action, -self.max_action, self.max_action)
 
-    InferenceResult PerformInference(const std::vector<uint8_t>& input_tensor)
-    {
-        InferenceResult result;
+        return action
 
-        // Copy input to GPU memory
-        cudaMemcpy(input_buffer_, input_tensor.data(), input_tensor.size(),
-                   cudaMemcpyHostToDevice);
+    def store_transition(self, state, action, reward, next_state, done):
+        """Store transition in replay buffer"""
+        self.replay_buffer.append((state, action, reward, next_state, done))
 
-        // Perform inference
-        std::vector<void*> bindings = {input_buffer_, output_buffer_};
-        bool status = context_->executeV2(bindings.data());
+    def update(self):
+        """Update the networks using a batch of experiences"""
+        if len(self.replay_buffer) < self.batch_size:
+            return
 
-        if (!status) {
-            RCLCPP_ERROR(this->get_logger(), "Inference execution failed");
-            return result;
-        }
+        # Sample batch from replay buffer
+        batch = random.sample(self.replay_buffer, self.batch_size)
+        states = torch.FloatTensor([transition[0] for transition in batch])
+        actions = torch.FloatTensor([transition[1] for transition in batch])
+        rewards = torch.FloatTensor([transition[2] for transition in batch]).unsqueeze(1)
+        next_states = torch.FloatTensor([transition[3] for transition in batch])
+        dones = torch.BoolTensor([transition[4] for transition in batch]).unsqueeze(1)
 
-        // Copy output from GPU memory
-        cudaMemcpy(result.output_data.data(), output_buffer_,
-                   output_size_, cudaMemcpyDeviceToHost);
+        # Compute target Q-values
+        with torch.no_grad():
+            next_actions = self.actor_target(next_states)
+            next_q_values = self.critic_target(next_states, next_actions)
+            target_q_values = rewards + (self.gamma * next_q_values * ~dones)
 
-        return result;
-    }
+        # Update critic
+        current_q_values = self.critic(states, actions)
+        critic_loss = nn.MSELoss()(current_q_values, target_q_values)
 
-    vision_msgs::msg::Detection2DArray PostprocessResults(
-        const InferenceResult& result, const std_msgs::msg::Header& header)
-    {
-        vision_msgs::msg::Detection2DArray detections;
-        detections.header = header;
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
 
-        // Parse model outputs (assuming YOLO format)
-        const float* output = reinterpret_cast<const float*>(result.output_data.data());
+        # Update actor
+        actor_actions = self.actor(states)
+        actor_loss = -self.critic(states, actor_actions).mean()
 
-        for (int i = 0; i < max_detections_; ++i) {
-            float confidence = output[i * output_stride_ + 4];
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
 
-            if (confidence > confidence_threshold_) {
-                vision_msgs::msg::Detection2D detection;
-                detection.header = header;
+        # Soft update target networks
+        for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
+            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-                // Extract bounding box coordinates
-                float x_center = output[i * output_stride_ + 0];
-                float y_center = output[i * output_stride_ + 1];
-                float width = output[i * output_stride_ + 2];
-                float height = output[i * output_stride_ + 3];
-
-                // Convert to image coordinates
-                detection.bbox.center.x = x_center * input_width_;
-                detection.bbox.center.y = y_center * input_height_;
-                detection.bbox.size_x = width * input_width_;
-                detection.bbox.size_y = height * input_height_;
-
-                // Add confidence result
-                vision_msgs::msg::ObjectHypothesisWithPose hypothesis;
-                hypothesis.hypothesis.class_id = GetMaxClassId(output + i * output_stride_ + 5);
-                hypothesis.hypothesis.score = confidence;
-                detection.results.push_back(hypothesis);
-
-                detections.detections.push_back(detection);
-            }
-        }
-
-        return detections;
-    }
-
-    void InitializeTensorRTEngine()
-    {
-        // Load TensorRT engine file
-        std::string engine_path = this->declare_parameter("engine_file_path", "");
-        if (engine_path.empty()) {
-            RCLCPP_ERROR(this->get_logger(), "Engine file path not specified");
-            return;
-        }
-
-        // Load the serialized engine
-        std::ifstream engine_file(engine_path, std::ios::binary);
-        if (!engine_file) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to open engine file: %s", engine_path.c_str());
-            return;
-        }
-
-        // Read engine data
-        std::vector<char> engine_data;
-        engine_file.seekg(0, engine_file.end);
-        size_t size = engine_file.tellg();
-        engine_file.seekg(0, engine_file.beg);
-        engine_data.resize(size);
-        engine_file.read(engine_data.data(), size);
-
-        // Create runtime and engine
-        runtime_ = nvinfer1::createInferRuntime(gLogger);
-        engine_ = runtime_->deserializeCudaEngine(engine_data.data(), size, nullptr);
-        context_ = engine_->createExecutionContext();
-
-        // Allocate GPU buffers
-        AllocateGPUBuffers();
-
-        RCLCPP_INFO(this->get_logger(), "TensorRT engine loaded successfully");
-    }
-
-    void AllocateGPUBuffers()
-    {
-        // Get binding indices
-        input_index_ = engine_->getBindingIndex("input");
-        output_index_ = engine_->getBindingIndex("output");
-
-        // Get binding dimensions
-        auto input_dims = engine_->getBindingDimensions(input_index_);
-        auto output_dims = engine_->getBindingDimensions(output_index_);
-
-        // Calculate buffer sizes
-        input_size_ = 1; // Batch size
-        for (int i = 0; i < input_dims.nbDims; ++i) {
-            input_size_ *= input_dims.d[i];
-        }
-        input_size_ *= sizeof(float); // Assuming float32
-
-        output_size_ = 1; // Batch size
-        for (int i = 0; i < output_dims.nbDims; ++i) {
-            output_size_ *= output_dims.d[i];
-        }
-        output_size_ *= sizeof(float); // Assuming float32
-
-        // Allocate GPU memory
-        cudaMalloc(&input_buffer_, input_size_);
-        cudaMalloc(&output_buffer_, output_size_);
-
-        // Allocate output tensor
-        output_tensor_size_ = output_size_ / sizeof(float);
-    }
-
-    struct InferenceResult {
-        std::vector<uint8_t> output_data;
-    };
-
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
-    rclcpp::Publisher<vision_msgs::msg::Detection2DArray>::SharedPtr detection_publisher_;
-
-    // TensorRT components
-    nvinfer1::IRuntime* runtime_{nullptr};
-    nvinfer1::ICudaEngine* engine_{nullptr};
-    nvinfer1::IExecutionContext* context_{nullptr};
-    void* input_buffer_{nullptr};
-    void* output_buffer_{nullptr};
-
-    // Model parameters
-    int input_width_{640};
-    int input_height_{640};
-    int input_size_{0};
-    int output_size_{0};
-    size_t output_tensor_size_{0};
-    int input_index_{-1};
-    int output_index_{-1};
-    float confidence_threshold_{0.5};
-    int max_detections_{100};
-    int output_stride_{85}; // YOLOv5 stride
-
-    // Logger for TensorRT
-    Logger gLogger;
-};
+        for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
+            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 ```
 
-### 2. Isaac ROS Triton Inference Server Integration
+### 2. Model Predictive Control (MPC) with AI Enhancement
 
-```cpp
-// Isaac ROS integration with Triton Inference Server
-#include "tritonclient/grpc/grpc_client.h"
-#include "isaac_ros_tensor_list_interfaces/msg/tensor_list.hpp"
+MPC enhanced with AI models for better prediction and optimization:
 
-class TritonAIPerceptionNode : public rclcpp::Node
-{
-public:
-    TritonAIPerceptionNode() : Node("triton_ai_perception")
-    {
-        // Initialize Triton client
-        InitializeTritonClient();
+```python
+import cvxpy as cp
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel
 
-        // Create subscription and publisher
-        image_subscription_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "input_image", 10,
-            std::bind(&TritonAIPerceptionNode::ImageCallback, this, std::placeholders::_1));
+class AIEnhancedMPC:
+    def __init__(self, horizon=20, state_dim=6, action_dim=3):
+        self.horizon = horizon
+        self.state_dim = state_dim
+        self.action_dim = action_dim
 
-        detection_publisher_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
-            "triton_detections", 10);
-    }
+        # AI model for system dynamics prediction
+        self.dynamics_model = self.initialize_dynamics_model()
 
-private:
-    void InitializeTritonClient()
-    {
-        // Get Triton server parameters
-        std::string server_url = this->declare_parameter("triton_server_url", "localhost:8001");
-        model_name_ = this->declare_parameter("model_name", "yolov5");
-        model_version_ = this->declare_parameter("model_version", "1");
+        # MPC parameters
+        self.Q = np.eye(state_dim) * 1.0  # State cost matrix
+        self.R = np.eye(action_dim) * 0.1  # Control cost matrix
+        self.Qf = np.eye(state_dim) * 5.0  # Terminal cost matrix
 
-        // Create Triton client
-        bool use_ssl = false;
-        std::map<std::string, std::string> headers;
-        long timeout = 0; // No timeout
+        # Optimization variables
+        self.states = [cp.Variable(state_dim) for _ in range(horizon + 1)]
+        self.actions = [cp.Variable(action_dim) for _ in range(horizon)]
 
-        error_ = tc::InferenceServerGrpcClient::Create(&triton_client_, server_url, use_ssl, headers, timeout);
+    def initialize_dynamics_model(self):
+        """Initialize AI model for predicting system dynamics"""
+        # Use Gaussian Process for uncertainty-aware dynamics modeling
+        kernel = ConstantKernel(1.0) * RBF(1.0)
+        return GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)
 
-        if (!error_) {
-            RCLCPP_INFO(this->get_logger(), "Connected to Triton server: %s", server_url.c_str());
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to connect to Triton server: %s", error_->Message().c_str());
+    def fit_dynamics_model(self, historical_data):
+        """Fit the dynamics model using historical data"""
+        # Historical data should be in the form of [state_t, action_t, state_{t+1}]
+        X = []  # State-action pairs
+        y = []  # Next state differences
+
+        for state_t, action_t, state_tp1 in historical_data:
+            X.append(np.concatenate([state_t, action_t]))
+            y.append(state_tp1 - state_t)  # State difference
+
+        X = np.array(X)
+        y = np.array(y)
+
+        self.dynamics_model.fit(X, y)
+
+    def predict_next_state(self, current_state, action):
+        """Predict next state using AI-enhanced dynamics model"""
+        state_action = np.concatenate([current_state, action]).reshape(1, -1)
+
+        # Predict mean and uncertainty
+        predicted_delta = self.dynamics_model.predict(state_action)
+        predicted_state = current_state + predicted_delta[0]
+
+        # Get uncertainty estimate
+        std_prediction = np.sqrt(self.dynamics_model.predict(state_action.reshape(1, -1), return_std=True)[1])
+
+        return predicted_state, std_prediction
+
+    def solve_mpc(self, current_state, goal_state):
+        """Solve MPC optimization problem with AI-enhanced predictions"""
+        # Define objective function
+        objective_terms = []
+
+        # State and control costs
+        for t in range(self.horizon):
+            state_error = self.states[t] - goal_state
+            control_effort = self.actions[t]
+
+            objective_terms.append(
+                cp.quad_form(state_error, self.Q) +
+                cp.quad_form(control_effort, self.R)
+            )
+
+        # Terminal cost
+        terminal_error = self.states[self.horizon] - goal_state
+        objective_terms.append(cp.quad_form(terminal_error, self.Qf))
+
+        objective = cp.Minimize(sum(objective_terms))
+
+        # Constraints
+        constraints = []
+
+        # Initial state constraint
+        constraints.append(self.states[0] == current_state)
+
+        # Dynamics constraints using AI model
+        for t in range(self.horizon):
+            predicted_next_state, uncertainty = self.predict_next_state(
+                self.states[t].value, self.actions[t].value
+            )
+
+            # Add uncertainty to constraints for robustness
+            uncertainty_weight = 0.1  # Adjust based on uncertainty level
+            constraints.append(
+                self.states[t + 1] <= predicted_next_state + uncertainty_weight * uncertainty
+            )
+            constraints.append(
+                self.states[t + 1] >= predicted_next_state - uncertainty_weight * uncertainty
+            )
+
+        # Action constraints
+        for t in range(self.horizon):
+            constraints.append(self.actions[t] <= 1.0)  # Upper bound
+            constraints.append(self.actions[t] >= -1.0)  # Lower bound
+
+        # Solve optimization problem
+        problem = cp.Problem(objective, constraints)
+        problem.solve()
+
+        if problem.status == cp.OPTIMAL:
+            # Return first action from the optimal sequence
+            return self.actions[0].value
+        else:
+            # Return zero action if optimization failed
+            return np.zeros(self.action_dim)
+```
+
+### 3. Adaptive Control with Neural Networks
+
+Adaptive control systems that adjust their parameters based on system performance:
+
+```python
+class NeuralAdaptiveController:
+    def __init__(self, state_dim, action_dim, hidden_dim=128):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        # Neural network for adaptive gain adjustment
+        self.gain_network = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim),  # Output adaptive gains
+            nn.Sigmoid()  # Ensure gains are positive and bounded
+        )
+
+        # Traditional PID gains (will be modulated by NN)
+        self.kp = torch.nn.Parameter(torch.ones(action_dim) * 1.0)
+        self.ki = torch.nn.Parameter(torch.ones(action_dim) * 0.1)
+        self.kd = torch.nn.Parameter(torch.ones(action_dim) * 0.05)
+
+        # PID state
+        self.error_integral = torch.zeros(action_dim)
+        self.error_derivative = torch.zeros(action_dim)
+        self.previous_error = torch.zeros(action_dim)
+
+        # Learning parameters
+        self.optimizer = optim.Adam(list(self.gain_network.parameters()) + [self.kp, self.ki, self.kd], lr=1e-3)
+        self.loss_fn = nn.MSELoss()
+
+    def update_pid_gains(self, state, action):
+        """Update PID gains using neural network"""
+        state_action = torch.cat([state, action], dim=-1)
+        adaptive_factors = self.gain_network(state_action)
+
+        # Modulate traditional gains
+        kp_adaptive = self.kp * adaptive_factors
+        ki_adaptive = self.ki * adaptive_factors
+        kd_adaptive = self.kd * adaptive_factors
+
+        return kp_adaptive, ki_adaptive, kd_adaptive
+
+    def compute_control(self, state, reference, dt=0.01):
+        """Compute control action using adaptive PID"""
+        error = reference - state[:self.action_dim]  # Assume first dims are controllable
+
+        # Update PID terms
+        self.error_integral += error * dt
+        self.error_derivative = (error - self.previous_error) / dt
+        self.previous_error = error.clone()
+
+        # Get adaptive gains
+        action_prev = torch.zeros(self.action_dim)  # Previous action placeholder
+        kp, ki, kd = self.update_pid_gains(state, action_prev)
+
+        # Compute PID control
+        proportional = kp * error
+        integral = ki * self.error_integral
+        derivative = kd * self.error_derivative
+
+        control_output = proportional + integral + derivative
+
+        return control_output
+
+    def update_network(self, state, action, desired_action, reward):
+        """Update neural network based on performance"""
+        predicted_action = self.compute_control(state, desired_action)
+
+        # Compute loss
+        control_loss = self.loss_fn(predicted_action, desired_action)
+        reward_loss = -reward  # Maximize reward
+
+        total_loss = control_loss + reward_loss
+
+        # Backpropagate
+        self.optimizer.zero_grad()
+        total_loss.backward()
+        self.optimizer.step()
+```
+
+## Deep Reinforcement Learning for Robot Control
+
+### Deep Deterministic Policy Gradient (DDPG) for Continuous Control
+
+```python
+class DDPGAgent:
+    def __init__(self, state_dim, action_dim, max_action, lr_actor=1e-4, lr_critic=1e-3):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+        # Actor network (policy)
+        self.actor = self.build_actor()
+        self.actor_target = self.build_actor()
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr_actor)
+
+        # Critic network (Q-function)
+        self.critic = self.build_critic()
+        self.critic_target = self.build_critic()
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=lr_critic)
+
+        # Initialize target networks
+        self.actor_target.load_state_dict(self.actor.state_dict())
+        self.critic_target.load_state_dict(self.critic.state_dict())
+
+        # Replay buffer
+        self.replay_buffer = []
+        self.batch_size = 100
+        self.buffer_capacity = 100000
+
+        # Hyperparameters
+        self.gamma = 0.99  # Discount factor
+        self.tau = 0.005   # Soft update parameter
+        self.noise_std = 0.2  # Exploration noise
+
+    def build_actor(self):
+        """Build actor network"""
+        return nn.Sequential(
+            nn.Linear(self.state_dim, 400),
+            nn.ReLU(),
+            nn.Linear(400, 300),
+            nn.ReLU(),
+            nn.Linear(300, self.action_dim),
+            nn.Tanh()
+        )
+
+    def build_critic(self):
+        """Build critic network"""
+        return nn.Sequential(
+            nn.Linear(self.state_dim + self.action_dim, 400),
+            nn.ReLU(),
+            nn.Linear(400, 300),
+            nn.ReLU(),
+            nn.Linear(300, 1)
+        )
+
+    def select_action(self, state, add_noise=True):
+        """Select action with optional exploration noise"""
+        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        action = self.actor(state_tensor).cpu().data.numpy().flatten()
+
+        if add_noise:
+            noise = np.random.normal(0, self.noise_std, size=self.action_dim)
+            action = action + noise
+            action = np.clip(action, -self.max_action, self.max_action)
+
+        return action
+
+    def store_experience(self, state, action, reward, next_state, done):
+        """Store experience in replay buffer"""
+        self.replay_buffer.append((state, action, reward, next_state, done))
+
+        if len(self.replay_buffer) > self.buffer_capacity:
+            self.replay_buffer.pop(0)
+
+    def train(self):
+        """Train the networks"""
+        if len(self.replay_buffer) < self.batch_size:
+            return
+
+        # Sample batch
+        batch_indices = np.random.choice(len(self.replay_buffer), self.batch_size, replace=False)
+        batch = [self.replay_buffer[i] for i in batch_indices]
+
+        state_batch = torch.FloatTensor([transition[0] for transition in batch])
+        action_batch = torch.FloatTensor([transition[1] for transition in batch])
+        reward_batch = torch.FloatTensor([transition[2] for transition in batch]).unsqueeze(1)
+        next_state_batch = torch.FloatTensor([transition[3] for transition in batch])
+        done_batch = torch.BoolTensor([transition[4] for transition in batch]).unsqueeze(1)
+
+        # Compute target Q-values
+        with torch.no_grad():
+            next_actions = self.actor_target(next_state_batch)
+            next_q_values = self.critic_target(torch.cat([next_state_batch, next_actions], dim=1))
+            target_q_values = reward_batch + (self.gamma * next_q_values * (~done_batch))
+
+        # Update critic
+        current_q_values = self.critic(torch.cat([state_batch, action_batch], dim=1))
+        critic_loss = nn.MSELoss()(current_q_values, target_q_values)
+
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+        # Update actor
+        actions_pred = self.actor(state_batch)
+        actor_loss = -self.critic(torch.cat([state_batch, actions_pred], dim=1)).mean()
+
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
+
+        # Soft update target networks
+        self.soft_update(self.actor_target, self.actor, self.tau)
+        self.soft_update(self.critic_target, self.critic, self.tau)
+
+    def soft_update(self, target_net, net, tau):
+        """Soft update of target network parameters"""
+        for target_param, param in zip(target_net.parameters(), net.parameters()):
+            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+```
+
+### Twin Delayed DDPG (TD3) for Improved Stability
+
+```python
+class TD3Agent:
+    def __init__(self, state_dim, action_dim, max_action, lr_actor=1e-4, lr_critic=1e-3):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+        # Actor networks
+        self.actor = self.build_actor()
+        self.actor_target = self.build_actor()
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr_actor)
+
+        # Critic networks (two critics for TD3)
+        self.critic_1 = self.build_critic()
+        self.critic_2 = self.build_critic()
+        self.critic_1_target = self.build_critic()
+        self.critic_2_target = self.build_critic()
+        self.critic_1_optimizer = optim.Adam(self.critic_1.parameters(), lr=lr_critic)
+        self.critic_2_optimizer = optim.Adam(self.critic_2.parameters(), lr=lr_critic)
+
+        # Initialize target networks
+        self.actor_target.load_state_dict(self.actor.state_dict())
+        self.critic_1_target.load_state_dict(self.critic_1.state_dict())
+        self.critic_2_target.load_state_dict(self.critic_2.state_dict())
+
+        # Hyperparameters
+        self.gamma = 0.99
+        self.tau = 0.005
+        self.policy_noise = 0.2
+        self.noise_clip = 0.5
+        self.policy_freq = 2
+        self.total_it = 0
+
+    def build_actor(self):
+        """Build actor network"""
+        return nn.Sequential(
+            nn.Linear(self.state_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, self.action_dim),
+            nn.Tanh()
+        )
+
+    def build_critic(self):
+        """Build critic network"""
+        return nn.Sequential(
+            nn.Linear(self.state_dim + self.action_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1)
+        )
+
+    def select_action(self, state, add_noise=True):
+        """Select action with optional exploration noise"""
+        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        action = self.actor(state_tensor).cpu().data.numpy().flatten()
+
+        if add_noise:
+            noise = np.random.normal(0, self.policy_noise, size=self.action_dim)
+            noise = np.clip(noise, -self.noise_clip, self.noise_clip)
+            action = action + noise
+            action = np.clip(action, -self.max_action, self.max_action)
+
+        return action
+
+    def train(self, replay_buffer, batch_size=100):
+        """Train the agent using TD3 algorithm"""
+        self.total_it += 1
+
+        # Sample batch from replay buffer
+        state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
+
+        with torch.no_grad():
+            # Select action according to policy and add clipped noise
+            noise = (torch.randn_like(action) * self.policy_noise).clamp(-self.noise_clip, self.noise_clip)
+
+            next_action = (self.actor_target(next_state) + noise).clamp(-self.max_action, self.max_action)
+
+            # Compute target Q-values
+            target_Q1 = self.critic_1_target(next_state, next_action)
+            target_Q2 = self.critic_2_target(next_state, next_action)
+            target_Q = reward + not_done * self.gamma * torch.min(target_Q1, target_Q2)
+
+        # Get current Q-values
+        current_Q1 = self.critic_1(state, action)
+        current_Q2 = self.critic_2(state, action)
+
+        # Compute critic loss
+        critic_loss = nn.MSELoss()(current_Q1, target_Q) + nn.MSELoss()(current_Q2, target_Q)
+
+        # Optimize critic
+        self.critic_1_optimizer.zero_grad()
+        self.critic_2_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_1_optimizer.step()
+        self.critic_2_optimizer.step()
+
+        # Delayed policy updates
+        if self.total_it % self.policy_freq == 0:
+            # Compute actor loss
+            actor_loss = -self.critic_1(state, self.actor(state)).mean()
+
+            # Optimize actor
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+
+            # Soft update target networks
+            for param, target_param in zip(self.critic_1.parameters(), self.critic_1_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+            for param, target_param in zip(self.critic_2.parameters(), self.critic_2_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+```
+
+## Model-Based Reinforcement Learning
+
+### World Models for Planning
+
+```python
+class WorldModel(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_dim=256):
+        super(WorldModel, self).__init__()
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        # Encoder: compress observations to latent space
+        self.encoder = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, hidden_dim // 4)
+        )
+
+        # Dynamics model: predict next latent state
+        self.dynamics = nn.Sequential(
+            nn.Linear(hidden_dim // 4 + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, hidden_dim // 4)
+        )
+
+        # Reward predictor
+        self.reward_predictor = nn.Sequential(
+            nn.Linear(hidden_dim // 4 + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        )
+
+        # Decoder: reconstruct observation from latent
+        self.decoder = nn.Sequential(
+            nn.Linear(hidden_dim // 4, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, state_dim)
+        )
+
+    def encode(self, state):
+        """Encode state to latent representation"""
+        return self.encoder(state)
+
+    def decode(self, latent):
+        """Decode latent representation to state"""
+        return self.decoder(latent)
+
+    def predict_next_state(self, latent_state, action):
+        """Predict next latent state"""
+        state_action = torch.cat([latent_state, action], dim=-1)
+        return self.dynamics(state_action)
+
+    def predict_reward(self, latent_state, action):
+        """Predict reward"""
+        state_action = torch.cat([latent_state, action], dim=-1)
+        return self.reward_predictor(state_action)
+
+class ModelBasedAgent:
+    def __init__(self, state_dim, action_dim, max_action):
+        self.world_model = WorldModel(state_dim, action_dim)
+        self.actor = self.build_actor(state_dim, action_dim)
+        self.critic = self.build_critic(state_dim, action_dim)
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+        self.optimizer = optim.Adam(
+            list(self.world_model.parameters()) +
+            list(self.actor.parameters()) +
+            list(self.critic.parameters()),
+            lr=1e-3
+        )
+
+    def build_actor(self, state_dim, action_dim):
+        """Build actor network"""
+        return nn.Sequential(
+            nn.Linear(state_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, action_dim),
+            nn.Tanh()
+        )
+
+    def build_critic(self, state_dim, action_dim):
+        """Build critic network"""
+        return nn.Sequential(
+            nn.Linear(state_dim + action_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1)
+        )
+
+    def plan_with_world_model(self, current_state, horizon=10):
+        """Plan actions using the world model"""
+        with torch.no_grad():
+            # Encode current state
+            current_latent = self.world_model.encode(current_state.unsqueeze(0))
+
+            best_return = float('-inf')
+            best_action_sequence = []
+
+            # Try different action sequences
+            for _ in range(10):  # Number of candidate sequences
+                current_latent_temp = current_latent.clone()
+                total_return = 0
+
+                action_sequence = []
+
+                for t in range(horizon):
+                    # Sample random action
+                    action = torch.randn(self.action_dim) * 0.5
+                    action = torch.clamp(action, -1, 1)
+
+                    # Predict next state and reward
+                    next_latent = self.world_model.predict_next_state(current_latent_temp, action.unsqueeze(0))
+                    reward = self.world_model.predict_reward(current_latent_temp, action.unsqueeze(0))
+
+                    total_return += reward.item() * (0.99 ** t)  # Discounted return
+
+                    current_latent_temp = next_latent
+                    action_sequence.append(action)
+
+                if total_return > best_return:
+                    best_return = total_return
+                    best_action_sequence = action_sequence
+
+            # Return first action in best sequence
+            return best_action_sequence[0] if best_action_sequence else torch.zeros(self.action_dim)
+```
+
+## Imitation Learning and Behavior Cloning
+
+### Behavior Cloning Implementation
+
+```python
+class BehaviorCloning:
+    def __init__(self, state_dim, action_dim, hidden_dim=256):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        # Policy network that mimics expert demonstrations
+        self.policy = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim)
+        )
+
+        self.optimizer = optim.Adam(self.policy.parameters(), lr=1e-3)
+        self.loss_fn = nn.MSELoss()
+
+    def train_on_demonstrations(self, expert_states, expert_actions, epochs=100):
+        """Train policy to mimic expert demonstrations"""
+        for epoch in range(epochs):
+            total_loss = 0
+
+            for i in range(len(expert_states)):
+                state = torch.FloatTensor(expert_states[i]).unsqueeze(0)
+                expert_action = torch.FloatTensor(expert_actions[i]).unsqueeze(0)
+
+                predicted_action = self.policy(state)
+                loss = self.loss_fn(predicted_action, expert_action)
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+
+                total_loss += loss.item()
+
+            if epoch % 10 == 0:
+                print(f"Epoch {epoch}, Loss: {total_loss/len(expert_states):.4f}")
+
+    def predict_action(self, state):
+        """Predict action for given state"""
+        state_tensor = torch.FloatTensor(state).unsqueeze(0)
+        action = self.policy(state_tensor).cpu().data.numpy().flatten()
+        return action
+
+class GenerativeAdversarialImitationLearning:
+    def __init__(self, state_dim, action_dim, hidden_dim=256):
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        # Discriminator: distinguishes between expert and agent trajectories
+        self.discriminator = nn.Sequential(
+            nn.Linear(state_dim + action_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid()  # Output probability of being expert
+        )
+
+        # Policy network (generator)
+        self.policy = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, action_dim)
+        )
+
+        # Optimizers
+        self.discriminator_optimizer = optim.Adam(self.discriminator.parameters(), lr=1e-3)
+        self.policy_optimizer = optim.Adam(self.policy.parameters(), lr=1e-3)
+
+    def compute_reward(self, state, action):
+        """Compute reward as negative log-probability of being expert"""
+        state_action = torch.cat([state, action], dim=-1)
+        prob_expert = self.discriminator(state_action)
+        # Use log-prob to avoid numerical issues
+        reward = torch.log(prob_expert + 1e-8) - torch.log(1 - prob_expert + 1e-8)
+        return reward
+
+    def update_discriminator(self, expert_states, expert_actions, agent_states, agent_actions):
+        """Update discriminator to distinguish expert from agent"""
+        # Create labels: 1 for expert, 0 for agent
+        expert_labels = torch.ones(len(expert_states), 1)
+        agent_labels = torch.zeros(len(agent_states), 1)
+
+        # Concatenate expert and agent data
+        all_states = torch.cat([expert_states, agent_states])
+        all_actions = torch.cat([expert_actions, agent_actions])
+        all_labels = torch.cat([expert_labels, agent_labels])
+
+        # Compute discriminator loss
+        state_action_pairs = torch.cat([all_states, all_actions], dim=1)
+        predictions = self.discriminator(state_action_pairs)
+        discriminator_loss = nn.BCELoss()(predictions, all_labels)
+
+        # Update discriminator
+        self.discriminator_optimizer.zero_grad()
+        discriminator_loss.backward()
+        self.discriminator_optimizer.step()
+
+    def update_policy(self, states):
+        """Update policy to fool discriminator (maximize imitation reward)"""
+        actions = self.policy(states)
+        rewards = self.compute_reward(states, actions)
+
+        # Policy loss: maximize expected reward
+        policy_loss = -rewards.mean()
+
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
+```
+
+## NVIDIA Isaac Integration for AI Control
+
+### Isaac ROS Control Integration
+
+```python
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist, Pose
+from sensor_msgs.msg import JointState, Image
+from std_msgs.msg import Float64MultiArray
+from nav_msgs.msg import Odometry
+import torch
+
+class IsaacAIControlNode(Node):
+    def __init__(self):
+        super().__init__('isaac_ai_control')
+
+        # Subscribers for robot state
+        self.odom_sub = self.create_subscription(
+            Odometry, '/odom', self.odom_callback, 10)
+        self.joint_state_sub = self.create_subscription(
+            JointState, '/joint_states', self.joint_state_callback, 10)
+        self.image_sub = self.create_subscription(
+            Image, '/camera/rgb/image_rect_color', self.image_callback, 10)
+
+        # Publishers for commands
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.joint_cmd_pub = self.create_publisher(Float64MultiArray, '/joint_commands', 10)
+
+        # AI control components
+        self.ai_controller = self.initialize_ai_controller()
+        self.perception_model = self.initialize_perception_model()
+
+        # State storage
+        self.current_odom = None
+        self.current_joints = None
+        self.current_image = None
+
+        # Control timer
+        self.control_timer = self.create_timer(0.05, self.control_callback)  # 20 Hz
+
+        self.get_logger().info('Isaac AI Control node initialized')
+
+    def initialize_ai_controller(self):
+        """Initialize AI-based controller"""
+        # Example: Initialize DDPG controller
+        state_dim = 24  # Example: 12 joint positions + 12 joint velocities
+        action_dim = 12  # Example: 12 joint commands
+        max_action = 1.0
+
+        return DDPGAgent(state_dim, action_dim, max_action)
+
+    def initialize_perception_model(self):
+        """Initialize perception model for AI control"""
+        # Example: Initialize a simple CNN for image processing
+        return nn.Sequential(
+            nn.Conv2d(3, 32, 8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, 4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, stride=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(64 * 7 * 7, 512),  # Adjust based on image size
+            nn.ReLU(),
+            nn.Linear(512, 64)
+        )
+
+    def odom_callback(self, msg):
+        """Update odometry information"""
+        self.current_odom = msg
+
+    def joint_state_callback(self, msg):
+        """Update joint state information"""
+        self.current_joints = msg
+
+    def image_callback(self, msg):
+        """Process camera image for perception"""
+        # Convert ROS Image to tensor
+        # This would involve image preprocessing and feeding to perception model
+        pass
+
+    def control_callback(self):
+        """Main control callback"""
+        if self.current_joints is None or self.current_odom is None:
+            return
+
+        # Prepare state for AI controller
+        state = self.prepare_state_vector()
+
+        # Get action from AI controller
+        action = self.ai_controller.select_action(state.detach().numpy())
+
+        # Execute action
+        self.execute_action(action)
+
+    def prepare_state_vector(self):
+        """Prepare state vector for AI controller"""
+        if self.current_joints is None or self.current_odom is None:
+            return torch.zeros(24)  # Return zeros if no data
+
+        # Example state preparation
+        joint_positions = torch.tensor(list(self.current_joints.position))
+        joint_velocities = torch.tensor(list(self.current_joints.velocity))
+
+        # Combine into state vector
+        state = torch.cat([joint_positions, joint_velocities])
+
+        return state
+
+    def execute_action(self, action):
+        """Execute action by publishing commands"""
+        # Publish joint commands
+        cmd_msg = Float64MultiArray()
+        cmd_msg.data = action.tolist()
+        self.joint_cmd_pub.publish(cmd_msg)
+
+        # Publish velocity commands (if applicable)
+        vel_msg = Twist()
+        vel_msg.linear.x = action[0] * 0.5  # Scale as needed
+        vel_msg.angular.z = action[1] * 0.5  # Scale as needed
+        self.cmd_vel_pub.publish(vel_msg)
+```
+
+## Model Deployment and Optimization
+
+### TensorRT Optimization for Real-time Inference
+
+```python
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit
+import numpy as np
+
+class TensorRTOptimizer:
+    def __init__(self):
+        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.builder = trt.Builder(self.logger)
+        self.network = None
+        self.engine = None
+
+    def build_engine_from_pytorch(self, model, input_shape, precision="fp16"):
+        """Build TensorRT engine from PyTorch model"""
+        # Create builder config
+        config = self.builder.create_builder_config()
+
+        # Set memory limit
+        config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 1 << 30)  # 1GB
+
+        # Set precision
+        if precision == "fp16":
+            if self.builder.platform_has_fast_fp16:
+                config.set_flag(trt.BuilderFlag.FP16)
+            else:
+                print("FP16 not supported, using FP32")
+
+        # Create explicit batch network
+        EXPLICIT_BATCH = 1 << (int)(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        self.network = self.builder.create_network(EXPLICIT_BATCH)
+
+        # Parse the PyTorch model
+        # This would require ONNX export first
+        import onnx
+
+        # Export model to ONNX
+        dummy_input = torch.randn(input_shape)
+        torch.onnx.export(
+            model,
+            dummy_input,
+            "temp_model.onnx",
+            export_params=True,
+            opset_version=11,
+            do_constant_folding=True,
+            input_names=['input'],
+            output_names=['output']
+        )
+
+        # Parse ONNX
+        parser = trt.OnnxParser(self.network, self.logger)
+        with open("temp_model.onnx", 'rb') as model:
+            if not parser.parse(model.read()):
+                for error in range(parser.num_errors):
+                    print(parser.get_error(error))
+
+        # Set optimization profile
+        profile = self.builder.create_optimization_profile()
+        profile.set_shape(
+            'input',  # Input name
+            min=(1,) + input_shape[1:],  # Minimum shape
+            opt=(1,) + input_shape[1:],  # Optimal shape
+            max=(1,) + input_shape[1:]   # Maximum shape
+        )
+        config.add_optimization_profile(profile)
+
+        # Build engine
+        serialized_engine = self.builder.build_serialized_network(self.network, config)
+
+        # Create runtime
+        runtime = trt.Runtime(self.logger)
+        engine = runtime.deserialize_cuda_engine(serialized_engine)
+
+        return engine
+
+    def optimize_for_robot_control(self, model, input_shape):
+        """Optimize model specifically for robot control"""
+        # Build optimized engine
+        engine = self.build_engine_from_pytorch(model, input_shape, precision="fp16")
+
+        # Create execution context
+        context = engine.create_execution_context()
+
+        # Allocate GPU memory
+        input_size = trt.volume(engine.get_binding_shape(0)) * engine.max_batch_size * np.dtype(np.float32).itemsize
+        output_size = trt.volume(engine.get_binding_shape(1)) * engine.max_batch_size * np.dtype(np.float32).itemsize
+
+        d_input = cuda.mem_alloc(input_size)
+        d_output = cuda.mem_alloc(output_size)
+
+        bindings = [int(d_input), int(d_output)]
+
+        return {
+            'engine': engine,
+            'context': context,
+            'bindings': bindings,
+            'input_size': input_size,
+            'output_size': output_size
         }
-    }
 
-    void ImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        if (!triton_client_ || error_) {
-            return;
+class OptimizedAIAgent:
+    def __init__(self, optimized_model):
+        self.optimized_model = optimized_model
+        self.stream = cuda.Stream()
+
+    def infer(self, input_data):
+        """Perform optimized inference"""
+        # Copy input to GPU
+        cuda.memcpy_htod_async(
+            self.optimized_model['bindings'][0],
+            input_data.astype(np.float32),
+            self.stream
+        )
+
+        # Run inference
+        self.optimized_model['context'].execute_async_v2(
+            bindings=self.optimized_model['bindings'],
+            stream_handle=self.stream.handle
+        )
+
+        # Copy output from GPU
+        output = np.empty(
+            trt.volume(self.optimized_model['engine'].get_binding_shape(1)) * self.optimized_model['engine'].max_batch_size,
+            dtype=np.float32
+        )
+        cuda.memcpy_dtoh_async(output, self.optimized_model['bindings'][1], self.stream)
+        self.stream.synchronize()
+
+        return output
+```
+
+## Safety and Robustness Considerations
+
+### Safe AI Control with Verification
+
+```python
+class SafeAIController:
+    def __init__(self, base_controller):
+        self.base_controller = base_controller
+        self.safety_monitor = SafetyMonitor()
+        self.verification_module = ControlVerificationModule()
+
+    def compute_safe_control(self, state, reference):
+        """Compute control action with safety verification"""
+        # Get initial control from AI controller
+        ai_action = self.base_controller.select_action(state)
+
+        # Verify safety constraints
+        if self.verification_module.verify_control(ai_action, state):
+            return ai_action
+        else:
+            # Fallback to safe control
+            safe_action = self.get_safe_fallback_control(state, reference)
+            return safe_action
+
+    def get_safe_fallback_control(self, state, reference):
+        """Get safe fallback control action"""
+        # Example: Use simple PID controller as fallback
+        error = reference - state[:3]  # Position error
+        kp = 1.0
+        safe_action = kp * error
+        safe_action = np.clip(safe_action, -1.0, 1.0)  # Limit action
+        return safe_action
+
+class SafetyMonitor:
+    def __init__(self):
+        self.safety_limits = {
+            'position': 2.0,      # Max position from origin
+            'velocity': 1.0,      # Max velocity
+            'acceleration': 5.0,  # Max acceleration
+            'torque': 100.0,      # Max torque
+            'power': 1000.0       # Max power
         }
 
-        // Prepare inference request
-        PrepareInferenceRequest(*msg);
+    def is_safe_state(self, state):
+        """Check if current state is safe"""
+        # Example safety checks
+        position_norm = np.linalg.norm(state[:3])  # Assuming first 3 dims are position
+        if position_norm > self.safety_limits['position']:
+            return False
 
-        // Perform inference
-        auto result = PerformTritonInference();
+        velocity_norm = np.linalg.norm(state[3:6])  # Assuming next 3 dims are velocity
+        if velocity_norm > self.safety_limits['velocity']:
+            return False
 
-        // Process results
-        if (result) {
-            auto detections = ProcessInferenceResults(result, msg->header);
-            detection_publisher_->publish(detections);
-        }
-    }
+        return True
 
-    void PrepareInferenceRequest(const sensor_msgs::msg::Image& image_msg)
-    {
-        // Preprocess image
-        cv::Mat image = cv_bridge::toCvShare(image_msg, "bgr8")->image;
-        cv::resize(image, image, cv::Size(640, 640));
-        image.convertTo(image, CV_32F, 1.0 / 255.0);
+    def is_safe_action(self, action, current_state):
+        """Check if action is safe given current state"""
+        # Predict next state with action
+        predicted_state = self.predict_state(current_state, action)
 
-        // Prepare input data
-        input_data_.resize(3 * 640 * 640); // CHW format
-        std::vector<cv::Mat> channels(3);
-        cv::split(image, channels);
+        # Check if predicted state is safe
+        return self.is_safe_state(predicted_state)
 
-        size_t channel_size = 640 * 640;
-        for (int c = 0; c < 3; ++c) {
-            memcpy(input_data_.data() + c * channel_size,
-                   channels[c].ptr<float>(),
-                   channel_size * sizeof(float));
-        }
+    def predict_state(self, current_state, action, dt=0.01):
+        """Predict next state given current state and action"""
+        # Simplified dynamics model
+        # In practice, this would use the robot's actual dynamics
+        next_state = current_state.copy()
+        next_state[:3] += current_state[3:6] * dt  # Position update
+        next_state[3:6] += action[:3] * dt  # Velocity update (simplified)
+        return next_state
 
-        // Set up inputs
-        inputs_.clear();
-        tc::InferInput* input;
-        error_ = tc::InferInput::Create(&input, "input", {1, 3, 640, 640}, "FP32");
-        if (error_) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to create input: %s", error_->Message().c_str());
-            return;
+class ControlVerificationModule:
+    def __init__(self):
+        self.verifier_models = {}
+        self.thresholds = {
+            'stability': 0.1,
+            'feasibility': 0.05,
+            'safety': 0.01
         }
 
-        error_ = input->AppendRaw(reinterpret_cast<uint8_t*>(input_data_.data()),
-                                 input_data_.size() * sizeof(float));
-        if (error_) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to append input data: %s", error_->Message().c_str());
-            delete input;
-            return;
+    def verify_control(self, action, state):
+        """Verify control action for safety and feasibility"""
+        # Check stability
+        if not self.check_stability(action, state):
+            return False
+
+        # Check feasibility
+        if not self.check_feasibility(action, state):
+            return False
+
+        # Check safety
+        if not self.check_safety(action, state):
+            return False
+
+        return True
+
+    def check_stability(self, action, state):
+        """Check if action maintains stability"""
+        # This would involve Lyapunov-based stability analysis
+        # or other stability criteria
+        return True  # Simplified for example
+
+    def check_feasibility(self, action, state):
+        """Check if action is physically feasible"""
+        # Check if action is within actuator limits
+        action_norm = np.linalg.norm(action)
+        return action_norm < 10.0  # Example threshold
+
+    def check_safety(self, action, state):
+        """Check if action satisfies safety constraints"""
+        # This would involve formal verification techniques
+        return True  # Simplified for example
+```
+
+## Performance Monitoring and Adaptation
+
+### Online Learning and Adaptation
+
+```python
+class AdaptiveAIAgent:
+    def __init__(self, base_agent, adaptation_rate=0.01):
+        self.base_agent = base_agent
+        self.adaptation_rate = adaptation_rate
+        self.performance_history = []
+        self.adaptation_counter = 0
+
+    def update_with_experience(self, state, action, reward, next_state, done):
+        """Update agent with new experience and adapt if needed"""
+        # Store experience
+        self.base_agent.store_experience(state, action, reward, next_state, done)
+
+        # Train base agent
+        self.base_agent.train()
+
+        # Evaluate performance
+        self.performance_history.append(reward)
+
+        # Check if adaptation is needed
+        if len(self.performance_history) > 100:
+            recent_performance = np.mean(self.performance_history[-50:])
+            historical_performance = np.mean(self.performance_history[:-50])
+
+            # If performance is degrading, adapt the agent
+            if recent_performance < historical_performance * 0.8:  # 20% worse
+                self.adapt_agent()
+
+    def adapt_agent(self):
+        """Adapt agent parameters based on performance"""
+        # Example: Increase exploration rate
+        if hasattr(self.base_agent, 'noise_std'):
+            self.base_agent.noise_std = min(0.5, self.base_agent.noise_std * 1.1)
+
+        # Example: Adjust learning rate
+        for param_group in self.base_agent.actor_optimizer.param_groups:
+            param_group['lr'] = min(1e-2, param_group['lr'] * 1.05)
+
+        self.adaptation_counter += 1
+        print(f"Agent adapted. Adaptation count: {self.adaptation_counter}")
+
+class PerformanceMonitor:
+    def __init__(self):
+        self.metrics = {
+            'success_rate': [],
+            'average_reward': [],
+            'episode_length': [],
+            'computation_time': [],
+            'safety_violations': []
         }
 
-        inputs_.push_back(input);
+    def record_episode(self, episode_data):
+        """Record metrics for completed episode"""
+        self.metrics['success_rate'].append(episode_data.get('success', 0))
+        self.metrics['average_reward'].append(np.mean(episode_data.get('rewards', [])))
+        self.metrics['episode_length'].append(len(episode_data.get('rewards', [])))
+        self.metrics['computation_time'].append(episode_data.get('computation_time', 0))
+        self.metrics['safety_violations'].append(episode_data.get('safety_violations', 0))
 
-        // Set up outputs
-        outputs_.clear();
-        tc::InferRequestedOutput* output;
-        error_ = tc::InferRequestedOutput::Create(&output, "output");
-        if (error_) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to create output: %s", error_->Message().c_str());
-            delete input;
-            return;
-        }
-        outputs_.push_back(output);
-    }
-
-    std::shared_ptr<tc::InferResult> PerformTritonInference()
-    {
-        std::shared_ptr<tc::InferResult> result;
-        std::map<std::string, std::shared_ptr<tc::InferResult>> results;
-
-        // Perform inference
-        error_ = triton_client_->Infer(&results, model_name_, model_version_,
-                                      inputs_, outputs_, headers_);
-
-        if (!error_) {
-            auto it = results.find("output");
-            if (it != results.end()) {
-                result = it->second;
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "Output 'output' not found in results");
-            }
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Inference failed: %s", error_->Message().c_str());
-        }
-
-        // Clean up inputs and outputs
-        for (auto& input : inputs_) {
-            delete input;
-        }
-        for (auto& output : outputs_) {
-            delete output;
-        }
-
-        return result;
-    }
-
-    vision_msgs::msg::Detection2DArray ProcessInferenceResults(
-        const std::shared_ptr<tc::InferResult>& result,
-        const std_msgs::msg::Header& header)
-    {
-        vision_msgs::msg::Detection2DArray detections;
-        detections.header = header;
-
-        // Get output data
-        std::vector<uint8_t> output_data;
-        error_ = result->RawData("output", &output_data);
-
-        if (error_) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to get output data: %s", error_->Message().c_str());
-            return detections;
-        }
-
-        // Parse detection results (assuming YOLO format)
-        const float* output = reinterpret_cast<const float*>(output_data.data());
-        size_t num_detections = output_data.size() / (sizeof(float) * 85); // YOLOv5 output format
-
-        for (size_t i = 0; i < num_detections && i < 100; ++i) {
-            float confidence = output[i * 85 + 4];
-            if (confidence > 0.5) { // Confidence threshold
-                vision_msgs::msg::Detection2D detection;
-                detection.header = header;
-
-                // Extract bounding box (x, y, width, height)
-                detection.bbox.center.x = output[i * 85 + 0] * 640.0f; // Scale to image size
-                detection.bbox.center.y = output[i * 85 + 1] * 640.0f;
-                detection.bbox.size_x = output[i * 85 + 2] * 640.0f;
-                detection.bbox.size_y = output[i * 85 + 3] * 640.0f;
-
-                // Get class with highest probability
-                int class_id = 0;
-                float max_prob = 0.0f;
-                for (int c = 5; c < 85; ++c) {
-                    float prob = output[i * 85 + c];
-                    if (prob > max_prob) {
-                        max_prob = prob;
-                        class_id = c - 5; // Adjust for YOLO format
-                    }
+    def get_performance_summary(self):
+        """Get summary of performance metrics"""
+        summary = {}
+        for metric, values in self.metrics.items():
+            if values:
+                summary[metric] = {
+                    'current': values[-1] if values else 0,
+                    'average': np.mean(values),
+                    'trend': self.calculate_trend(values)
                 }
+        return summary
 
-                vision_msgs::msg::ObjectHypothesisWithPose hypothesis;
-                hypothesis.hypothesis.class_id = std::to_string(class_id);
-                hypothesis.hypothesis.score = confidence;
-                detection.results.push_back(hypothesis);
+    def calculate_trend(self, values):
+        """Calculate trend of metric values"""
+        if len(values) < 10:
+            return "insufficient_data"
 
-                detections.detections.push_back(detection);
-            }
-        }
+        recent_avg = np.mean(values[-5:])
+        earlier_avg = np.mean(values[-10:-5])
 
-        return detections;
-    }
-
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
-    rclcpp::Publisher<vision_msgs::msg::Detection2DArray>::SharedPtr detection_publisher_;
-
-    // Triton components
-    std::unique_ptr<tc::InferenceServerGrpcClient> triton_client_;
-    tc::Error error_;
-    std::string model_name_;
-    std::string model_version_;
-    std::map<std::string, std::string> headers_;
-    std::vector<tc::InferInput*> inputs_;
-    std::vector<tc::InferRequestedOutput*> outputs_;
-    std::vector<float> input_data_;
-};
+        if recent_avg > earlier_avg * 1.1:
+            return "improving"
+        elif recent_avg < earlier_avg * 0.9:
+            return "degrading"
+        else:
+            return "stable"
 ```
 
-## Model Optimization with TensorRT
+## Integration with Humanoid Robotics
 
-### 1. TensorRT Model Conversion and Optimization
+### Humanoid-Specific Control Challenges
 
-```cpp
-// TensorRT model optimization tools
-#include "NvInfer.h"
-#include "NvOnnxParser.h"
-#include <cuda_runtime_api.h>
+```python
+class HumanoidAIAgent:
+    def __init__(self, state_dim, action_dim, max_action):
+        # Specialized networks for humanoid control
+        self.balance_controller = self.build_balance_controller()
+        self.walk_controller = self.build_walk_controller()
+        self.manipulation_controller = self.build_manipulation_controller()
 
-class TensorRTOptimizer
-{
-public:
-    struct ModelConfig {
-        std::string onnx_model_path;
-        std::string output_engine_path;
-        int batch_size = 1;
-        int input_height = 640;
-        int input_width = 640;
-        int input_channels = 3;
-        std::vector<std::string> output_layer_names;
-        bool use_fp16 = false;
-        bool use_int8 = false;
-        std::string calibration_dataset_path;
-    };
+        # High-level task selector
+        self.task_selector = self.build_task_selector()
 
-    bool OptimizeModel(const ModelConfig& config)
-    {
-        // Create TensorRT builder
-        auto builder = nvinfer1::createInferBuilder(gLogger);
-        if (!builder) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to create TensorRT builder");
-            return false;
+        # State dimensions for humanoid (including balance, joint positions, etc.)
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.max_action = max_action
+
+        # Balance-specific parameters
+        self.balance_weights = {
+            'com': 1.0,      # Center of mass
+            'zmp': 0.8,      # Zero moment point
+            'angular': 0.5   # Angular momentum
         }
 
-        // Create network definition
-        const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
-        auto network = builder->createNetworkV2(explicitBatch);
-        if (!network) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to create TensorRT network");
-            return false;
-        }
+    def build_balance_controller(self):
+        """Build specialized balance controller"""
+        return nn.Sequential(
+            nn.Linear(12, 64),  # Input: COM error, ZMP error, angular error
+            nn.ReLU(),
+            nn.Linear(64, 64),
+            nn.ReLU(),
+            nn.Linear(64, 6)   # Output: balance corrections
+        )
 
-        // Create ONNX parser
-        auto parser = nvonnxparser::createParser(*network, gLogger);
-        if (!parser) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to create ONNX parser");
-            return false;
-        }
+    def build_walk_controller(self):
+        """Build specialized walking controller"""
+        return nn.Sequential(
+            nn.Linear(18, 128),  # Input: gait phase, foot positions, body state
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 12)   # Output: walking commands
+        )
 
-        // Parse ONNX model
-        if (!parser->parseFromFile(config.onnx_model_path.c_str(),
-                                  static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to parse ONNX model");
-            return false;
-        }
+    def build_manipulation_controller(self):
+        """Build specialized manipulation controller"""
+        return nn.Sequential(
+            nn.Linear(24, 256),  # Input: end-effector state, object state
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 12)   # Output: manipulation commands
+        )
 
-        // Configure builder
-        auto profile = builder->createOptimizationProfile();
-        auto input_tensor = network->getInput(0);
+    def build_task_selector(self):
+        """Build task selector network"""
+        return nn.Sequential(
+            nn.Linear(self.state_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 3),   # Output: probabilities for balance/walk/manipulate
+            nn.Softmax(dim=-1)
+        )
 
-        // Set dynamic shape if needed
-        if (input_tensor->isShapeTensor()) {
-            nvinfer1::Dims input_dims{4, {config.batch_size, config.input_channels, config.input_height, config.input_width}};
-            profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kMIN, input_dims);
-            profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kOPT, input_dims);
-            profile->setDimensions(input_tensor->getName(), nvinfer1::OptProfileSelector::kMAX, input_dims);
-        }
+    def compute_humanoid_control(self, state):
+        """Compute control for humanoid robot with multiple subsystems"""
+        # Parse state for different controllers
+        balance_state = state[:12]    # Balance-related state
+        walk_state = state[12:30]     # Walking-related state
+        manipulation_state = state[30:54]  # Manipulation-related state
 
-        // Configure precision
-        if (config.use_fp16) {
-            builder->setFp16Mode(true);
-        }
-        if (config.use_int8) {
-            builder->setInt8Mode(true);
-            if (!SetupInt8Calibration(builder, network, config.calibration_dataset_path)) {
-                RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to setup INT8 calibration");
-                return false;
-            }
-        }
+        # Get task priorities
+        task_probs = self.task_selector(state.unsqueeze(0)).squeeze()
 
-        // Set optimization profile
-        builder->setConfigAttribute(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH, 1);
-        builder->setMaxBatchSize(config.batch_size);
+        # Compute specialized controls
+        balance_control = self.balance_controller(balance_state.unsqueeze(0)).squeeze()
+        walk_control = self.walk_controller(walk_state.unsqueeze(0)).squeeze()
+        manipulation_control = self.manipulation_controller(manipulation_state.unsqueeze(0)).squeeze()
 
-        // Build engine
-        auto config_ptr = builder->createBuilderConfig();
-        config_ptr->addOptimizationProfile(profile);
+        # Combine controls based on task priorities
+        final_control = (
+            task_probs[0] * balance_control +
+            task_probs[1] * walk_control +
+            task_probs[2] * manipulation_control
+        )
 
-        auto engine = builder->buildEngineWithConfig(*network, *config_ptr);
-        if (!engine) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to build TensorRT engine");
-            return false;
-        }
+        return final_control
 
-        // Serialize engine
-        auto serialized_engine = engine->serialize();
-        if (!serialized_engine) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to serialize TensorRT engine");
-            return false;
-        }
+    def ensure_balance_constraints(self, control_output):
+        """Ensure control output respects balance constraints"""
+        # Apply balance-specific limits
+        max_balance_correction = 0.1  # meters
+        control_output[:3] = torch.clamp(control_output[:3], -max_balance_correction, max_balance_correction)
 
-        // Save engine to file
-        std::ofstream engine_file(config.output_engine_path, std::ios::binary);
-        if (!engine_file) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"), "Failed to open output file: %s",
-                        config.output_engine_path.c_str());
-            return false;
-        }
-
-        engine_file.write(static_cast<const char*>(serialized_engine->data()), serialized_engine->size());
-        engine_file.close();
-
-        RCLCPP_INFO(rclcpp::get_logger("tensorrt_optimizer"), "TensorRT engine saved to: %s",
-                   config.output_engine_path.c_str());
-
-        // Cleanup
-        serialized_engine->destroy();
-        engine->destroy();
-        config_ptr->destroy();
-        profile->destroy();
-        parser->destroy();
-        network->destroy();
-        builder->destroy();
-
-        return true;
-    }
-
-private:
-    bool SetupInt8Calibration(nvinfer1::IBuilder* builder, nvinfer1::INetworkDefinition* network,
-                             const std::string& calibration_dataset_path)
-    {
-        // For INT8 calibration, we need to provide calibration data
-        // This is a simplified example - in practice, you'd implement a custom calibrator
-        if (calibration_dataset_path.empty()) {
-            RCLCPP_ERROR(rclcpp::get_logger("tensorrt_optimizer"),
-                        "Calibration dataset path required for INT8 optimization");
-            return false;
-        }
-
-        // Create custom calibrator (simplified implementation)
-        auto calibrator = std::make_unique<EntropyCalibrator2>(calibration_dataset_path);
-
-        // This would typically involve:
-        // 1. Loading calibration images
-        // 2. Preprocessing them
-        // 3. Providing them to TensorRT for calibration
-
-        return true; // Simplified return
-    }
-
-    class EntropyCalibrator2 : public nvinfer1::IInt8EntropyCalibrator2
-    {
-    public:
-        EntropyCalibrator2(const std::string& dataset_path) : dataset_path_(dataset_path) {}
-
-        int getBatchSize() const noexcept override
-        {
-            return 1; // Simplified
-        }
-
-        bool getBatch(void* bindings[], const char* names[], int nbBindings) noexcept override
-        {
-            // Load next batch of calibration data
-            // This would involve loading images and preprocessing them
-            return true; // Simplified
-        }
-
-        const void* readCalibrationCache(size_t& length) noexcept override
-        {
-            // Read calibration cache from file if it exists
-            calibration_cache_.clear();
-            std::ifstream cache_file(dataset_path_ + "/calibration.cache", std::ios::binary);
-            if (cache_file) {
-                cache_file.seekg(0, cache_file.end);
-                size_t cache_size = cache_file.tellg();
-                cache_file.seekg(0, cache_file.beg);
-
-                calibration_cache_.resize(cache_size);
-                cache_file.read(calibration_cache_.data(), cache_size);
-                length = cache_size;
-            } else {
-                length = 0;
-            }
-            return length > 0 ? calibration_cache_.data() : nullptr;
-        }
-
-        void writeCalibrationCache(const void* cache, size_t length) noexcept override
-        {
-            // Write calibration cache to file
-            std::ofstream cache_file(dataset_path_ + "/calibration.cache", std::ios::binary);
-            if (cache_file) {
-                cache_file.write(static_cast<const char*>(cache), length);
-            }
-        }
-
-    private:
-        std::string dataset_path_;
-        std::vector<char> calibration_cache_;
-    };
-
-    Logger gLogger;
-};
+        return control_output
 ```
 
-### 2. Isaac ROS Model Format Conversion
-
-```cpp
-// Isaac ROS model format conversion tools
-#include "isaac_ros_tensor_list_interfaces/msg/tensor_list.hpp"
-
-class IsaacModelConverter
-{
-public:
-    enum class ModelFormat {
-        ONNX,
-        TENSORRT,
-        TORCHSCRIPT,
-        TENSORFLOW,
-        TFLITE
-    };
-
-    bool ConvertModel(const std::string& input_path, const std::string& output_path,
-                     ModelFormat input_format, ModelFormat output_format)
-    {
-        switch (input_format) {
-            case ModelFormat::ONNX:
-                return ConvertFromONNX(input_path, output_path, output_format);
-            case ModelFormat::TORCHSCRIPT:
-                return ConvertFromTorchScript(input_path, output_path, output_format);
-            case ModelFormat::TENSORFLOW:
-                return ConvertFromTensorFlow(input_path, output_path, output_format);
-            case ModelFormat::TFLITE:
-                return ConvertFromTFLite(input_path, output_path, output_format);
-            case ModelFormat::TENSORRT:
-                RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                           "TensorRT engine conversion is not supported as input format");
-                return false;
-        }
-
-        return false;
-    }
-
-private:
-    bool ConvertFromONNX(const std::string& input_path, const std::string& output_path,
-                        ModelFormat output_format)
-    {
-        switch (output_format) {
-            case ModelFormat::TENSORRT:
-                return ConvertONNXToTensorRT(input_path, output_path);
-            case ModelFormat::TORCHSCRIPT:
-                return ConvertONNXToTorchScript(input_path, output_path);
-            case ModelFormat::TFLITE:
-                return ConvertONNXToTFLite(input_path, output_path);
-            default:
-                RCLCPP_ERROR(rclcpp::get_logger("model_converter"),
-                           "Unsupported ONNX to %d conversion", static_cast<int>(output_format));
-                return false;
-        }
-    }
-
-    bool ConvertONNXToTensorRT(const std::string& onnx_path, const std::string& engine_path)
-    {
-        // Use TensorRT to convert ONNX to TensorRT engine
-        TensorRTOptimizer optimizer;
-
-        TensorRTOptimizer::ModelConfig config;
-        config.onnx_model_path = onnx_path;
-        config.output_engine_path = engine_path;
-        config.use_fp16 = true; // Enable FP16 for better performance
-
-        return optimizer.OptimizeModel(config);
-    }
-
-    bool ConvertONNXToTorchScript(const std::string& onnx_path, const std::string& torchscript_path)
-    {
-        // This would typically involve using ONNX-TorchScript conversion tools
-        // or re-exporting from PyTorch
-        RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                   "ONNX to TorchScript conversion requires re-export from PyTorch");
-        return false;
-    }
-
-    bool ConvertONNXToTFLite(const std::string& onnx_path, const std::string& tflite_path)
-    {
-        // Use ONNX-TFLite conversion (requires onnx-tf or similar tools)
-        RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                   "ONNX to TFLite conversion requires external tools like onnx-tf");
-        return false;
-    }
-
-    bool ConvertFromTorchScript(const std::string& input_path, const std::string& output_path,
-                               ModelFormat output_format)
-    {
-        // PyTorch-specific conversion
-        RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                   "TorchScript conversion requires PyTorch runtime");
-        return false;
-    }
-
-    bool ConvertFromTensorFlow(const std::string& input_path, const std::string& output_path,
-                              ModelFormat output_format)
-    {
-        // TensorFlow-specific conversion
-        RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                   "TensorFlow conversion requires TensorFlow runtime");
-        return false;
-    }
-
-    bool ConvertFromTFLite(const std::string& input_path, const std::string& output_path,
-                          ModelFormat output_format)
-    {
-        // TFLite-specific conversion
-        RCLCPP_WARN(rclcpp::get_logger("model_converter"),
-                   "TFLite conversion requires TensorFlow Lite runtime");
-        return false;
-    }
-};
-```
-
-## Isaac ROS Tensor Management
-
-### 1. Efficient Tensor Processing
-
-```cpp
-// Efficient tensor processing for Isaac ROS
-#include "isaac_ros_tensor_list_interfaces/msg/tensor_list.hpp"
-#include "isaac_ros_managed_nh/managed_node_handle.hpp"
-
-class EfficientTensorProcessor
-{
-public:
-    EfficientTensorProcessor(rclcpp::Node* node) : node_(node)
-    {
-        // Initialize GPU memory pools
-        InitializeMemoryPools();
-
-        // Create tensor processing pipeline
-        CreateProcessingPipeline();
-    }
-
-    TensorList ProcessTensors(const TensorList& input_tensors)
-    {
-        TensorList output_tensors;
-
-        for (const auto& tensor : input_tensors.tensors) {
-            // Determine processing method based on tensor properties
-            if (tensor.data.size() > large_tensor_threshold_) {
-                // Process large tensors asynchronously
-                auto future_result = ProcessLargeTensorAsync(tensor);
-                output_tensors.tensors.push_back(future_result.get());
-            } else {
-                // Process small tensors synchronously
-                auto processed_tensor = ProcessSmallTensor(tensor);
-                output_tensors.tensors.push_back(processed_tensor);
-            }
-        }
-
-        return output_tensors;
-    }
-
-private:
-    struct Tensor {
-        std::string name;
-        std::vector<int64_t> shape;
-        std::string data_type; // FLOAT32, UINT8, etc.
-        std::vector<uint8_t> data;
-        std::map<std::string, std::string> metadata;
-    };
-
-    struct TensorList {
-        std_msgs::msg::Header header;
-        std::vector<Tensor> tensors;
-    };
-
-    void InitializeMemoryPools()
-    {
-        // Create GPU memory pools for efficient allocation
-        cudaStreamCreate(&processing_stream_);
-        cudaStreamCreate(&copy_stream_);
-
-        // Pre-allocate common tensor sizes
-        PreallocateCommonSizes();
-    }
-
-    void PreallocateCommonSizes()
-    {
-        // Pre-allocate memory for common tensor sizes to reduce allocation overhead
-        std::vector<size_t> common_sizes = {
-            640 * 640 * 3 * sizeof(float),  // Common image size
-            224 * 224 * 3 * sizeof(float),  // ResNet input
-            416 * 416 * 3 * sizeof(float),  // YOLO input
-            1000 * sizeof(float)            // Common output size
-        };
-
-        for (size_t size : common_sizes) {
-            void* buffer;
-            cudaMalloc(&buffer, size);
-            memory_pool_[size] = buffer;
-        }
-    }
-
-    std::future<Tensor> ProcessLargeTensorAsync(const Tensor& input_tensor)
-    {
-        return std::async(std::launch::async, [this, input_tensor]() {
-            return ProcessTensorOnGPU(input_tensor);
-        });
-    }
-
-    Tensor ProcessSmallTensor(const Tensor& input_tensor)
-    {
-        // Process on CPU for small tensors (avoid GPU overhead)
-        return ProcessTensorOnCPU(input_tensor);
-    }
-
-    Tensor ProcessTensorOnGPU(const Tensor& input_tensor)
-    {
-        Tensor output_tensor = input_tensor;
-
-        // Allocate GPU memory
-        void* d_input;
-        void* d_output;
-
-        size_t tensor_size = CalculateTensorSize(input_tensor);
-
-        // Use memory pool if available, otherwise allocate
-        auto pool_it = memory_pool_.find(tensor_size);
-        if (pool_it != memory_pool_.end()) {
-            d_input = pool_it->second;
-        } else {
-            cudaMalloc(&d_input, tensor_size);
-        }
-
-        cudaMalloc(&d_output, tensor_size);
-
-        // Copy input to GPU
-        cudaMemcpyAsync(d_input, input_tensor.data.data(), tensor_size,
-                       cudaMemcpyHostToDevice, processing_stream_);
-
-        // Process tensor (example: apply some transformation)
-        ProcessTensorKernel<<<
-            (tensor_size + 255) / 256, 256, 0, processing_stream_>>>(
-            static_cast<float*>(d_input), static_cast<float*>(d_output),
-            tensor_size / sizeof(float));
-
-        // Copy result back to host
-        output_tensor.data.resize(tensor_size);
-        cudaMemcpyAsync(output_tensor.data.data(), d_output, tensor_size,
-                       cudaMemcpyDeviceToHost, processing_stream_);
-
-        // Synchronize stream
-        cudaStreamSynchronize(processing_stream_);
-
-        // Free GPU memory (or return to pool)
-        cudaFree(d_output);
-
-        return output_tensor;
-    }
-
-    Tensor ProcessTensorOnCPU(const Tensor& input_tensor)
-    {
-        Tensor output_tensor = input_tensor;
-
-        // Simple CPU processing example
-        if (input_tensor.data_type == "FLOAT32") {
-            float* data = reinterpret_cast<float*>(output_tensor.data.data());
-            size_t count = output_tensor.data.size() / sizeof(float);
-
-            for (size_t i = 0; i < count; ++i) {
-                data[i] = data[i] * 2.0f; // Example transformation
-            }
-        }
-
-        return output_tensor;
-    }
-
-    size_t CalculateTensorSize(const Tensor& tensor)
-    {
-        size_t element_size = 4; // Default to float32
-
-        if (tensor.data_type == "UINT8") element_size = 1;
-        else if (tensor.data_type == "INT8") element_size = 1;
-        else if (tensor.data_type == "FLOAT16") element_size = 2;
-        else if (tensor.data_type == "FLOAT32") element_size = 4;
-        else if (tensor.data_type == "FLOAT64") element_size = 8;
-
-        size_t total_elements = 1;
-        for (int64_t dim : tensor.shape) {
-            total_elements *= dim;
-        }
-
-        return total_elements * element_size;
-    }
-
-    // CUDA kernel for tensor processing
-    __global__ void ProcessTensorKernel(float* input, float* output, size_t size)
-    {
-        int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx < size) {
-            // Example processing: normalize values
-            float value = input[idx];
-            output[idx] = fmaxf(0.0f, fminf(1.0f, value)); // Clamp to [0, 1]
-        }
-    }
-
-    rclcpp::Node* node_;
-    cudaStream_t processing_stream_;
-    cudaStream_t copy_stream_;
-    std::map<size_t, void*> memory_pool_;
-    size_t large_tensor_threshold_ = 1024 * 1024; // 1MB threshold
-};
-```
-
-## Model Deployment Strategies
-
-### 1. Multi-Model Inference Pipeline
-
-```cpp
-// Multi-model inference pipeline for humanoid robotics
-class MultiModelInferencePipeline
-{
-public:
-    struct ModelInfo {
-        std::string name;
-        std::string engine_path;
-        std::vector<std::string> input_names;
-        std::vector<std::string> output_names;
-        std::vector<int> input_shapes;  // [batch, channels, height, width]
-        std::vector<int> output_shapes;
-        float confidence_threshold;
-        int gpu_device;
-    };
-
-    MultiModelInferencePipeline(const std::vector<ModelInfo>& models)
-    {
-        // Initialize models on different GPU devices if available
-        for (const auto& model_info : models) {
-            auto model = std::make_unique<InferenceModel>(model_info);
-            models_.push_back(std::move(model));
-        }
-
-        // Create processing threads for each model
-        CreateProcessingThreads();
-    }
-
-    MultiModelResults ProcessMultiModel(const SensorData& sensor_data)
-    {
-        MultiModelResults results;
-
-        // Distribute sensor data to appropriate models
-        for (size_t i = 0; i < models_.size(); ++i) {
-            auto& model = models_[i];
-
-            // Select appropriate sensor data for this model
-            auto model_input = PrepareModelInput(sensor_data, model->GetModelInfo());
-
-            // Process asynchronously
-            auto future_result = std::async(std::launch::async, [model, model_input]() {
-                return model->Process(model_input);
-            });
-
-            results.model_results.push_back(future_result.get());
-        }
-
-        // Fuse results from all models
-        results.fused_result = FuseModelResults(results.model_results);
-
-        return results;
-    }
-
-private:
-    struct SensorData {
-        sensor_msgs::msg::Image::SharedPtr rgb_image;
-        sensor_msgs::msg::Image::SharedPtr depth_image;
-        sensor_msgs::msg::PointCloud2::SharedPtr pointcloud;
-        sensor_msgs::msg::Imu::SharedPtr imu_data;
-        geometry_msgs::msg::PoseStamped robot_pose;
-    };
-
-    struct MultiModelResults {
-        std::vector<ModelResult> model_results;
-        FusedResult fused_result;
-    };
-
-    struct ModelResult {
-        std::string model_name;
-        std::vector<Tensor> outputs;
-        rclcpp::Time inference_time;
-        float confidence;
-    };
-
-    struct FusedResult {
-        std::vector<ObjectDetection> objects;
-        std::vector<HumanPose> human_poses;
-        std::vector<SemanticSegment> segmentation;
-        geometry_msgs::msg::PoseStamped robot_state;
-    };
-
-    class InferenceModel
-    {
-    public:
-        InferenceModel(const ModelInfo& info) : info_(info)
-        {
-            // Set GPU device
-            cudaSetDevice(info.gpu_device);
-
-            // Load TensorRT engine
-            LoadTensorRTEngine(info.engine_path);
-        }
-
-        ModelResult Process(const std::vector<Tensor>& inputs)
-        {
-            ModelResult result;
-            result.model_name = info_.name;
-
-            // Copy inputs to GPU
-            for (size_t i = 0; i < inputs.size(); ++i) {
-                cudaMemcpy(input_buffers_[i], inputs[i].data.data(),
-                          inputs[i].data.size(), cudaMemcpyHostToDevice);
-            }
-
-            // Perform inference
-            auto start_time = std::chrono::high_resolution_clock::now();
-            std::vector<void*> bindings = PrepareBindings();
-            context_->executeV2(bindings.data());
-            auto end_time = std::chrono::high_resolution_clock::now();
-
-            result.inference_time = rclcpp::Time(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    end_time - start_time).count());
-
-            // Copy outputs from GPU
-            for (size_t i = 0; i < output_buffers_.size(); ++i) {
-                Tensor output;
-                output.data.resize(output_sizes_[i]);
-                cudaMemcpy(output.data.data(), output_buffers_[i],
-                          output_sizes_[i], cudaMemcpyDeviceToHost);
-                result.outputs.push_back(output);
-            }
-
-            return result;
-        }
-
-        const ModelInfo& GetModelInfo() const { return info_; }
-
-    private:
-        void LoadTensorRTEngine(const std::string& engine_path)
-        {
-            // Load serialized engine (implementation similar to previous examples)
-            // Allocate input/output buffers
-            // Initialize execution context
-        }
-
-        std::vector<void*> PrepareBindings()
-        {
-            std::vector<void*> bindings;
-            for (auto buffer : input_buffers_) {
-                bindings.push_back(buffer);
-            }
-            for (auto buffer : output_buffers_) {
-                bindings.push_back(buffer);
-            }
-            return bindings;
-        }
-
-        ModelInfo info_;
-        nvinfer1::IRuntime* runtime_{nullptr};
-        nvinfer1::ICudaEngine* engine_{nullptr};
-        nvinfer1::IExecutionContext* context_{nullptr};
-        std::vector<void*> input_buffers_;
-        std::vector<void*> output_buffers_;
-        std::vector<size_t> input_sizes_;
-        std::vector<size_t> output_sizes_;
-    };
-
-    std::vector<Tensor> PrepareModelInput(const SensorData& sensor_data, const ModelInfo& model_info)
-    {
-        std::vector<Tensor> inputs;
-
-        // Prepare input tensors based on model requirements
-        if (model_info.name.find("detection") != std::string::npos) {
-            // Prepare for object detection model
-            auto image_tensor = ConvertImageToTensor(sensor_data.rgb_image, model_info.input_shapes);
-            inputs.push_back(image_tensor);
-        }
-        else if (model_info.name.find("pose") != std::string::npos) {
-            // Prepare for pose estimation model
-            auto pose_tensor = ConvertImageToTensor(sensor_data.rgb_image, model_info.input_shapes);
-            inputs.push_back(pose_tensor);
-        }
-        else if (model_info.name.find("segmentation") != std::string::npos) {
-            // Prepare for segmentation model
-            auto seg_tensor = ConvertImageToTensor(sensor_data.rgb_image, model_info.input_shapes);
-            inputs.push_back(seg_tensor);
-        }
-
-        return inputs;
-    }
-
-    Tensor ConvertImageToTensor(const sensor_msgs::msg::Image::SharedPtr& image_msg,
-                               const std::vector<int>& target_shape)
-    {
-        Tensor tensor;
-        tensor.shape = {target_shape[0], target_shape[1], target_shape[2], target_shape[3]};
-
-        // Convert ROS image to tensor format
-        cv::Mat image = cv_bridge::toCvShare(image_msg, "bgr8")->image;
-        cv::resize(image, image, cv::Size(target_shape[3], target_shape[2]));
-
-        // Normalize and convert to NCHW format
-        image.convertTo(image, CV_32F, 1.0 / 255.0);
-
-        std::vector<cv::Mat> channels;
-        cv::split(image, channels);
-
-        tensor.data.resize(target_shape[1] * target_shape[2] * target_shape[3] * sizeof(float));
-        size_t channel_size = target_shape[2] * target_shape[3] * sizeof(float);
-
-        for (int c = 0; c < 3; ++c) {
-            memcpy(tensor.data.data() + c * channel_size,
-                   channels[c].data,
-                   channel_size);
-        }
-
-        return tensor;
-    }
-
-    FusedResult FuseModelResults(const std::vector<ModelResult>& model_results)
-    {
-        FusedResult fused_result;
-
-        for (const auto& result : model_results) {
-            if (result.model_name.find("detection") != std::string::npos) {
-                auto detections = ParseDetectionResults(result);
-                fused_result.objects.insert(fused_result.objects.end(),
-                                          detections.begin(), detections.end());
-            }
-            else if (result.model_name.find("pose") != std::string::npos) {
-                auto poses = ParsePoseResults(result);
-                fused_result.human_poses.insert(fused_result.human_poses.end(),
-                                              poses.begin(), poses.end());
-            }
-            else if (result.model_name.find("segmentation") != std::string::npos) {
-                auto segments = ParseSegmentationResults(result);
-                fused_result.segmentation.insert(fused_result.segmentation.end(),
-                                               segments.begin(), segments.end());
-            }
-        }
-
-        return fused_result;
-    }
-
-    std::vector<ObjectDetection> ParseDetectionResults(const ModelResult& result)
-    {
-        std::vector<ObjectDetection> detections;
-        // Parse detection model outputs
-        // Implementation depends on model output format
-        return detections;
-    }
-
-    std::vector<HumanPose> ParsePoseResults(const ModelResult& result)
-    {
-        std::vector<HumanPose> poses;
-        // Parse pose estimation model outputs
-        // Implementation depends on model output format
-        return poses;
-    }
-
-    std::vector<SemanticSegment> ParseSegmentationResults(const ModelResult& result)
-    {
-        std::vector<SemanticSegment> segments;
-        // Parse segmentation model outputs
-        // Implementation depends on model output format
-        return segments;
-    }
-
-    std::vector<std::unique_ptr<InferenceModel>> models_;
-    std::vector<std::thread> processing_threads_;
-};
-```
-
-### 2. Model Versioning and Management
-
-```cpp
-// Model versioning and management system
-class ModelManager
-{
-public:
-    struct ModelMetadata {
-        std::string model_name;
-        std::string version;
-        std::string model_type; // detection, segmentation, pose_estimation, etc.
-        std::string input_format; // RGB, RGBD, PointCloud, etc.
-        std::vector<int> input_shape; // [batch, channels, height, width]
-        std::vector<int> output_shape;
-        float accuracy; // Model accuracy metric
-        float inference_time; // Average inference time in ms
-        std::string hardware_requirements; // GPU memory, compute capability
-        rclcpp::Time created_time;
-        std::string description;
-        std::map<std::string, std::string> tags; // e.g., "indoor", "outdoor", "day", "night"
-    };
-
-    ModelManager(rclcpp::Node* node) : node_(node)
-    {
-        // Load model registry from file
-        LoadModelRegistry();
-    }
-
-    bool RegisterModel(const std::string& model_path, const ModelMetadata& metadata)
-    {
-        // Validate model file exists and is accessible
-        if (!std::filesystem::exists(model_path)) {
-            RCLCPP_ERROR(node_->get_logger(), "Model file does not exist: %s", model_path.c_str());
-            return false;
-        }
-
-        // Perform model validation
-        if (!ValidateModel(model_path, metadata)) {
-            RCLCPP_ERROR(node_->get_logger(), "Model validation failed for: %s", model_path.c_str());
-            return false;
-        }
-
-        // Register model in the registry
-        registered_models_[metadata.model_name + ":" + metadata.version] = {model_path, metadata};
-
-        // Save updated registry
-        SaveModelRegistry();
-
-        RCLCPP_INFO(node_->get_logger(), "Model registered: %s version %s",
-                   metadata.model_name.c_str(), metadata.version.c_str());
-
-        return true;
-    }
-
-    std::string GetBestModel(const std::string& model_type,
-                           const std::map<std::string, std::string>& requirements = {})
-    {
-        std::string best_model_path;
-        float best_score = -1.0;
-
-        for (const auto& [model_key, model_info] : registered_models_) {
-            // Check if model type matches
-            if (model_info.metadata.model_type != model_type) {
-                continue;
-            }
-
-            // Check requirements
-            bool meets_requirements = true;
-            for (const auto& [req_key, req_value] : requirements) {
-                if (req_key == "environment") {
-                    auto it = model_info.metadata.tags.find(req_value);
-                    if (it == model_info.metadata.tags.end()) {
-                        meets_requirements = false;
-                        break;
-                    }
-                }
-                // Add other requirement checks as needed
-            }
-
-            if (!meets_requirements) {
-                continue;
-            }
-
-            // Calculate score based on accuracy, inference time, and other factors
-            float score = CalculateModelScore(model_info.metadata, requirements);
-
-            if (score > best_score) {
-                best_score = score;
-                best_model_path = model_info.path;
-            }
-        }
-
-        return best_model_path;
-    }
-
-    bool UpdateModel(const std::string& model_name, const std::string& new_model_path,
-                    const ModelMetadata& new_metadata)
-    {
-        // Find existing model versions
-        std::vector<std::string> existing_versions;
-        for (const auto& [key, info] : registered_models_) {
-            if (key.find(model_name + ":") == 0) {
-                existing_versions.push_back(key.substr(model_name.length() + 1)); // Extract version
-            }
-        }
-
-        // Validate new model
-        if (!ValidateModel(new_model_path, new_metadata)) {
-            RCLCPP_ERROR(node_->get_logger(), "New model validation failed");
-            return false;
-        }
-
-        // Register new version
-        std::string new_key = model_name + ":" + new_metadata.version;
-        registered_models_[new_key] = {new_model_path, new_metadata};
-
-        // Save updated registry
-        SaveModelRegistry();
-
-        RCLCPP_INFO(node_->get_logger(), "Model updated: %s to version %s",
-                   model_name.c_str(), new_metadata.version.c_str());
-
-        return true;
-    }
-
-    std::vector<ModelMetadata> GetModelHistory(const std::string& model_name)
-    {
-        std::vector<ModelMetadata> history;
-
-        for (const auto& [key, info] : registered_models_) {
-            if (key.find(model_name + ":") == 0) {
-                history.push_back(info.metadata);
-            }
-        }
-
-        // Sort by creation time
-        std::sort(history.begin(), history.end(),
-                 [](const ModelMetadata& a, const ModelMetadata& b) {
-                     return a.created_time.nanoseconds() < b.created_time.nanoseconds();
-                 });
-
-        return history;
-    }
-
-private:
-    struct RegisteredModel {
-        std::string path;
-        ModelMetadata metadata;
-    };
-
-    bool ValidateModel(const std::string& model_path, const ModelMetadata& metadata)
-    {
-        // Basic validation checks
-        if (metadata.model_name.empty()) {
-            RCLCPP_ERROR(node_->get_logger(), "Model name is empty");
-            return false;
-        }
-
-        if (metadata.version.empty()) {
-            RCLCPP_ERROR(node_->get_logger(), "Model version is empty");
-            return false;
-        }
-
-        // Check if model file has valid extension
-        std::string extension = std::filesystem::path(model_path).extension();
-        if (extension != ".engine" && extension != ".onnx" && extension != ".trt") {
-            RCLCPP_ERROR(node_->get_logger(), "Invalid model file extension: %s", extension.c_str());
-            return false;
-        }
-
-        // Additional validation can be added here
-        // e.g., check if TensorRT engine is valid, etc.
-
-        return true;
-    }
-
-    float CalculateModelScore(const ModelMetadata& metadata,
-                            const std::map<std::string, std::string>& requirements)
-    {
-        float score = 0.0;
-
-        // Accuracy contributes positively to score
-        score += metadata.accuracy * 0.5;
-
-        // Faster inference time contributes positively (inverse relationship)
-        if (metadata.inference_time > 0) {
-            score += (1.0 / metadata.inference_time) * 0.3;
-        }
-
-        // Check for specific requirements
-        auto env_it = requirements.find("environment");
-        if (env_it != requirements.end()) {
-            auto tag_it = metadata.tags.find(env_it->second);
-            if (tag_it != metadata.tags.end()) {
-                score += 0.2; // Bonus for environment match
-            }
-        }
-
-        return score;
-    }
-
-    void LoadModelRegistry()
-    {
-        std::string registry_path = node_->declare_parameter("model_registry_path",
-                                                            "/tmp/model_registry.json");
-
-        std::ifstream file(registry_path);
-        if (!file.is_open()) {
-            RCLCPP_WARN(node_->get_logger(), "Model registry file not found, starting fresh");
-            return;
-        }
-
-        nlohmann::json registry_json;
-        file >> registry_json;
-
-        // Parse registry data
-        if (registry_json.contains("models")) {
-            for (const auto& model_json : registry_json["models"]) {
-                RegisteredModel model_info;
-                model_info.path = model_json["path"];
-
-                ModelMetadata metadata;
-                metadata.model_name = model_json["metadata"]["model_name"];
-                metadata.version = model_json["metadata"]["version"];
-                metadata.model_type = model_json["metadata"]["model_type"];
-                metadata.accuracy = model_json["metadata"]["accuracy"];
-                metadata.inference_time = model_json["metadata"]["inference_time"];
-
-                model_info.metadata = metadata;
-
-                std::string key = metadata.model_name + ":" + metadata.version;
-                registered_models_[key] = model_info;
-            }
-        }
-
-        file.close();
-    }
-
-    void SaveModelRegistry()
-    {
-        std::string registry_path = node_->declare_parameter("model_registry_path",
-                                                            "/tmp/model_registry.json");
-
-        nlohmann::json registry_json;
-        nlohmann::json models_json = nlohmann::json::array();
-
-        for (const auto& [key, model_info] : registered_models_) {
-            nlohmann::json model_json;
-            model_json["path"] = model_info.path;
-
-            nlohmann::json metadata_json;
-            metadata_json["model_name"] = model_info.metadata.model_name;
-            metadata_json["version"] = model_info.metadata.version;
-            metadata_json["model_type"] = model_info.metadata.model_type;
-            metadata_json["accuracy"] = model_info.metadata.accuracy;
-            metadata_json["inference_time"] = model_info.metadata.inference_time;
-
-            model_json["metadata"] = metadata_json;
-            models_json.push_back(model_json);
-        }
-
-        registry_json["models"] = models_json;
-
-        std::ofstream file(registry_path);
-        file << registry_json.dump(4);
-        file.close();
-    }
-
-    rclcpp::Node* node_;
-    std::map<std::string, RegisteredModel> registered_models_;
-};
-```
-
-## Performance Monitoring and Optimization
-
-### 1. Inference Performance Monitoring
-
-```cpp
-// Performance monitoring for AI inference
-class InferencePerformanceMonitor
-{
-public:
-    struct PerformanceMetrics {
-        double average_inference_time_ms;
-        double max_inference_time_ms;
-        double min_inference_time_ms;
-        double std_dev_inference_time_ms;
-        int total_inferences;
-        double throughput_fps; // Frames per second
-        double gpu_utilization_percent;
-        double memory_utilization_percent;
-        int dropped_frames;
-        double power_consumption_watts;
-    };
-
-    InferencePerformanceMonitor()
-    {
-        // Initialize monitoring thread
-        monitoring_thread_ = std::thread(&InferencePerformanceMonitor::MonitoringLoop, this);
-    }
-
-    ~InferencePerformanceMonitor()
-    {
-        should_stop_ = true;
-        if (monitoring_thread_.joinable()) {
-            monitoring_thread_.join();
-        }
-    }
-
-    void StartInferenceTimer(const std::string& model_name)
-    {
-        inference_start_times_[model_name] = std::chrono::high_resolution_clock::now();
-    }
-
-    void EndInferenceTimer(const std::string& model_name)
-    {
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto start_time = inference_start_times_[model_name];
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-
-        // Store inference time
-        std::lock_guard<std::mutex> lock(metrics_mutex_);
-        inference_times_[model_name].push_back(duration.count() / 1000.0); // Convert to milliseconds
-
-        // Limit stored samples to prevent memory overflow
-        if (inference_times_[model_name].size() > max_samples_) {
-            inference_times_[model_name].erase(inference_times_[model_name].begin());
-        }
-    }
-
-    PerformanceMetrics GetMetrics(const std::string& model_name)
-    {
-        std::lock_guard<std::mutex> lock(metrics_mutex_);
-
-        PerformanceMetrics metrics;
-        const auto& times = inference_times_[model_name];
-
-        if (times.empty()) {
-            return metrics; // Return zero-initialized metrics
-        }
-
-        // Calculate statistics
-        double sum = std::accumulate(times.begin(), times.end(), 0.0);
-        metrics.average_inference_time_ms = sum / times.size();
-        metrics.max_inference_time_ms = *std::max_element(times.begin(), times.end());
-        metrics.min_inference_time_ms = *std::min_element(times.begin(), times.end());
-
-        // Calculate standard deviation
-        double sq_sum = std::inner_product(times.begin(), times.end(), times.begin(), 0.0);
-        metrics.std_dev_inference_time_ms = std::sqrt(sq_sum / times.size() -
-                                                     metrics.average_inference_time_ms * metrics.average_inference_time_ms);
-
-        metrics.total_inferences = times.size();
-        metrics.throughput_fps = 1000.0 / metrics.average_inference_time_ms; // Approximate FPS
-
-        // Get GPU utilization (simplified)
-        metrics.gpu_utilization_percent = GetGPUUtilization();
-        metrics.memory_utilization_percent = GetGPUMemoryUtilization();
-
-        return metrics;
-    }
-
-    void PublishMetrics(const std::string& model_name, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub)
-    {
-        auto metrics = GetMetrics(model_name);
-
-        std_msgs::msg::String msg;
-        msg.data = "Model: " + model_name +
-                  ", Avg Inference Time: " + std::to_string(metrics.average_inference_time_ms) + "ms" +
-                  ", Throughput: " + std::to_string(metrics.throughput_fps) + " FPS" +
-                  ", GPU Util: " + std::to_string(metrics.gpu_utilization_percent) + "%" +
-                  ", Memory Util: " + std::to_string(metrics.memory_utilization_percent) + "%";
-
-        pub->publish(msg);
-    }
-
-private:
-    void MonitoringLoop()
-    {
-        while (!should_stop_) {
-            // Collect system metrics periodically
-            CollectSystemMetrics();
-
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-    }
-
-    void CollectSystemMetrics()
-    {
-        // Collect GPU utilization, memory usage, etc.
-        // This would typically involve calling nvidia-ml-py or similar
-        current_gpu_util_ = GetSystemGPUUtilization();
-        current_memory_util_ = GetSystemGPUMemoryUtilization();
-    }
-
-    double GetGPUUtilization()
-    {
-        // Return current GPU utilization for this model
-        // In practice, this would be calculated based on the model's usage
-        return current_gpu_util_;
-    }
-
-    double GetGPUMemoryUtilization()
-    {
-        // Return current GPU memory utilization for this model
-        return current_memory_util_;
-    }
-
-    double GetSystemGPUUtilization()
-    {
-        // Simplified implementation - in practice, use nvidia-ml-py
-        // or other system monitoring tools
-        unsigned int utilization;
-        // nvmlDeviceGetUtilizationRates(device, &utilization); // Example
-        return 75.0; // Placeholder
-    }
-
-    double GetSystemGPUMemoryUtilization()
-    {
-        // Simplified implementation
-        return 60.0; // Placeholder
-    }
-
-    std::map<std::string, std::chrono::high_resolution_clock::time_point> inference_start_times_;
-    std::map<std::string, std::vector<double>> inference_times_; // In milliseconds
-    std::mutex metrics_mutex_;
-
-    std::thread monitoring_thread_;
-    std::atomic<bool> should_stop_{false};
-
-    double current_gpu_util_{0.0};
-    double current_memory_util_{0.0};
-
-    static constexpr size_t max_samples_ = 1000; // Maximum samples to store
-};
-```
-
-## Next Steps
-
-In the next section, we'll explore Isaac Sim integration for AI model training and validation, learning how to leverage Isaac Sim's realistic physics and rendering capabilities to generate synthetic training data and validate AI models before deployment on physical humanoid robots.
+## Best Practices for AI-Enhanced Control
+
+### 1. System Design
+- Use modular architectures for different control functions
+- Implement proper state estimation and filtering
+- Design for fault tolerance and graceful degradation
+- Plan for online learning and adaptation
+
+### 2. Safety Considerations
+- Implement multiple safety layers and fallback mechanisms
+- Use formal verification where possible
+- Monitor system performance continuously
+- Plan for emergency stops and safe states
+
+### 3. Performance Optimization
+- Optimize models for real-time inference
+- Use hardware acceleration appropriately
+- Implement efficient data pipelines
+- Monitor and tune performance metrics
+
+### 4. Testing and Validation
+- Test extensively in simulation before real deployment
+- Use diverse test scenarios and edge cases
+- Validate safety properties formally
+- Plan for continuous validation in deployment
+
+## Troubleshooting Common Issues
+
+### 1. Training Instability
+- **Problem**: AI controller learning is unstable
+- **Solution**: Reduce learning rate, add regularization, use stable algorithms like TD3
+
+### 2. Safety Violations
+- **Problem**: AI controller produces unsafe actions
+- **Solution**: Add safety constraints, use constrained RL, implement verification modules
+
+### 3. Performance Degradation
+- **Problem**: Performance decreases over time
+- **Solution**: Implement adaptation mechanisms, monitor for concept drift
+
+### 4. Real-time Constraints
+- **Problem**: Controller cannot run in real-time
+- **Solution**: Optimize models, use efficient inference, consider model predictive control
+
+## Summary
+
+AI-enhanced robot control systems represent a powerful approach to creating intelligent, adaptive robotic systems. Key concepts include:
+
+- **Learning-Based Control**: Using neural networks and RL algorithms to learn control policies
+- **Model-Based Approaches**: Using learned models of system dynamics for planning
+- **Imitation Learning**: Learning from expert demonstrations
+- **NVIDIA Isaac Integration**: Leveraging GPU acceleration for real-time performance
+- **Safety and Verification**: Ensuring safe operation of AI-controlled systems
+- **Adaptive Control**: Systems that can adapt to changing conditions
+
+These systems enable robots to learn complex behaviors, adapt to new situations, and perform tasks that would be difficult to program with traditional control methods. The integration of AI techniques with robotics opens up new possibilities for autonomous systems that can operate effectively in complex, dynamic environments.
+
+The combination of advanced AI techniques with robust safety mechanisms creates control systems that are both capable and reliable, making them suitable for deployment in real-world applications where safety and performance are critical.

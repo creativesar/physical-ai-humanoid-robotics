@@ -1,5 +1,5 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -36,6 +36,32 @@ const config: Config = {
     locales: ['en'],
   },
 
+  // Add Urdu font support via Google Fonts
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'preconnect',
+        href: 'https://fonts.googleapis.com',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossorigin: 'anonymous',
+      },
+    },
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap',
+      },
+    },
+  ],
+
   presets: [
     [
       'classic',
@@ -68,19 +94,20 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
+  plugins: [
+    './plugins/better-auth-plugin.js',
+  ],
 
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
-      respectPrefersColorScheme: true,
+      defaultMode: 'dark',
+      disableSwitch: true,
+      respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Physical AI & Humanoid Robotics Textbook',
-      logo: {
-        alt: 'Physical AI & Humanoid Robotics Logo',
-        src: 'img/logo.svg',
-      },
       items: [
         {
           type: 'docSidebar',
@@ -88,16 +115,15 @@ const config: Config = {
           position: 'left',
           label: 'Textbook',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
-        {to: '/contact', label: 'Contact', position: 'left'},
+        { to: '/blog', label: 'Blog', position: 'left' },
+        { to: '/contact', label: 'Contact', position: 'left' },
         {
-          href: 'https://github.com/coders-users/physical-ai-humanoid-robotics',
+          href: 'https://github.com/creativesar',
           label: 'GitHub',
           position: 'right',
         },
       ],
-      style: 'dark',
-      hideOnScroll: false,
+      hideOnScroll: true,
     },
     footer: {
       style: 'dark',
@@ -107,7 +133,7 @@ const config: Config = {
           items: [
             {
               label: 'Introduction',
-              to: '/docs/intro',
+              to: '/docs/module-1/',
             },
           ],
         },
@@ -116,7 +142,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/coders-users/physical-ai-humanoid-robotics',
+              href: 'https://github.com/creativesar',
             },
             {
               label: 'Documentation',

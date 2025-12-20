@@ -2,7 +2,7 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import ContactUs from '../components/ContactUs';
 
-export default function Contact(): JSX.Element {
+export default function Contact() {
   return (
     <Layout
       title="Contact Us"

@@ -1,246 +1,284 @@
 ---
 sidebar_position: 3
-title: "Nodes and Communication"
+title: "Nodes, Topics, Services, and Actions"
 ---
 
-# Nodes and Communication
+# Nodes, Topics, Services, and Actions
 
-## Understanding Nodes in ROS 2
+## Nodes
 
-Nodes are the fundamental building blocks of any ROS 2 system. In the context of humanoid robotics, nodes represent individual components of the robot system such as sensor drivers, control algorithms, perception modules, and user interfaces.
+Nodes are the fundamental building blocks of ROS 2. Each node is a process that performs computation and communicates with other nodes through messages. Let's look at how to create and structure nodes in ROS 2.
 
-## Creating Nodes
-
-### Node Structure
-
-Every ROS 2 node typically includes:
-
-1. **Node Class Definition**: Inherits from `rclcpp::Node` or uses the Python equivalent
-2. **Initialization**: Constructor that sets up the node name and other parameters
-3. **Communication Interfaces**: Publishers, subscribers, services, and actions
-4. **Execution Loop**: Spin loop that processes callbacks
-
-### Example Node Implementation
-
-```cpp
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
-
-class HumanoidController : public rclcpp::Node
-{
-public:
-    HumanoidController() : Node("humanoid_controller")
-    {
-        // Create subscriber for joint states
-        joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-            "joint_states", 10,
-            std::bind(&HumanoidController::jointStateCallback, this, std::placeholders::_1));
-
-        // Create publisher for joint commands
-        joint_command_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>(
-            "joint_commands", 10);
-
-        RCLCPP_INFO(this->get_logger(), "Humanoid Controller Node Initialized");
-    }
-
-private:
-    void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
-    {
-        RCLCPP_INFO(this->get_logger(), "Received %d joint states", msg->name.size());
-        // Process joint states and generate commands
-    }
-
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_command_pub_;
-};
-```
-
-## Communication Patterns
-
-### 1. Topics (Publish-Subscribe)
-
-Topics are used for streaming data between nodes and are ideal for sensor data, robot state information, and other continuous data streams.
-
-#### Key Characteristics:
-- Unidirectional data flow
-- Many-to-many communication
-- Asynchronous communication
-- Data is sent regardless of subscriber presence
-
-#### Use Cases in Humanoid Robotics:
-- Sensor data (IMU, cameras, joint encoders)
-- Robot state information
-- Trajectory commands
-- Perception results
-
-### 2. Services (Request-Response)
-
-Services provide synchronous communication where a client sends a request and waits for a response.
-
-#### Key Characteristics:
-- Synchronous communication
-- One-to-one communication
-- Request-response pattern
-- Blocking until response received
-
-#### Use Cases in Humanoid Robotics:
-- Calibration procedures
-- Configuration changes
-- Diagnostic requests
-- Emergency stop commands
-
-### 3. Actions (Goal-Feedback-Result)
-
-Actions are designed for long-running tasks that require feedback and the ability to be canceled.
-
-#### Key Characteristics:
-- Asynchronous with feedback
-- Goal-feedback-result pattern
-- Cancellation capability
-- Ideal for tasks with duration
-
-#### Use Cases in Humanoid Robotics:
-- Navigation to a location
-- Manipulation tasks
-- Walking gaits
-- Complex motion sequences
-
-## Advanced Communication Features
-
-### Quality of Service (QoS) Configuration
-
-QoS settings allow fine-tuning of communication behavior:
-
-```cpp
-// Configure QoS for sensor data (high frequency, best effort)
-rclcpp::QoS sensor_qos(10);
-sensor_qos.best_effort().keep_last(5);
-
-// Configure QoS for critical commands (reliable, transient)
-rclcpp::QoS command_qos(5);
-command_qos.reliable().transient_local().keep_all();
-
-auto sensor_pub = this->create_publisher<sensor_msgs::msg::JointState>(
-    "sensor_data", sensor_qos);
-auto command_pub = this->create_publisher<control_msgs::msg::JointTrajectoryControllerCommand>(
-    "critical_commands", command_qos);
-```
-
-### Parameters
-
-Parameters provide a way to configure nodes at runtime:
-
-```cpp
-// Declare parameters with default values
-this->declare_parameter("control_frequency", 100);
-this->declare_parameter("max_velocity", 1.0);
-this->declare_parameter("robot_name", "atlas");
-
-// Get parameter values
-double control_freq = this->get_parameter("control_frequency").as_double();
-std::string robot_name = this->get_parameter("robot_name").as_string();
-
-// Parameter callback for dynamic reconfiguration
-auto param_change_callback = [this](const std::vector<rclcpp::Parameter> & parameters) {
-    for (const auto & param : parameters) {
-        if (param.get_name() == "control_frequency") {
-            RCLCPP_INFO(this->get_logger(), "Control frequency changed to: %f",
-                       param.as_double());
-        }
-    }
-};
-this->set_on_parameters_set_callback(param_change_callback);
-```
-
-## Inter-Process Communication
-
-### Client Libraries
-
-ROS 2 supports multiple client libraries that can communicate with each other:
-
-- **C++ (rclcpp)**: High-performance applications
-- **Python (rclpy)**: Rapid prototyping and scripting
-- **Other languages**: Java, C, etc.
-
-### Cross-Language Communication Example
-
-A Python node can subscribe to topics published by a C++ node:
+### Creating a Basic Node in Python
 
 ```python
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
 
-class JointStateMonitor(Node):
+class MinimalPublisher(Node):
     def __init__(self):
-        super().__init__('joint_state_monitor')
+        super().__init__('minimal_publisher')
+        self.publisher_ = self.create_publisher(String, 'topic', 10)
+        timer_period = 0.5  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
+
+    def timer_callback(self):
+        msg = String()
+        msg.data = 'Hello World: %d' % self.i
+        self.publisher_.publish(msg)
+        self.get_logger().info('Publishing: "%s"' % msg.data)
+        self.i += 1
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_publisher = MinimalPublisher()
+    rclpy.spin(minimal_publisher)
+    minimal_publisher.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### Creating a Subscriber Node
+
+```python
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class MinimalSubscriber(Node):
+    def __init__(self):
+        super().__init__('minimal_subscriber')
         self.subscription = self.create_subscription(
-            JointState,
-            'joint_states',
+            String,
+            'topic',
             self.listener_callback,
             10)
+        self.subscription  # prevent unused variable warning
 
     def listener_callback(self, msg):
-        self.get_logger().info(f'Received joint states for {len(msg.name)} joints')
+        self.get_logger().info('I heard: "%s"' % msg.data)
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_subscriber = MinimalSubscriber()
+    rclpy.spin(minimal_subscriber)
+    minimal_subscriber.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
 ```
 
-## Best Practices for Humanoid Robotics
+## Topics
 
-### 1. Modular Design
-- Separate perception, planning, and control into different nodes
-- Use composition for performance-critical components
-- Design nodes with single responsibilities
+Topics provide unidirectional, asynchronous communication using a publish/subscribe model. Multiple nodes can publish to the same topic, and multiple nodes can subscribe to the same topic.
 
-### 2. Error Handling
-- Implement proper exception handling
-- Use latching for critical state topics
-- Monitor node health and connections
+### Topic Communication Characteristics
+- **Asynchronous**: Publishers don't wait for subscribers
+- **Unidirectional**: Data flows from publisher to subscriber
+- **Many-to-many**: Multiple publishers and subscribers can use the same topic
 
-### 3. Performance Optimization
-- Use intra-process communication when appropriate
-- Configure QoS settings based on data requirements
-- Implement proper message throttling
+### Creating Custom Message Types
 
-### 4. Security Considerations
-- Implement proper namespace isolation
-- Use ROS 2 security features for sensitive data
-- Validate all incoming messages
+To create custom message types, define them in `.msg` files:
 
-## Debugging and Monitoring
-
-### ROS 2 Tools
-- `ros2 topic list`: List available topics
-- `ros2 topic echo <topic>`: View topic data
-- `ros2 node list`: List active nodes
-- `ros2 run <pkg> <exec> __params:=<file>`: Launch with parameter file
-
-### Custom Monitoring
-```cpp
-// Add custom diagnostics
-#include "diagnostic_updater/diagnostic_updater.hpp"
-
-class DiagnosticsNode : public rclcpp::Node
-{
-public:
-    DiagnosticsNode() : Node("diagnostics_node")
-    {
-        updater_.setHardwareID("humanoid_robot");
-        updater_.add("Joint Controller Status", this, &DiagnosticsNode::check_joints);
-    }
-
-private:
-    void check_joints(diagnostic_updater::DiagnosticStatusWrapper & stat)
-    {
-        // Custom diagnostic logic
-        stat.summary(diagnostic_msgs::msg::DiagnosticStatus::OK, "All joints operational");
-        stat.add("Joint Count", 28); // Example for humanoid robot
-    }
-
-    diagnostic_updater::Updater updater_;
-};
+```
+# In msg/CustomMessage.msg
+string name
+int32 id
+float64 value
+bool active
 ```
 
-## Next Steps
+## Services
 
-In the next section, we'll explore how to create and manage ROS 2 packages and workspaces, which are essential for organizing your humanoid robotics codebase.
+Services provide bidirectional, synchronous communication using a request/response model. A service client sends a request and waits for a response from the service server.
+
+### Creating a Service Server
+
+```python
+from example_interfaces.srv import AddTwoInts
+
+class MinimalService(Node):
+    def __init__(self):
+        super().__init__('minimal_service')
+        self.srv = self.create_service(AddTwoInts, 'add_two_ints', self.add_two_ints_callback)
+
+    def add_two_ints_callback(self, request, response):
+        response.sum = request.a + request.b
+        self.get_logger().info('Incoming request\na: %d b: %d' % (request.a, request.b))
+        return response
+
+def main(args=None):
+    rclpy.init(args=args)
+    minimal_service = MinimalService()
+    rclpy.spin(minimal_service)
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### Creating a Service Client
+
+```python
+import sys
+from example_interfaces.srv import AddTwoInts
+import rclpy
+from rclpy.node import Node
+
+class MinimalClientAsync(Node):
+    def __init__(self):
+        super().__init__('minimal_client_async')
+        self.cli = self.create_client(AddTwoInts, 'add_two_ints')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = AddTwoInts.Request()
+
+    def send_request(self, a, b):
+        self.req.a = a
+        self.req.b = b
+        self.future = self.cli.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
+
+def main():
+    rclpy.init()
+    minimal_client = MinimalClientAsync()
+    response = minimal_client.send_request(int(sys.argv[1]), int(sys.argv[2]))
+    minimal_client.get_logger().info(
+        'Result of add_two_ints: for %d + %d = %d' %
+        (int(sys.argv[1]), int(sys.argv[2]), response.sum))
+    minimal_client.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+## Actions
+
+Actions provide bidirectional, asynchronous communication for long-running tasks with feedback. They're ideal for tasks that take time to complete and need to provide feedback during execution.
+
+### Action States
+- **Goal**: Request to start a long-running task
+- **Feedback**: Continuous updates during task execution
+- **Result**: Final outcome of the task
+
+### Creating an Action Server
+
+```python
+from rclpy.action import ActionServer
+from rclpy.node import Node
+from example_interfaces.action import Fibonacci
+
+class FibonacciActionServer(Node):
+    def __init__(self):
+        super().__init__('fibonacci_action_server')
+        self._action_server = ActionServer(
+            self,
+            Fibonacci,
+            'fibonacci',
+            self.execute_callback)
+
+    def execute_callback(self, goal_handle):
+        self.get_logger().info('Executing goal...')
+
+        feedback_msg = Fibonacci.Feedback()
+        feedback_msg.sequence = [0, 1]
+
+        for i in range(1, goal_handle.request.order):
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                self.get_logger().info('Goal canceled')
+                return Fibonacci.Result()
+
+            feedback_msg.sequence.append(
+                feedback_msg.sequence[i] + feedback_msg.sequence[i-1])
+
+            self.get_logger().info('Publishing feedback: {feedback_msg.sequence}')
+            goal_handle.publish_feedback(feedback_msg)
+
+        goal_handle.succeed()
+        result = Fibonacci.Result()
+        result.sequence = feedback_msg.sequence
+        return result
+```
+
+### Creating an Action Client
+
+```python
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from example_interfaces.action import Fibonacci
+
+class FibonacciActionClient(Node):
+    def __init__(self):
+        super().__init__('fibonacci_action_client')
+        self._action_client = ActionClient(
+            self,
+            Fibonacci,
+            'fibonacci')
+
+    def send_goal(self, order):
+        goal_msg = Fibonacci.Goal()
+        goal_msg.order = order
+
+        self._action_client.wait_for_server()
+        self._send_goal_future = self._action_client.send_goal_async(
+            goal_msg,
+            feedback_callback=self.feedback_callback)
+
+        self._send_goal_future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected :(')
+            return
+
+        self.get_logger().info('Goal accepted :)')
+        self._get_result_future = goal_handle.get_result_async()
+        self._get_result_future.add_done_callback(self.get_result_callback)
+
+    def feedback_callback(self, feedback_msg):
+        feedback = feedback_msg.feedback
+        self.get_logger().info('Received feedback: {feedback.sequence}')
+
+    def get_result_callback(self, future):
+        result = future.result().result
+        self.get_logger().info('Result: {result.sequence}')
+```
+
+## Communication Patterns
+
+### Publisher-Subscriber Pattern
+Used for broadcasting information that multiple nodes might need, such as sensor data or robot state.
+
+### Client-Server Pattern
+Used for specific requests that require a response, such as calculating a value or performing a specific action.
+
+### Action Pattern
+Used for long-running tasks that require feedback, such as navigation or manipulation tasks.
+
+## Best Practices
+
+1. **Topic Naming**: Use descriptive, consistent names following ROS naming conventions
+2. **Message Design**: Keep messages simple and focused on specific data
+3. **Node Design**: Each node should have a single responsibility
+4. **Error Handling**: Implement proper error handling for all communication
+5. **Resource Management**: Properly clean up resources when nodes are destroyed
+
+## Summary
+
+Nodes, topics, services, and actions form the core communication infrastructure of ROS 2. Understanding these concepts is crucial for developing complex robotic systems:
+
+- **Nodes** provide the execution context for your code
+- **Topics** enable asynchronous, one-way communication
+- **Services** enable synchronous, request-response communication
+- **Actions** enable asynchronous, goal-oriented communication with feedback
+
+In the next section, we'll explore how to build ROS 2 packages with Python.

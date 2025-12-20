@@ -58,22 +58,35 @@ const PremiumGetInTouch = () => {
 
   return (
     <section className={styles.section}>
-      {/* Gold Accent Background Elements */}
-      <div className={styles.goldAccent1}></div>
-      <div className={styles.goldAccent2}></div>
-      <div className={styles.goldAccent3}></div>
-      
-      {/* Subtle Grain Texture Overlay */}
-      <div className={styles.grainOverlay}></div>
+      {/* Animated gradient background */}
+      <div className={styles.animatedGradientBg}></div>
+
+      {/* Particle Effects */}
+      <div className={styles.particleEffects}>
+        <div className={styles.floatingParticle}></div>
+        <div className={styles.floatingParticle}></div>
+        <div className={styles.floatingParticle}></div>
+        <div className={styles.gradientOrb}></div>
+        <div className={styles.gradientOrb}></div>
+        <div className={styles.blueNeonOrb}></div>
+        <div className={styles.blueNeonParticle}></div>
+        <div className={styles.blueNeonParticle}></div>
+        <div className={styles.spark}></div>
+        <div className={styles.spark}></div>
+        <div className={styles.electricSpark}></div>
+        <div className={styles.electricSpark}></div>
+        <div className={styles.electricArc}></div>
+        <div className={styles.electricArc}></div>
+      </div>
 
       <div className={styles.container}>
         <div className={styles.contentWrapper}>
           <div className={styles.leftColumn}>
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
               className={styles.header}
             >
               <h1 className={styles.title}>Get In Touch</h1>
@@ -86,10 +99,10 @@ const PremiumGetInTouch = () => {
             </motion.div>
 
             <motion.ul
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
               className={styles.contactInfo}
             >
               {contactInfo.map((info, index) => (
@@ -98,8 +111,8 @@ const PremiumGetInTouch = () => {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.6, delay: index * 0.15, ease: "easeOut" }}
+                  whileHover={{ scale: 1.02 }}
                   className={styles.infoItem}
                 >
                   <span className={styles.infoIcon}>{info.icon}</span>
@@ -111,17 +124,17 @@ const PremiumGetInTouch = () => {
               ))}
             </motion.ul>
           </div>
-          
+
           <div className={styles.rightColumn}>
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
               <form onSubmit={handleSubmit} className={styles.form}>
                 <h2 className={styles.formTitle}>Send a Message</h2>
-                
+
                 <div className={styles.formGroup}>
                   <label htmlFor="name" className={styles.formLabel}>Full Name</label>
                   <input
@@ -135,7 +148,7 @@ const PremiumGetInTouch = () => {
                     required
                   />
                 </div>
-                
+
                 <div className={styles.formGroup}>
                   <label htmlFor="email" className={styles.formLabel}>Email Address</label>
                   <input
@@ -149,7 +162,7 @@ const PremiumGetInTouch = () => {
                     required
                   />
                 </div>
-                
+
                 <div className={styles.formGroup}>
                   <label htmlFor="subject" className={styles.formLabel}>Subject</label>
                   <input
@@ -163,7 +176,7 @@ const PremiumGetInTouch = () => {
                     required
                   />
                 </div>
-                
+
                 <div className={styles.formGroup}>
                   <label htmlFor="message" className={styles.formLabel}>Message</label>
                   <textarea
@@ -176,23 +189,23 @@ const PremiumGetInTouch = () => {
                     required
                   ></textarea>
                 </div>
-                
-                <button 
-                  type="submit" 
+
+                <button
+                  type="submit"
                   className={styles.submitButton}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
-              
+
               <div className={styles.socialLinks}>
                 {socialLinks.map((link, index) => (
                   <motion.a
                     key={index}
                     href={link.url}
                     className={styles.socialLink}
-                    whileHover={{ y: -5 }}
+                    whileHover={{ scale: 1.1, y: -8 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label={link.name}
                   >

@@ -1,866 +1,1160 @@
 ---
-sidebar_position: 2
-title: "Isaac ROS and GEMs"
+sidebar_position: 7
+title: "Isaac ROS: Hardware-accelerated Perception"
 ---
 
-# Isaac ROS and GEMs
+# Isaac ROS: Hardware-accelerated Perception
 
 ## Introduction to Isaac ROS
 
-Isaac ROS is NVIDIA's collection of hardware-accelerated packages that bring the power of GPU computing to robotic applications. Built on top of ROS 2, Isaac ROS provides optimized implementations of common robotic algorithms that leverage NVIDIA GPUs for significant performance improvements. For humanoid robotics, this acceleration is crucial for real-time perception, planning, and control tasks.
+Isaac ROS is a collection of GPU-accelerated perception and navigation packages that bridge the gap between NVIDIA's GPU computing capabilities and the ROS/ROS2 ecosystem. These packages, often called "gems," provide significant performance improvements for computationally intensive tasks like computer vision, sensor processing, and SLAM by leveraging NVIDIA's hardware acceleration technologies including CUDA, TensorRT, and RTX ray tracing.
 
-## Isaac ROS Architecture
+Isaac ROS gems offer several key advantages:
+- **Hardware Acceleration**: GPU-accelerated processing for real-time performance
+- **Deep Learning Integration**: Optimized neural network inference
+- **Sensor Fusion**: Efficient processing of multiple sensor modalities
+- **ROS/ROS2 Compatibility**: Seamless integration with existing robotics frameworks
+- **Production Ready**: Optimized for deployment on NVIDIA hardware platforms
 
-### Core Design Principles
+## Architecture of Isaac ROS
 
-Isaac ROS follows several key design principles:
+### Isaac ROS Framework
 
-#### 1. Hardware Acceleration
-- **GPU-optimized algorithms**: Leveraging CUDA and TensorRT
-- **Hardware abstraction**: Consistent interfaces regardless of hardware
-- **Performance scaling**: Better performance with better hardware
-
-#### 2. ROS 2 Compatibility
-- **Standard interfaces**: Uses ROS 2 message types and services
-- **Ecosystem integration**: Works with existing ROS 2 tools
-- **Modular design**: Packages can be used independently
-
-#### 3. Real-time Performance
-- **Low-latency processing**: Optimized for real-time applications
-- **Deterministic behavior**: Predictable performance characteristics
-- **Resource management**: Efficient GPU memory and compute usage
-
-### Isaac ROS Package Categories
-
-#### 1. Perception Packages
-- **Image Processing**: Color conversion, resizing, filtering
-- **Stereo Vision**: Depth estimation and disparity computation
-- **SLAM**: Simultaneous Localization and Mapping
-- **Detection and Segmentation**: Object detection and semantic segmentation
-
-#### 2. Navigation Packages
-- **Path Planning**: Global and local path planning
-- **Localization**: Pose estimation and tracking
-- **Control**: Motion control and trajectory generation
-
-#### 3. Utilities
-- **Hardware Interfaces**: GPU-accelerated sensor drivers
-- **Data Processing**: Efficient data conversion and storage
-- **Monitoring**: Performance and resource monitoring
-
-## Isaac ROS GEMs (GPU-accelerated Modules)
-
-### Overview of Isaac ROS GEMs
-
-GEMs (GPU-accelerated Modules) are specialized packages that provide significant performance improvements through GPU acceleration. These packages are particularly valuable for humanoid robotics applications that require real-time processing of sensor data.
-
-### Key GEMs for Humanoid Robotics
-
-#### 1. Isaac ROS Image Pipeline
-
-The image pipeline provides GPU-accelerated image processing:
-
-```cpp
-// Example usage of Isaac ROS image pipeline
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/image.hpp"
-#include "isaac_ros_image_pipeline/rectification_node.hpp"
-
-class HumanoidPerceptionNode : public rclcpp::Node
-{
-public:
-    HumanoidPerceptionNode() : Node("humanoid_perception_node")
-    {
-        // Create GPU-accelerated image rectification node
-        rectification_node_ = std::make_shared<isaac_ros::image_pipeline::RectificationNode>(
-            "rectification_node");
-
-        // Image subscribers
-        left_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/left/image_raw", 10,
-            std::bind(&HumanoidPerceptionNode::leftImageCallback, this, std::placeholders::_1));
-
-        right_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/right/image_raw", 10,
-            std::bind(&HumanoidPerceptionNode::rightImageCallback, this, std::placeholders::_1));
-
-        // Processed image publisher
-        processed_image_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-            "/camera/rectified/image", 10);
-
-        RCLCPP_INFO(this->get_logger(), "Humanoid Perception Node initialized with GPU acceleration");
-    }
-
-private:
-    void leftImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Process with GPU acceleration
-        auto rectified_image = rectification_node_->Process(msg);
-        processed_image_pub_->publish(*rectified_image);
-    }
-
-    void rightImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Process with GPU acceleration
-        auto rectified_image = rectification_node_->Process(msg);
-        processed_image_pub_->publish(*rectified_image);
-    }
-
-    std::shared_ptr<isaac_ros::image_pipeline::RectificationNode> rectification_node_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr left_image_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr right_image_sub_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr processed_image_pub_;
-};
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Isaac ROS                                │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Perception    │  │   Navigation    │  │   Manipulation  │  │
+│  │   Gems          │  │   Gems          │  │   Gems          │  │
+│  │ - DetectNet     │  │ - Visual SLAM   │  │ - Manipulation  │  │
+│  │ - Stereo DNN    │  │ - Path Planning │  │ - Grasping      │  │
+│  │ - Stereo DNN    │  │ - Obstacle Avoid│  │ - Trajectory    │  │
+│  │ - Point Cloud   │  │ - Costmaps      │  │   Generation    │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │            Hardware Acceleration Layer                      │ │
+│  │  - CUDA Compute                                           │ │
+│  │  - TensorRT Inference                                     │ │
+│  │  - RTX Ray Tracing                                        │ │
+│  │  - GPU Memory Management                                  │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   NVIDIA        │  │   ROS/ROS2      │  │   Applications  │  │
+│  │   Hardware      │  │   Interface     │  │   Layer         │  │
+│  │   (Jetson,      │  │   - Publishers  │  │   - Robot       │  │
+│  │    Drive, etc.) │  │   - Subscribers │  │     Controllers │  │
+│  │                 │  │   - Services    │  │   - AI Agents   │  │
+│  └─────────────────┘  └─────────────────┘  │   - etc.        │  │
+│                                           └─────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-#### 2. Isaac ROS Stereo Disparity
+### Core Components
 
-For depth perception in humanoid robots:
+#### 1. Isaac ROS Common
+- Base utilities and infrastructure
+- Message definitions and interfaces
+- Hardware abstraction layer
+- Configuration management
 
-```cpp
-// GPU-accelerated stereo disparity
-#include "isaac_ros_stereo_image_proc/stereo_disparity_node.hpp"
+#### 2. Isaac ROS Perception
+- Object detection and recognition
+- Stereo vision and depth estimation
+- Point cloud processing
+- Image enhancement and filtering
 
-class HumanoidDepthNode : public rclcpp::Node
-{
-public:
-    HumanoidDepthNode() : Node("humanoid_depth_node")
-    {
-        // Create stereo disparity node
-        stereo_node_ = std::make_shared<isaac_ros::stereo_image_proc::DisparityNode>(
-            "stereo_disparity_node");
+#### 3. Isaac ROS Navigation
+- Visual SLAM and mapping
+- Path planning and obstacle avoidance
+- Costmap generation and management
+- Multi-robot coordination
 
-        // Subscribe to stereo pair
-        left_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/stereo_camera/left/image_rect", 10,
-            std::bind(&HumanoidDepthNode::leftImageCallback, this, std::placeholders::_1));
+## Installation and Setup
 
-        right_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/stereo_camera/right/image_rect", 10,
-            std::bind(&HumanoidDepthNode::rightImageCallback, this, std::placeholders::_1));
-
-        // Publish disparity map
-        disparity_pub_ = this->create_publisher<stereo_msgs::msg::DisparityImage>(
-            "/stereo_camera/disparity", 10);
-
-        // Publish depth image
-        depth_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-            "/stereo_camera/depth", 10);
-    }
-
-private:
-    void leftImageCallback(const sensor_msgs::msg::Image::SharedPtr left_msg)
-    {
-        // Store left image and process when right image arrives
-        latest_left_image_ = left_msg;
-        processIfReady();
-    }
-
-    void rightImageCallback(const sensor_msgs::msg::Image::SharedPtr right_msg)
-    {
-        // Store right image and process when left image is available
-        latest_right_image_ = right_msg;
-        processIfReady();
-    }
-
-    void processIfReady()
-    {
-        if (latest_left_image_ && latest_right_image_) {
-            // Compute disparity using GPU acceleration
-            auto disparity = stereo_node_->ComputeDisparity(latest_left_image_, latest_right_image_);
-            disparity_pub_->publish(*disparity);
-
-            // Convert to depth image
-            auto depth_image = convertDisparityToDepth(*disparity);
-            depth_pub_->publish(*depth_image);
-
-            // Clear stored images
-            latest_left_image_.reset();
-            latest_right_image_.reset();
-        }
-    }
-
-    std::shared_ptr<isaac_ros::stereo_image_proc::DisparityNode> stereo_node_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr left_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr right_sub_;
-    rclcpp::Publisher<stereo_msgs::msg::DisparityImage>::SharedPtr disparity_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr depth_pub_;
-
-    sensor_msgs::msg::Image::SharedPtr latest_left_image_;
-    sensor_msgs::msg::Image::SharedPtr latest_right_image_;
-};
-```
-
-#### 3. Isaac ROS AprilTag Detection
-
-For marker-based localization and object tracking:
-
-```cpp
-// GPU-accelerated AprilTag detection
-#include "isaac_ros_apriltag/isaac_ros_apriltag.hpp"
-
-class HumanoidAprilTagNode : public rclcpp::Node
-{
-public:
-    HumanoidAprilTagNode() : Node("humanoid_apriltag_node")
-    {
-        // Create AprilTag detector with GPU acceleration
-        apriltag_detector_ = std::make_shared<isaac_ros::apriltag::AprilTagNode>(
-            "apriltag_detector");
-
-        // Image subscriber
-        image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/image_raw", 10,
-            std::bind(&HumanoidAprilTagNode::imageCallback, this, std::placeholders::_1));
-
-        // Detection publisher
-        detections_pub_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
-            "/apriltag/detections", 10);
-
-        // Set AprilTag parameters
-        this->declare_parameter("family", "tag36h11");
-        this->declare_parameter("max_hamming", 0);
-        this->declare_parameter("quad_decimate", 2.0);
-        this->declare_parameter("quad_sigma", 0.0);
-        this->declare_parameter("refine_edges", true);
-        this->declare_parameter("decode_sharpening", 0.25);
-        this->declare_parameter("num_threads", 4);
-    }
-
-private:
-    void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Detect AprilTags using GPU acceleration
-        auto detections = apriltag_detector_->DetectTags(msg);
-
-        // Publish detections
-        vision_msgs::msg::Detection2DArray detection_array;
-        detection_array.header = msg->header;
-        detection_array.detections = detections;
-
-        detections_pub_->publish(detection_array);
-    }
-
-    std::shared_ptr<isaac_ros::apriltag::AprilTagNode> apriltag_detector_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
-    rclcpp::Publisher<vision_msgs::msg::Detection2DArray>::SharedPtr detections_pub_;
-};
-```
-
-## Setting Up Isaac ROS
-
-### Installation Requirements
+### System Requirements
 
 #### Hardware Requirements
-- **NVIDIA GPU**: CUDA-capable GPU (RTX series recommended)
-- **Memory**: Minimum 8GB GPU memory for complex operations
-- **Compute Capability**: 6.0 or higher
+- **GPU**: NVIDIA GPU with compute capability 6.0 or higher
+  - Recommended: RTX series, Tesla V100/A100, Jetson AGX Orin
+- **Memory**: 8GB+ GPU memory for most applications
+- **CPU**: Multi-core processor (ARM64 for Jetson platforms)
+- **OS**: Ubuntu 18.04/20.04 (x86_64) or Ubuntu 20.04 (ARM64)
 
 #### Software Requirements
+- **CUDA**: 11.4 or later
+- **TensorRT**: 8.0 or later
+- **ROS/ROS2**: Foxy, Galactic, or Humble
+- **OpenCV**: 4.2 or later (with CUDA support)
+
+### Installation Methods
+
+#### 1. Docker Installation (Recommended)
 ```bash
-# Install CUDA (version should match your GPU driver)
-sudo apt install cuda-toolkit-12-0
+# Pull Isaac ROS Docker image
+docker pull nvcr.io/nvidia/isaac-ros-dev:latest
 
-# Install Isaac ROS dependencies
+# Run Isaac ROS container with GPU support
+docker run --gpus all -it --rm \
+    --name isaac-ros-dev \
+    --network host \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    --env DISPLAY=$DISPLAY \
+    --env NVIDIA_VISIBLE_DEVICES=all \
+    --env NVIDIA_DRIVER_CAPABILITIES=all \
+    nvcr.io/nvidia/isaac-ros-dev:latest
+```
+
+#### 2. Native Installation
+```bash
+# Add NVIDIA package repository
+sudo apt update && sudo apt install wget
+sudo wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+sudo dpkg -i cuda-keyring_1.0-1_all.deb
+sudo apt-get update
+
+# Install CUDA and dependencies
+sudo apt install cuda-toolkit-11-8
+
+# Install Isaac ROS packages
 sudo apt install ros-humble-isaac-ros-common
-sudo apt install ros-humble-isaac-ros-image-pipeline
-sudo apt install ros-humble-isaac-ros-stereo-image-proc
-sudo apt install ros-humble-isaac-ros-apriltag
-sudo apt install ros-humble-isaac-ros-bitmask
-sudo apt install ros-humble-isaac-ros-gxf
+sudo apt install ros-humble-isaac-ros-detection
+sudo apt install ros-humble-isaac-ros-stereo-depth
+sudo apt install ros-humble-isaac-ros-visual-slam
 ```
 
-### Docker Setup for Isaac ROS
+#### 3. Build from Source
+```bash
+# Create ROS workspace
+mkdir -p ~/isaac_ros_ws/src
+cd ~/isaac_ros_ws
 
-Isaac ROS provides Docker containers for easy deployment:
+# Clone Isaac ROS repositories
+git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_common.git src/isaac_ros_common
+git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_detection.git src/isaac_ros_detection
+git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_stereo_image_proc.git src/isaac_ros_stereo_image_proc
 
-```dockerfile
-# Dockerfile for Isaac ROS humanoid application
-FROM nvcr.io/nvidia/isaac-ros:galactic-ros-base-l4t-r35.2.1
-
-# Install additional packages needed for humanoid robotics
-RUN apt-get update && apt-get install -y \
-    ros-humble-navigation2 \
-    ros-humble-nav2-bringup \
-    ros-humble-teleop-twist-keyboard \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy your humanoid robot packages
-COPY humanoid_packages/ /opt/ros/humble/share/
-
-# Source ROS and Isaac ROS
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-RUN echo "source /opt/isaac_ros_ws/install/setup.bash" >> ~/.bashrc
-
-CMD ["bash"]
+# Build packages
+colcon build --packages-select isaac_ros_common isaac_ros_detection isaac_ros_stereo_image_proc
+source install/setup.bash
 ```
 
-### Launch Configuration
+## Isaac ROS Perception Gems
 
+### Isaac ROS DetectNet
+
+Isaac ROS DetectNet provides GPU-accelerated object detection using NVIDIA's DetectNet deep learning model optimized with TensorRT.
+
+#### Installation and Setup
+```bash
+# Install DetectNet package
+sudo apt install ros-humble-isaac-ros-detectnet
+
+# Or build from source
+git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_detectnet.git
+```
+
+#### Launch Configuration
 ```xml
-<!-- Example launch file for Isaac ROS humanoid perception -->
+<!-- detectnet.launch.xml -->
 <launch>
-  <!-- Declare arguments -->
-  <arg name="camera_namespace" default="camera"/>
-  <arg name="rectify_width" default="640"/>
-  <arg name="rectify_height" default="480"/>
-
-  <!-- Image rectification node -->
-  <node pkg="isaac_ros_image_proc" exec="isaac_ros_rectify" name="rectify_left">
-    <param name="image_width" value="$(var rectify_width)"/>
-    <param name="image_height" value="$(var rectify_height)"/>
-    <remap from="image_raw" to="$(var camera_namespace)/left/image_raw"/>
-    <remap from="image_rect" to="$(var camera_namespace)/left/image_rect"/>
+  <!-- Isaac ROS DetectNet node -->
+  <node pkg="isaac_ros_detectnet" exec="isaac_ros_detectnet" name="detectnet">
+    <param name="model_path" value="models/detectnet/resnet34_peoplenet.onnx"/>
+    <param name="input_topic" value="/camera/image_rect_color"/>
+    <param name="output_topic" value="/detectnet/detections"/>
+    <param name="confidence_threshold" value="0.7"/>
+    <param name="max_objects" value="10"/>
+    <param name="enable_bbox" value="true"/>
   </node>
 
-  <!-- Stereo disparity node -->
-  <node pkg="isaac_ros_stereo_image_proc" exec="isaac_ros_stereo_disparity" name="stereo_disparity">
-    <param name="approximate_sync" value="true"/>
-    <param name="use_system_timestamps" value="false"/>
-    <remap from="left/image_rect" to="$(var camera_namespace)/left/image_rect"/>
-    <remap from="right/image_rect" to="$(var camera_namespace)/right/image_rect"/>
-    <remap from="left/camera_info" to="$(var camera_namespace)/left/camera_info"/>
-    <remap from="right/camera_info" to="$(var camera_namespace)/right/camera_info"/>
-  </node>
-
-  <!-- AprilTag detection node -->
-  <node pkg="isaac_ros_apriltag" exec="isaac_ros_apriltag" name="apriltag">
-    <param name="family" value="tag36h11"/>
-    <param name="max_hamming" value="0"/>
-    <param name="quad_decimate" value="2.0"/>
-    <param name="refine_edges" value="true"/>
-    <remap from="image" to="$(var camera_namespace)/left/image_rect"/>
-    <remap from="camera_info" to="$(var camera_namespace)/left/camera_info"/>
+  <!-- Image preprocessor -->
+  <node pkg="isaac_ros_image_pipeline" exec="isaac_ros_image_preprocessor" name="image_preprocessor">
+    <param name="input_topic" value="/camera/image_raw"/>
+    <param name="output_topic" value="/camera/image_rect_color"/>
   </node>
 </launch>
 ```
 
-## Performance Optimization with Isaac ROS
+#### Usage Example
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from isaac_ros_detectnet_interfaces.msg import Detection2DArray
+from cv_bridge import CvBridge
+import cv2
+import numpy as np
 
-### 1. Memory Management
+class IsaacDetectNetNode(Node):
+    def __init__(self):
+        super().__init__('isaac_detectnet_example')
 
-```cpp
-// Efficient GPU memory management for Isaac ROS
-#include "isaac_ros_common/gpu_thread_synchronize.hpp"
+        # Publishers and subscribers
+        self.image_sub = self.create_subscription(
+            Image, '/camera/image_rect_color', self.image_callback, 10)
+        self.detection_sub = self.create_subscription(
+            Detection2DArray, '/detectnet/detections', self.detection_callback, 10)
+        self.result_pub = self.create_publisher(Image, '/detectnet/visualize', 10)
 
-class OptimizedHumanoidPerception : public rclcpp::Node
-{
-public:
-    OptimizedHumanoidPerception() : Node("optimized_perception")
-    {
-        // Pre-allocate GPU memory buffers
-        AllocateGPUBuffers();
+        # CV Bridge for image conversion
+        self.cv_bridge = CvBridge()
 
-        // Set up CUDA streams for parallel processing
-        cudaStreamCreate(&image_processing_stream_);
-        cudaStreamCreate(&detection_stream_);
-    }
+        # Store latest detections
+        self.latest_detections = None
 
-    ~OptimizedHumanoidPerception()
-    {
-        // Clean up GPU resources
-        cudaStreamDestroy(image_processing_stream_);
-        cudaStreamDestroy(detection_stream_);
-        FreeGPUBuffers();
-    }
+        self.get_logger().info('Isaac DetectNet example node initialized')
 
-private:
-    void AllocateGPUBuffers()
-    {
-        // Allocate GPU memory for image processing
-        cudaMalloc(&gpu_image_buffer_, IMAGE_WIDTH * IMAGE_HEIGHT * 3 * sizeof(uint8_t));
-        cudaMalloc(&gpu_processed_buffer_, IMAGE_WIDTH * IMAGE_HEIGHT * 3 * sizeof(uint8_t));
+    def image_callback(self, msg):
+        """Process incoming image and overlay detections"""
+        # Convert ROS Image to OpenCV
+        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
-        // Allocate memory for intermediate results
-        cudaMalloc(&gpu_depth_buffer_, IMAGE_WIDTH * IMAGE_HEIGHT * sizeof(float));
-    }
+        # Overlay detections if available
+        if self.latest_detections is not None:
+            cv_image = self.overlay_detections(cv_image, self.latest_detections)
 
-    void FreeGPUBuffers()
-    {
-        cudaFree(gpu_image_buffer_);
-        cudaFree(gpu_processed_buffer_);
-        cudaFree(gpu_depth_buffer_);
-    }
+        # Publish result image
+        result_msg = self.cv_bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+        result_msg.header = msg.header
+        self.result_pub.publish(result_msg)
 
-    void ProcessImageAsync(const sensor_msgs::msg::Image::SharedPtr image_msg)
-    {
-        // Copy image to GPU asynchronously
-        cudaMemcpyAsync(gpu_image_buffer_,
-                       image_msg->data.data(),
-                       image_msg->data.size(),
-                       cudaMemcpyHostToDevice,
-                       image_processing_stream_);
+    def detection_callback(self, msg):
+        """Store latest detections"""
+        self.latest_detections = msg.detections
 
-        // Process on GPU
-        ProcessOnGPU(gpu_image_buffer_, gpu_processed_buffer_, image_processing_stream_);
+    def overlay_detections(self, image, detections):
+        """Overlay detection results on image"""
+        for detection in detections:
+            # Get bounding box
+            bbox = detection.bbox
+            x, y, w, h = int(bbox.center.x - bbox.size_x/2), int(bbox.center.y - bbox.size_y/2), int(bbox.size_x), int(bbox.size_y)
 
-        // Copy result back asynchronously
-        cudaMemcpyAsync(processed_image_.data.data(),
-                       gpu_processed_buffer_,
-                       processed_image_.data.size(),
-                       cudaMemcpyDeviceToHost,
-                       image_processing_stream_);
+            # Draw bounding box
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        // Synchronize before publishing
-        cudaStreamSynchronize(image_processing_stream_);
-    }
+            # Add label and confidence
+            label = f"{detection.results[0].hypothesis.class_id}: {detection.results[0].hypothesis.score:.2f}"
+            cv2.putText(image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    cudaStream_t image_processing_stream_;
-    cudaStream_t detection_stream_;
-
-    uint8_t* gpu_image_buffer_;
-    uint8_t* gpu_processed_buffer_;
-    float* gpu_depth_buffer_;
-
-    static constexpr int IMAGE_WIDTH = 640;
-    static constexpr int IMAGE_HEIGHT = 480;
-};
+        return image
 ```
 
-### 2. Pipeline Optimization
+### Isaac ROS Stereo DNN
 
-```cpp
-// Optimized processing pipeline for humanoid perception
-class HumanoidPerceptionPipeline
-{
-public:
-    HumanoidPerceptionPipeline()
-    {
-        // Create processing nodes
-        image_rectifier_ = std::make_unique<IsaacImageRectifier>();
-        stereo_processor_ = std::make_unique<IsaacStereoProcessor>();
-        object_detector_ = std::make_unique<IsaacObjectDetector>();
-        slam_mapper_ = std::make_unique<IsaacSLAMMapper>();
+Isaac ROS Stereo DNN provides GPU-accelerated stereo vision processing with deep learning enhancement.
 
-        // Set up pipeline with minimal data copying
-        SetupOptimizedPipeline();
-    }
+#### Configuration
+```yaml
+# stereo_dnn_params.yaml
+stereo_dnn_node:
+  ros__parameters:
+    # Input topics
+    left_image_topic: "/camera/left/image_rect_color"
+    right_image_topic: "/camera/right/image_rect_color"
+    left_camera_info_topic: "/camera/left/camera_info"
+    right_camera_info_topic: "/camera/right/camera_info"
 
-    void ProcessFrame(const SensorData& sensor_data)
-    {
-        // Process all sensors in parallel using GPU streams
-        ProcessSensorsAsync(sensor_data);
+    # Output topics
+    disparity_topic: "/stereo_dnn/disparity"
+    depth_topic: "/stereo_dnn/depth"
 
-        // Wait for all processing to complete
-        SynchronizeAllStreams();
+    # Network parameters
+    model_path: "models/stereo_dnn/model.plan"
+    confidence_threshold: 0.7
+    max_disparity: 256
 
-        // Fuse sensor data
-        FuseSensorData();
-
-        // Publish results
-        PublishResults();
-    }
-
-private:
-    void SetupOptimizedPipeline()
-    {
-        // Create CUDA streams for different processing tasks
-        cudaStreamCreate(&camera_stream_);
-        cudaStreamCreate(&lidar_stream_);
-        cudaStreamCreate(&imu_stream_);
-        cudaStreamCreate(&fusion_stream_);
-
-        // Configure memory pools for zero-copy transfers
-        ConfigureMemoryPools();
-    }
-
-    void ProcessSensorsAsync(const SensorData& sensor_data)
-    {
-        // Process camera data on camera stream
-        image_rectifier_->ProcessAsync(sensor_data.camera_data, camera_stream_);
-
-        // Process LIDAR data on LIDAR stream
-        stereo_processor_->ProcessAsync(sensor_data.lidar_data, lidar_stream_);
-
-        // Process IMU data on IMU stream
-        slam_mapper_->ProcessAsync(sensor_data.imu_data, imu_stream_);
-    }
-
-    void SynchronizeAllStreams()
-    {
-        cudaStreamSynchronize(camera_stream_);
-        cudaStreamSynchronize(lidar_stream_);
-        cudaStreamSynchronize(imu_stream_);
-    }
-
-    void FuseSensorData()
-    {
-        // Fuse processed sensor data using GPU
-        cudaStreamWaitEvent(fusion_stream_, processing_complete_event_, 0);
-        SensorFusionGPU::FuseAsync(processed_data_, fused_result_, fusion_stream_);
-    }
-
-    std::unique_ptr<IsaacImageRectifier> image_rectifier_;
-    std::unique_ptr<IsaacStereoProcessor> stereo_processor_;
-    std::unique_ptr<IsaacObjectDetector> object_detector_;
-    std::unique_ptr<IsaacSLAMMapper> slam_mapper_;
-
-    cudaStream_t camera_stream_;
-    cudaStream_t lidar_stream_;
-    cudaStream_t imu_stream_;
-    cudaStream_t fusion_stream_;
-    cudaEvent_t processing_complete_event_;
-};
+    # Processing parameters
+    stereo_algorithm: "SGM"  # Semi-Global Matching
+    enable_census_transform: true
+    enable_disparity_filtering: true
 ```
 
-## Isaac ROS for Humanoid Robotics Applications
+#### Usage Example
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from stereo_msgs.msg import DisparityImage
+from cv_bridge import CvBridge
+import numpy as np
 
-### 1. Human Detection and Tracking
+class IsaacStereoDNNNode(Node):
+    def __init__(self):
+        super().__init__('isaac_stereo_dnn_example')
 
-```cpp
-// GPU-accelerated human detection for humanoid robots
-#include "isaac_ros_detect_net/detect_net_node.hpp"
+        # Subscribers for stereo images
+        self.left_sub = self.create_subscription(
+            Image, '/camera/left/image_rect_color', self.left_image_callback, 10)
+        self.right_sub = self.create_subscription(
+            Image, '/camera/right/image_rect_color', self.right_image_callback, 10)
 
-class HumanoidHumanDetector : public rclcpp::Node
-{
-public:
-    HumanoidHumanDetector() : Node("humanoid_human_detector")
-    {
-        // Initialize detection network
-        detection_network_ = std::make_shared<isaac_ros::dnn_inference::DetectNetNode>(
-            "detectnet",
-            "ssd-mobilenet-v2",  // or "yolov4" for better accuracy
-            0.5,  // threshold
-            true  // GPU acceleration
-        );
+        # Subscriber for disparity
+        self.disparity_sub = self.create_subscription(
+            DisparityImage, '/stereo_dnn/disparity', self.disparity_callback, 10)
 
-        // Image subscriber
-        image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/image_raw", 10,
-            std::bind(&HumanoidHumanDetector::imageCallback, this, std::placeholders::_1));
+        # Publishers
+        self.depth_pub = self.create_publisher(Image, '/stereo_dnn/depth', 10)
 
-        // Detection results publisher
-        detections_pub_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
-            "/human_detections", 10);
+        # CV Bridge
+        self.cv_bridge = CvBridge()
 
-        // Visualization publisher
-        visualization_pub_ = this->create_publisher<sensor_msgs::msg::Image>(
-            "/camera/image_annotated", 10);
-    }
+        # Store stereo pair
+        self.left_image = None
+        self.right_image = None
 
-private:
-    void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Run human detection using GPU acceleration
-        auto detections = detection_network_->Detect(msg);
+        self.get_logger().info('Isaac Stereo DNN example node initialized')
 
-        // Filter for human detections only
-        auto human_detections = FilterHumanDetections(detections);
+    def left_image_callback(self, msg):
+        """Store left camera image"""
+        self.left_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
-        // Publish detection results
-        vision_msgs::msg::Detection2DArray detection_msg;
-        detection_msg.header = msg->header;
-        detection_msg.detections = human_detections;
-        detections_pub_->publish(detection_msg);
+    def right_image_callback(self, msg):
+        """Store right camera image"""
+        self.right_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
-        // Create annotated image for visualization
-        auto annotated_image = CreateAnnotatedImage(msg, human_detections);
-        visualization_pub_->publish(annotated_image);
-    }
+    def disparity_callback(self, msg):
+        """Process disparity image and compute depth"""
+        # Convert disparity to depth
+        disparity = self.cv_bridge.imgmsg_to_cv2(msg.image)
 
-    std::vector<vision_msgs::msg::Detection2D> FilterHumanDetections(
-        const std::vector<vision_msgs::msg::Detection2D>& detections)
-    {
-        std::vector<vision_msgs::msg::Detection2D> human_detections;
+        # Compute depth from disparity (simplified)
+        # depth = (baseline * focal_length) / disparity
+        baseline = 0.12  # Example baseline in meters
+        focal_length = 700  # Example focal length in pixels
 
-        for (const auto& detection : detections) {
-            // Check if detection is a human (class ID for person in COCO dataset is 1)
-            for (const auto& result : detection.results) {
-                if (result.id == 1 && result.score > 0.7) { // Human class with high confidence
-                    human_detections.push_back(detection);
-                    break;
-                }
-            }
-        }
+        # Avoid division by zero
+        depth = np.zeros_like(disparity, dtype=np.float32)
+        valid_disparity = disparity > 0
+        depth[valid_disparity] = (baseline * focal_length) / disparity[valid_disparity]
 
-        return human_detections;
-    }
-
-    std::shared_ptr<isaac_ros::dnn_inference::DetectNetNode> detection_network_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
-    rclcpp::Publisher<vision_msgs::msg::Detection2DArray>::SharedPtr detections_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr visualization_pub_;
-};
+        # Publish depth image
+        depth_msg = self.cv_bridge.cv2_to_imgmsg(depth, encoding='32FC1')
+        depth_msg.header = msg.image.header
+        self.depth_pub.publish(depth_msg)
 ```
 
-### 2. Environment Mapping and Navigation
+### Isaac ROS Point Cloud
 
-```cpp
-// GPU-accelerated SLAM for humanoid navigation
-#include "isaac_ros_visual_slam/visual_slam_node.hpp"
+Isaac ROS Point Cloud provides GPU-accelerated point cloud processing and generation.
 
-class HumanoidSLAMNode : public rclcpp::Node
-{
-public:
-    HumanoidSLAMNode() : Node("humanoid_slam_node")
-    {
-        // Initialize GPU-accelerated visual SLAM
-        visual_slam_ = std::make_shared<isaac_ros::visual_slam::VisualSlamNode>(
-            "visual_slam");
+#### Configuration
+```yaml
+# point_cloud_params.yaml
+point_cloud_node:
+  ros__parameters:
+    # Input topics
+    depth_image_topic: "/camera/depth/image_rect_raw"
+    rgb_image_topic: "/camera/rgb/image_rect_color"
+    camera_info_topic: "/camera/rgb/camera_info"
 
-        // Stereo camera input
-        left_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/left/image_rect", 10,
-            std::bind(&HumanoidSLAMNode::leftImageCallback, this, std::placeholders::_1));
+    # Output topics
+    pointcloud_topic: "/camera/depth/color/points"
 
-        right_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-            "/camera/right/image_rect", 10,
-            std::bind(&HumanoidSLAMNode::rightImageCallback, this, std::placeholders::_1));
+    # Processing parameters
+    queue_size: 5
+    use_color: true
+    point_step: 16  # Size of each point in bytes
+    output_frame: "camera_depth_optical_frame"
 
-        // IMU input for improved tracking
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/imu/data", 10,
-            std::bind(&HumanoidSLAMNode::imuCallback, this, std::placeholders::_1));
-
-        // Publishers for SLAM results
-        odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/visual_slam/odometry", 10);
-        map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/visual_slam/map", 10);
-        pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/visual_slam/pose", 10);
-    }
-
-private:
-    void leftImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Process with GPU acceleration
-        visual_slam_->AddLeftImage(msg);
-        PublishSLAMResults();
-    }
-
-    void rightImageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
-    {
-        // Process with GPU acceleration
-        visual_slam_->AddRightImage(msg);
-        PublishSLAMResults();
-    }
-
-    void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
-    {
-        // Use IMU data to improve pose estimation
-        visual_slam_->AddIMUData(msg);
-    }
-
-    void PublishSLAMResults()
-    {
-        // Publish current pose
-        auto pose = visual_slam_->GetCurrentPose();
-        if (pose) {
-            geometry_msgs::msg::PoseStamped pose_msg;
-            pose_msg.header.stamp = this->now();
-            pose_msg.header.frame_id = "map";
-            pose_msg.pose = *pose;
-            pose_pub_->publish(pose_msg);
-        }
-
-        // Publish odometry
-        auto odometry = visual_slam_->GetCurrentOdometry();
-        if (odometry) {
-            nav_msgs::msg::Odometry odom_msg;
-            odom_msg.header.stamp = this->now();
-            odom_msg.header.frame_id = "map";
-            odom_msg.child_frame_id = "base_link";
-            odom_msg.pose = *odometry;
-            odom_pub_->publish(odom_msg);
-        }
-    }
-
-    std::shared_ptr<isaac_ros::visual_slam::VisualSlamNode> visual_slam_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr left_image_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr right_image_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
-};
+    # Filtering parameters
+    min_range: 0.1
+    max_range: 10.0
+    filter_speckles: true
+    speckle_range: 0.3
 ```
 
-## Integration with Humanoid Control Systems
+#### Usage Example
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import PointCloud2, Image, CameraInfo
+from sensor_msgs_py import point_cloud2
+from std_msgs.msg import Header
+import numpy as np
 
-### 1. Perception-Action Coupling
+class IsaacPointCloudNode(Node):
+    def __init__(self):
+        super().__init__('isaac_pointcloud_example')
 
-```cpp
-// Integration of Isaac ROS perception with humanoid control
-class PerceptionActionIntegrator : public rclcpp::Node
-{
-public:
-    PerceptionActionIntegrator() : Node("perception_action_integrator")
-    {
-        // Initialize perception components
-        human_detector_ = std::make_shared<HumanoidHumanDetector>();
-        object_detector_ = std::make_shared<HumanoidObjectDetector>();
-        slam_mapper_ = std::make_shared<HumanoidSLAMNode>();
+        # Subscribers
+        self.depth_sub = self.create_subscription(
+            Image, '/camera/depth/image_rect_raw', self.depth_callback, 10)
+        self.rgb_sub = self.create_subscription(
+            Image, '/camera/rgb/image_rect_color', self.rgb_callback, 10)
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo, '/camera/rgb/camera_info', self.camera_info_callback, 10)
 
-        // Initialize control components
-        motion_controller_ = std::make_shared<HumanoidMotionController>();
-        manipulation_controller_ = std::make_shared<HumanoidManipulationController>();
+        # Publisher
+        self.pc_pub = self.create_publisher(PointCloud2, '/camera/depth/color/points', 10)
 
-        // Set up action planning
-        action_planner_ = std::make_shared<ActionPlanner>();
+        # Camera parameters
+        self.camera_info = None
+        self.latest_depth = None
+        self.latest_rgb = None
 
-        // Timer for integration loop
-        integration_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(10),  // 100Hz integration
-            std::bind(&PerceptionActionIntegrator::IntegrationLoop, this));
-    }
+        self.get_logger().info('Isaac PointCloud example node initialized')
 
-private:
-    void IntegrationLoop()
-    {
-        // Get latest perception data
-        auto human_detections = human_detector_->GetLatestDetections();
-        auto object_detections = object_detector_->GetLatestDetections();
-        auto robot_pose = slam_mapper_->GetCurrentPose();
+    def camera_info_callback(self, msg):
+        """Store camera intrinsic parameters"""
+        self.camera_info = msg
 
-        // Plan actions based on perception
-        auto planned_actions = action_planner_->PlanActions(
-            human_detections, object_detections, robot_pose);
+    def depth_callback(self, msg):
+        """Process depth image"""
+        # Convert depth image to numpy array
+        if msg.encoding == '32FC1':
+            depth_array = np.frombuffer(msg.data, dtype=np.float32).reshape(msg.height, msg.width)
+        elif msg.encoding == '16UC1':
+            depth_array = np.frombuffer(msg.data, dtype=np.uint16).reshape(msg.height, msg.width).astype(np.float32) / 1000.0  # Convert mm to m
+        else:
+            self.get_logger().error(f'Unsupported depth encoding: {msg.encoding}')
+            return
 
-        // Execute actions using controllers
-        for (const auto& action : planned_actions) {
-            if (action.type == ActionType::MOTION) {
-                motion_controller_->ExecuteMotion(action);
-            } else if (action.type == ActionType::MANIPULATION) {
-                manipulation_controller_->ExecuteManipulation(action);
-            }
-        }
-    }
+        self.latest_depth = depth_array
 
-    std::shared_ptr<HumanoidHumanDetector> human_detector_;
-    std::shared_ptr<HumanoidObjectDetector> object_detector_;
-    std::shared_ptr<HumanoidSLAMNode> slam_mapper_;
-    std::shared_ptr<HumanoidMotionController> motion_controller_;
-    std::shared_ptr<HumanoidManipulationController> manipulation_controller_;
-    std::shared_ptr<ActionPlanner> action_planner_;
-    rclcpp::TimerBase::SharedPtr integration_timer_;
-};
+        # Generate point cloud if we have all required data
+        if self.camera_info is not None and self.latest_rgb is not None:
+            self.generate_pointcloud(msg.header)
+
+    def rgb_callback(self, msg):
+        """Process RGB image"""
+        # Store RGB image for colorized point cloud
+        # Implementation would convert ROS Image to numpy array
+        pass
+
+    def generate_pointcloud(self, header):
+        """Generate point cloud from depth and RGB images"""
+        if self.camera_info is None or self.latest_depth is None or self.latest_rgb is None:
+            return
+
+        # Get camera intrinsic parameters
+        cx = self.camera_info.k[2]  # Principal point x
+        cy = self.camera_info.k[5]  # Principal point y
+        fx = self.camera_info.k[0]  # Focal length x
+        fy = self.camera_info.k[4]  # Focal length y
+
+        # Create point cloud data
+        height, width = self.latest_depth.shape
+        points = []
+
+        for v in range(height):
+            for u in range(width):
+                depth = self.latest_depth[v, u]
+
+                # Skip invalid depth values
+                if depth <= 0 or np.isnan(depth) or np.isinf(depth):
+                    continue
+
+                # Calculate 3D point
+                x = (u - cx) * depth / fx
+                y = (v - cy) * depth / fy
+                z = depth
+
+                # Get color (simplified - in practice, you'd handle color properly)
+                r = g = b = 255  # Default to white if no color info
+
+                points.append([x, y, z, r, g, b])
+
+        # Create PointCloud2 message
+        fields = [
+            point_cloud2.PointField(name='x', offset=0, datatype=point_cloud2.PointField.FLOAT32, count=1),
+            point_cloud2.PointField(name='y', offset=4, datatype=point_cloud2.PointField.FLOAT32, count=1),
+            point_cloud2.PointField(name='z', offset=8, datatype=point_cloud2.PointField.FLOAT32, count=1),
+            point_cloud2.PointField(name='r', offset=12, datatype=point_cloud2.PointField.UINT8, count=1),
+            point_cloud2.PointField(name='g', offset=13, datatype=point_cloud2.PointField.UINT8, count=1),
+            point_cloud2.PointField(name='b', offset=14, datatype=point_cloud2.PointField.UINT8, count=1),
+        ]
+
+        header.frame_id = self.camera_info.header.frame_id
+        pc2_msg = point_cloud2.create_cloud(header, fields, points)
+
+        self.pc_pub.publish(pc2_msg)
 ```
 
-## Troubleshooting and Best Practices
+## Isaac ROS Navigation Gems
 
-### 1. Common Issues and Solutions
+### Isaac ROS Visual SLAM
 
-#### GPU Memory Issues
-```cpp
-// Handle GPU memory limitations
-class MemoryEfficientProcessor
-{
-public:
-    void ProcessImage(const sensor_msgs::msg::Image::SharedPtr image)
-    {
-        // Check available GPU memory before processing
-        size_t free_memory, total_memory;
-        cudaMemGetInfo(&free_memory, &total_memory);
+Isaac ROS Visual SLAM provides GPU-accelerated visual SLAM capabilities.
 
-        if (free_memory < MIN_MEMORY_REQUIRED) {
-            // Reduce image resolution or processing complexity
-            auto reduced_image = ReduceImageResolution(*image);
-            ProcessOnGPU(reduced_image);
-        } else {
-            ProcessOnGPU(*image);
-        }
-    }
+#### Configuration
+```yaml
+# visual_slam_params.yaml
+isaac_ros_visual_slam_node:
+  ros__parameters:
+    # Input topics
+    image_topic: "/camera/rgb/image_rect_color"
+    camera_info_topic: "/camera/rgb/camera_info"
+    imu_topic: "/imu/data"
 
-private:
-    static constexpr size_t MIN_MEMORY_REQUIRED = 512 * 1024 * 1024; // 512 MB
-};
+    # Output topics
+    odom_topic: "/visual_slam/odometry"
+    map_topic: "/visual_slam/map"
+    trajectory_topic: "/visual_slam/trajectory"
+
+    # Processing parameters
+    enable_imu_fusion: true
+    enable_localization: true
+    enable_mapping: true
+    enable_observations_view: true
+
+    # Tracking parameters
+    min_num_points: 100
+    max_num_points: 1000
+    min_disparity: 1.0
+    max_disparity: 256.0
+
+    # Map parameters
+    min_num_obs: 3
+    max_num_kfs: 100
+    local_ba_frequency: 5
+    global_ba_frequency: 10
+
+    # Loop closure parameters
+    enable_loop_detection: true
+    loop_detection_frequency: 10
+    min_loop_candidates: 5
+    max_loop_candidates: 10
 ```
 
-#### Synchronization Issues
-```cpp
-// Proper synchronization between GPU and CPU operations
-class SynchronizedProcessor
-{
-public:
-    sensor_msgs::msg::Image::SharedPtr ProcessWithSync(const sensor_msgs::msg::Image::SharedPtr input)
-    {
-        // Copy to GPU
-        cudaMemcpy(gpu_buffer_, input->data.data(), input->data.size(), cudaMemcpyHostToDevice);
+#### Usage Example
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo, Imu
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
+from cv_bridge import CvBridge
+import numpy as np
 
-        // Process on GPU
-        ProcessGPU(gpu_buffer_, gpu_output_buffer_, input->width, input->height);
+class IsaacVisualSLAMNode(Node):
+    def __init__(self):
+        super().__init__('isaac_visual_slam_example')
 
-        // Synchronize before copying back
-        cudaDeviceSynchronize();
+        # Subscribers
+        self.image_sub = self.create_subscription(
+            Image, '/camera/rgb/image_rect_color', self.image_callback, 10)
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo, '/camera/rgb/camera_info', self.camera_info_callback, 10)
+        self.imu_sub = self.create_subscription(
+            Imu, '/imu/data', self.imu_callback, 10)
 
-        // Copy result back to CPU
-        auto output = std::make_shared<sensor_msgs::msg::Image>(*input);
-        cudaMemcpy(output->data.data(), gpu_output_buffer_,
-                  output->data.size(), cudaMemcpyDeviceToHost);
+        # Publishers
+        self.odom_pub = self.create_publisher(Odometry, '/visual_slam/odometry', 10)
+        self.pose_pub = self.create_publisher(PoseStamped, '/visual_slam/pose', 10)
 
-        return output;
-    }
-};
+        # CV Bridge
+        self.cv_bridge = CvBridge()
+
+        # SLAM state
+        self.camera_matrix = None
+        self.latest_image = None
+        self.pose_estimate = np.eye(4)  # 4x4 identity matrix
+
+        self.get_logger().info('Isaac Visual SLAM example node initialized')
+
+    def camera_info_callback(self, msg):
+        """Process camera calibration parameters"""
+        self.camera_matrix = np.array(msg.k).reshape(3, 3)
+
+    def image_callback(self, msg):
+        """Process incoming image for SLAM"""
+        # Convert image for processing
+        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        self.latest_image = cv_image
+
+        # Perform visual SLAM processing
+        # This is a simplified example - real implementation would be more complex
+        if self.camera_matrix is not None:
+            self.process_visual_slam(cv_image)
+
+    def imu_callback(self, msg):
+        """Process IMU data for sensor fusion"""
+        # Integrate IMU data for better pose estimation
+        # This would involve fusing IMU with visual odometry
+        pass
+
+    def process_visual_slam(self, image):
+        """Perform visual SLAM processing"""
+        # Extract features from image
+        # Match features with previous frames
+        # Estimate camera motion
+        # Update map and pose estimate
+
+        # Simplified pose update (in practice, this would be much more complex)
+        # For example, use feature tracking to estimate motion
+        dt = 1.0 / 30.0  # Assuming 30 FPS
+
+        # This is a placeholder - real implementation would use proper SLAM algorithms
+        # such as ORB-SLAM, LSD-SLAM, or similar GPU-accelerated approaches
+        pass
+
+    def publish_odometry(self):
+        """Publish odometry information"""
+        odom_msg = Odometry()
+        odom_msg.header.stamp = self.get_clock().now().to_msg()
+        odom_msg.header.frame_id = "map"
+        odom_msg.child_frame_id = "camera_frame"
+
+        # Set position (from pose estimate)
+        odom_msg.pose.pose.position.x = self.pose_estimate[0, 3]
+        odom_msg.pose.pose.position.y = self.pose_estimate[1, 3]
+        odom_msg.pose.pose.position.z = self.pose_estimate[2, 3]
+
+        # Set orientation (simplified - convert rotation matrix to quaternion)
+        # This is a placeholder conversion
+        odom_msg.pose.pose.orientation.w = 1.0  # Placeholder
+
+        self.odom_pub.publish(odom_msg)
 ```
 
-### 2. Performance Monitoring
+### Isaac ROS Occupancy Grid
 
-```cpp
-// Performance monitoring for Isaac ROS applications
-class PerformanceMonitor
-{
-public:
-    struct PerformanceMetrics
-    {
-        double avg_processing_time;
-        double gpu_utilization;
-        double memory_usage;
-        int dropped_frames;
-        double throughput;
-    };
+Isaac ROS Occupancy Grid provides GPU-accelerated occupancy grid mapping.
 
-    PerformanceMetrics GetMetrics() const
-    {
-        PerformanceMetrics metrics;
-        metrics.avg_processing_time = GetAverageProcessingTime();
-        metrics.gpu_utilization = GetGPUUtilization();
-        metrics.memory_usage = GetGPUMemoryUsage();
-        metrics.dropped_frames = dropped_frame_count_;
-        metrics.throughput = GetThroughput();
+#### Usage Example
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import LaserScan, PointCloud2
+from nav_msgs.msg import OccupancyGrid, MapMetaData
+from geometry_msgs.msg import Pose
+import numpy as np
 
-        return metrics;
-    }
+class IsaacOccupancyGridNode(Node):
+    def __init__(self):
+        super().__init__('isaac_occupancy_grid_example')
 
-    void LogPerformance()
-    {
-        auto metrics = GetMetrics();
-        RCLCPP_INFO_STREAM(get_logger(),
-            "Performance - Processing: %.2fms, GPU: %.1f%%, Memory: %.1fMB, "
-            "Dropped: %d, Throughput: %.1fHz",
-            metrics.avg_processing_time * 1000,  // Convert to ms
-            metrics.gpu_utilization * 100,       // Convert to percentage
-            metrics.memory_usage / (1024*1024),  // Convert to MB
-            metrics.dropped_frames,
-            metrics.throughput);
-    }
+        # Subscribers
+        self.scan_sub = self.create_subscription(
+            LaserScan, '/scan', self.scan_callback, 10)
+        self.pc_sub = self.create_subscription(
+            PointCloud2, '/camera/depth/color/points', self.pointcloud_callback, 10)
 
-private:
-    double GetAverageProcessingTime() const
-    {
-        // Calculate from timing measurements
-        return 0.01; // Placeholder
-    }
+        # Publishers
+        self.map_pub = self.create_publisher(OccupancyGrid, '/map', 10)
 
-    double GetGPUUtilization() const
-    {
-        // Query GPU utilization
-        return 0.75; // Placeholder
-    }
+        # Map parameters
+        self.map_width = 200  # cells
+        self.map_height = 200  # cells
+        self.resolution = 0.05  # meters per cell
+        self.map_origin_x = -5.0  # meters
+        self.map_origin_y = -5.0  # meters
 
-    double GetGPUMemoryUsage() const
-    {
-        // Query GPU memory usage
-        return 2048 * 1024 * 1024; // Placeholder: 2GB
-    }
+        # Initialize occupancy grid
+        self.occupancy_grid = np.zeros((self.map_height, self.map_width), dtype=np.int8)
 
-    double GetThroughput() const
-    {
-        // Calculate processing throughput
-        return 30.0; // Placeholder: 30 Hz
-    }
+        # Timer for map publishing
+        self.map_timer = self.create_timer(1.0, self.publish_map)
 
-    int dropped_frame_count_ = 0;
-};
+        self.get_logger().info('Isaac Occupancy Grid example node initialized')
+
+    def scan_callback(self, msg):
+        """Process laser scan data to update occupancy grid"""
+        # Get robot position (simplified - in practice, get from TF or odometry)
+        robot_x, robot_y = 0.0, 0.0  # Placeholder
+
+        # Process each range reading
+        for i, range_val in enumerate(msg.ranges):
+            if not (msg.range_min <= range_val <= msg.range_max):
+                continue  # Invalid range
+
+            # Calculate angle of this reading
+            angle = msg.angle_min + i * msg.angle_increment
+
+            # Calculate end point of this ray
+            end_x = robot_x + range_val * np.cos(angle)
+            end_y = robot_y + range_val * np.sin(angle)
+
+            # Bresenham's line algorithm to mark free space
+            self.update_free_space(robot_x, robot_y, end_x, end_y)
+
+            # Mark endpoint as occupied (if it's a valid obstacle)
+            if range_val < msg.range_max * 0.9:  # Not max range (not a missing detection)
+                self.mark_occupied(end_x, end_y)
+
+    def pointcloud_callback(self, msg):
+        """Process point cloud data to update occupancy grid"""
+        # Convert PointCloud2 to numpy array and process
+        # This would involve projecting 3D points to 2D grid
+        pass
+
+    def update_free_space(self, start_x, start_y, end_x, end_y):
+        """Mark free space along a ray using Bresenham's algorithm"""
+        # Convert world coordinates to grid coordinates
+        start_grid_x = int((start_x - self.map_origin_x) / self.resolution)
+        start_grid_y = int((start_y - self.map_origin_y) / self.resolution)
+        end_grid_x = int((end_x - self.map_origin_x) / self.resolution)
+        end_grid_y = int((end_y - self.map_origin_y) / self.resolution)
+
+        # Bresenham's line algorithm
+        dx = abs(end_grid_x - start_grid_x)
+        dy = abs(end_grid_y - start_grid_y)
+        x_step = 1 if start_grid_x < end_grid_x else -1
+        y_step = 1 if start_grid_y < end_grid_y else -1
+
+        error = dx - dy
+        x, y = start_grid_x, start_grid_y
+
+        while True:
+            # Check bounds
+            if 0 <= x < self.map_width and 0 <= y < self.map_height:
+                # Mark as free space (0)
+                self.occupancy_grid[y, x] = 0
+
+            if x == end_grid_x and y == end_grid_y:
+                break
+
+            error2 = 2 * error
+            if error2 > -dy:
+                error -= dy
+                x += x_step
+            if error2 < dx:
+                error += dx
+                y += y_step
+
+    def mark_occupied(self, x, y):
+        """Mark a cell as occupied"""
+        grid_x = int((x - self.map_origin_x) / self.resolution)
+        grid_y = int((y - self.map_origin_y) / self.resolution)
+
+        if 0 <= grid_x < self.map_width and 0 <= grid_y < self.map_height:
+            # Mark as occupied (100)
+            self.occupancy_grid[grid_y, grid_x] = 100
+
+    def publish_map(self):
+        """Publish the occupancy grid map"""
+        map_msg = OccupancyGrid()
+
+        # Set header
+        map_msg.header.stamp = self.get_clock().now().to_msg()
+        map_msg.header.frame_id = "map"
+
+        # Set metadata
+        map_msg.info.map_load_time = self.get_clock().now().to_msg()
+        map_msg.info.resolution = self.resolution
+        map_msg.info.width = self.map_width
+        map_msg.info.height = self.map_height
+        map_msg.info.origin.position.x = self.map_origin_x
+        map_msg.info.origin.position.y = self.map_origin_y
+        map_msg.info.origin.position.z = 0.0
+        map_msg.info.origin.orientation.w = 1.0
+
+        # Flatten the grid for publishing
+        map_msg.data = self.occupancy_grid.flatten().tolist()
+
+        self.map_pub.publish(map_msg)
 ```
 
-## Next Steps
+## Advanced Isaac ROS Techniques
 
-In the next section, we'll explore perception systems in detail, learning how Isaac ROS enables advanced computer vision capabilities for humanoid robots, including object recognition, scene understanding, and multi-sensor fusion techniques.
+### Custom Isaac ROS Node Development
+
+Creating custom Isaac ROS nodes that leverage GPU acceleration:
+
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from std_msgs.msg import Float32MultiArray
+from cv_bridge import CvBridge
+import numpy as np
+import cupy as cp  # Use CuPy for GPU operations
+
+class IsaacCustomGpuNode(Node):
+    def __init__(self):
+        super().__init__('isaac_custom_gpu_example')
+
+        # Subscribers and publishers
+        self.image_sub = self.create_subscription(
+            Image, '/input_image', self.image_callback, 10)
+        self.result_pub = self.create_publisher(
+            Float32MultiArray, '/gpu_result', 10)
+
+        # CV Bridge
+        self.cv_bridge = CvBridge()
+
+        # GPU memory allocation
+        self.gpu_buffer = None
+
+        self.get_logger().info('Isaac Custom GPU node initialized')
+
+    def image_callback(self, msg):
+        """Process image using GPU acceleration"""
+        # Convert ROS Image to OpenCV
+        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
+        # Transfer to GPU
+        gpu_image = cp.asarray(cv_image)
+
+        # Perform GPU-accelerated processing
+        result = self.gpu_process_image(gpu_image)
+
+        # Transfer result back to CPU
+        cpu_result = cp.asnumpy(result)
+
+        # Publish result
+        result_msg = Float32MultiArray()
+        result_msg.data = cpu_result.flatten().tolist()
+        self.result_pub.publish(result_msg)
+
+    def gpu_process_image(self, gpu_image):
+        """Perform image processing on GPU"""
+        # Example: GPU-accelerated edge detection
+        # Convert to grayscale
+        gray = 0.299 * gpu_image[:, :, 0] + 0.587 * gpu_image[:, :, 1] + 0.114 * gpu_image[:, :, 2]
+
+        # Apply Sobel filter on GPU
+        sobel_x = cp.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+        sobel_y = cp.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+
+        # Perform convolution (simplified)
+        edges = cp.abs(cp.convolve(gray, sobel_x, mode='same')) + \
+                cp.abs(cp.convolve(gray, sobel_y, mode='same'))
+
+        return edges
+```
+
+### Isaac ROS Pipeline Integration
+
+Creating complex processing pipelines:
+
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import Twist
+from isaac_ros_detectnet_interfaces.msg import Detection2DArray
+import message_filters
+
+class IsaacPipelineNode(Node):
+    def __init__(self):
+        super().__init__('isaac_pipeline_example')
+
+        # Create synchronized subscribers
+        image_sub = message_filters.Subscriber(self, Image, '/camera/image_rect_color')
+        detections_sub = message_filters.Subscriber(self, Detection2DArray, '/detectnet/detections')
+        camera_info_sub = message_filters.Subscriber(self, CameraInfo, '/camera/rgb/camera_info')
+
+        # Synchronize messages
+        self.ts = message_filters.ApproximateTimeSynchronizer(
+            [image_sub, detections_sub, camera_info_sub],
+            queue_size=10,
+            slop=0.1
+        )
+        self.ts.registerCallback(self.pipeline_callback)
+
+        # Publishers
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        self.get_logger().info('Isaac Pipeline example node initialized')
+
+    def pipeline_callback(self, image_msg, detections_msg, camera_info_msg):
+        """Process synchronized sensor data through pipeline"""
+        # Step 1: Process image
+        # (image processing would go here)
+
+        # Step 2: Analyze detections
+        if detections_msg.detections:
+            # Find object of interest (e.g., largest detection)
+            largest_detection = max(
+                detections_msg.detections,
+                key=lambda d: d.bbox.size_x * d.bbox.size_y
+            )
+
+            # Step 3: Generate navigation command
+            cmd_vel = self.generate_navigation_command(largest_detection, camera_info_msg)
+
+            # Step 4: Publish command
+            self.cmd_pub.publish(cmd_vel)
+
+    def generate_navigation_command(self, detection, camera_info):
+        """Generate navigation command based on detection"""
+        cmd_vel = Twist()
+
+        # Calculate horizontal offset from image center
+        image_center_x = camera_info.width / 2
+        detection_center_x = detection.bbox.center.x
+
+        offset_x = detection_center_x - image_center_x
+        normalized_offset = offset_x / (camera_info.width / 2)  # Normalize to [-1, 1]
+
+        # Generate control commands
+        cmd_vel.linear.x = 0.5  # Move forward at 0.5 m/s
+        cmd_vel.angular.z = -0.5 * normalized_offset  # Turn toward object
+
+        return cmd_vel
+```
+
+## Performance Optimization
+
+### GPU Memory Management
+
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cupy as cp
+from collections import deque
+
+class IsaacOptimizedNode(Node):
+    def __init__(self):
+        super().__init__('isaac_optimized_example')
+
+        # Subscribers and publishers
+        self.image_sub = self.create_subscription(
+            Image, '/camera/image_rect_color', self.image_callback, 1)
+
+        # CV Bridge
+        self.cv_bridge = CvBridge()
+
+        # GPU memory pool management
+        self.gpu_memory_pool = cp.cuda.MemoryPool()
+        cp.cuda.set_allocator(self.gpu_memory_pool.malloc)
+
+        # Reusable GPU buffers
+        self.gpu_buffer = None
+        self.buffer_shape = None
+
+        # Processing queue for batching
+        self.processing_queue = deque(maxlen=5)
+
+        self.get_logger().info('Isaac Optimized node initialized')
+
+    def image_callback(self, msg):
+        """Process image with optimized GPU memory management"""
+        # Convert to OpenCV
+        cv_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
+        # Transfer to GPU with memory reuse
+        if (self.gpu_buffer is None or
+            self.buffer_shape != cv_image.shape):
+            # Allocate new buffer if needed
+            self.gpu_buffer = cp.empty(cv_image.shape, dtype=cp.uint8)
+            self.buffer_shape = cv_image.shape
+
+        # Copy to existing buffer
+        self.gpu_buffer.set(cv_image)
+
+        # Process on GPU
+        result = self.optimized_gpu_process(self.gpu_buffer)
+
+        # Process result (avoid transferring back unnecessary data)
+        self.process_result(result)
+
+    def optimized_gpu_process(self, gpu_image):
+        """Optimized GPU processing function"""
+        # Use in-place operations when possible
+        # Reuse intermediate arrays
+        # Minimize GPU-CPU transfers
+
+        # Example: optimized image filtering
+        result = cp.zeros_like(gpu_image)
+
+        # Perform operations in-place to save memory
+        # ... actual processing logic ...
+
+        return result
+
+    def process_result(self, result):
+        """Process GPU result without unnecessary transfers"""
+        # Only transfer data that's needed for the next step
+        # Use GPU arrays for further GPU processing
+        # Avoid CPU-GPU transfers unless necessary
+        pass
+```
+
+### Multi-Stream Processing
+
+```python
+import rclpy
+from rclpy.node import Node
+import cupy as cp
+
+class IsaacMultiStreamNode(Node):
+    def __init__(self):
+        super().__init__('isaac_multi_stream_example')
+
+        # Create multiple CUDA streams for parallel processing
+        self.stream1 = cp.cuda.Stream()
+        self.stream2 = cp.cuda.Stream()
+        self.stream3 = cp.cuda.Stream()
+
+        # Current processing stream index
+        self.current_stream = 0
+        self.streams = [self.stream1, self.stream2, self.stream3]
+
+        self.get_logger().info('Isaac Multi-Stream node initialized')
+
+    def process_parallel(self, data1, data2, data3):
+        """Process multiple data streams in parallel"""
+        # Process each data stream in a separate CUDA stream
+        with self.streams[0]:
+            result1 = self.process_data_gpu(data1)
+
+        with self.streams[1]:
+            result2 = self.process_data_gpu(data2)
+
+        with self.streams[2]:
+            result3 = self.process_data_gpu(data3)
+
+        # Synchronize all streams
+        for stream in self.streams:
+            stream.synchronize()
+
+        return result1, result2, result3
+
+    def process_data_gpu(self, data):
+        """Process data on GPU"""
+        gpu_data = cp.asarray(data)
+        # Perform GPU computation
+        result = gpu_data * 2  # Example operation
+        return result
+```
+
+## Integration with AI/ML Frameworks
+
+### TensorRT Integration
+
+```python
+import rclpy
+from rclpy.node import Node
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit
+import numpy as np
+
+class IsaacTensorRTNode(Node):
+    def __init__(self):
+        super().__init__('isaac_tensorrt_example')
+
+        # Initialize TensorRT engine
+        self.trt_engine = self.load_tensorrt_engine('/path/to/model.plan')
+        self.context = self.trt_engine.create_execution_context()
+
+        # Allocate GPU memory for inputs/outputs
+        self.allocate_buffers()
+
+        self.get_logger().info('Isaac TensorRT node initialized')
+
+    def load_tensorrt_engine(self, engine_path):
+        """Load TensorRT engine from file"""
+        with open(engine_path, 'rb') as f:
+            engine_data = f.read()
+
+        runtime = trt.Runtime(trt.Logger(trt.Logger.WARNING))
+        engine = runtime.deserialize_cuda_engine(engine_data)
+
+        return engine
+
+    def allocate_buffers(self):
+        """Allocate GPU memory for TensorRT inference"""
+        self.inputs = []
+        self.outputs = []
+        self.bindings = []
+        self.stream = cuda.Stream()
+
+        for idx in range(self.trt_engine.num_bindings):
+            binding_name = self.trt_engine.get_binding_name(idx)
+            binding_shape = self.trt_engine.get_binding_shape(idx)
+            binding_size = trt.volume(binding_shape) * self.trt_engine.max_batch_size * np.dtype(np.float32).itemsize
+
+            # Allocate GPU memory
+            binding_memory = cuda.mem_alloc(binding_size)
+            self.bindings.append(int(binding_memory))
+
+            if self.trt_engine.binding_is_input(idx):
+                self.inputs.append({
+                    'name': binding_name,
+                    'host_memory': np.empty(trt.volume(binding_shape) * self.trt_engine.max_batch_size, dtype=np.float32),
+                    'device_memory': binding_memory
+                })
+            else:
+                self.outputs.append({
+                    'name': binding_name,
+                    'host_memory': np.empty(trt.volume(binding_shape) * self.trt_engine.max_batch_size, dtype=np.float32),
+                    'device_memory': binding_memory
+                })
+
+    def infer(self, input_data):
+        """Perform TensorRT inference"""
+        # Copy input to GPU
+        np.copyto(self.inputs[0]['host_memory'], input_data.ravel())
+        cuda.memcpy_htod_async(self.inputs[0]['device_memory'],
+                              self.inputs[0]['host_memory'],
+                              self.stream)
+
+        # Run inference
+        self.context.execute_async_v2(bindings=self.bindings, stream_handle=self.stream.handle)
+
+        # Copy output from GPU
+        cuda.memcpy_dtoh_async(self.outputs[0]['host_memory'],
+                              self.outputs[0]['device_memory'],
+                              self.stream)
+        self.stream.synchronize()
+
+        return self.outputs[0]['host_memory']
+```
+
+## Best Practices for Isaac ROS
+
+### 1. Performance Optimization
+- Use appropriate data types to minimize memory usage
+- Reuse GPU buffers when possible
+- Implement proper memory management
+- Optimize for your specific hardware platform
+
+### 2. Data Flow Management
+- Use appropriate queue sizes for subscribers
+- Implement proper synchronization between nodes
+- Consider message filtering for high-frequency data
+- Use appropriate QoS settings for real-time performance
+
+### 3. Error Handling and Robustness
+- Implement proper error handling for GPU operations
+- Include fallback mechanisms when GPU acceleration fails
+- Monitor GPU utilization and memory usage
+- Handle hardware failures gracefully
+
+### 4. Integration Considerations
+- Ensure compatibility with existing ROS/ROS2 systems
+- Use standard message types when possible
+- Implement proper parameter configuration
+- Provide comprehensive logging and diagnostics
+
+## Troubleshooting Common Issues
+
+### 1. GPU Memory Issues
+- **Problem**: Out of memory errors during processing
+- **Solution**: Reduce batch sizes, optimize data types, use memory pools
+
+### 2. Performance Bottlenecks
+- **Problem**: Low frame rates or high latency
+- **Solution**: Profile code, optimize algorithms, adjust processing parameters
+
+### 3. Compatibility Issues
+- **Problem**: Incompatible CUDA versions or hardware
+- **Solution**: Check requirements, update drivers, use appropriate Docker images
+
+### 4. Data Synchronization
+- **Problem**: Messages arriving out of order or with delays
+- **Solution**: Use message filters, adjust QoS settings, implement buffering
+
+## Summary
+
+Isaac ROS provides powerful GPU-accelerated perception capabilities that significantly enhance robotic system performance:
+
+- **Hardware Acceleration**: Leverage NVIDIA GPUs for real-time processing
+- **Deep Learning Integration**: Optimized neural network inference with TensorRT
+- **Modular Architecture**: Flexible gem-based system for different capabilities
+- **ROS/ROS2 Compatibility**: Seamless integration with existing frameworks
+- **Production Ready**: Optimized for deployment on NVIDIA hardware platforms
+
+The Isaac ROS ecosystem enables robotics developers to build high-performance perception systems that can process complex sensor data in real-time, making advanced robotics applications feasible on embedded platforms like Jetson. By utilizing GPU acceleration, these systems can perform tasks like object detection, stereo vision, SLAM, and more with performance that would be impossible on CPU-only systems.
+
+In the next section, we'll explore Nav2 path planning for humanoid movement, which builds on the perception capabilities provided by Isaac ROS.

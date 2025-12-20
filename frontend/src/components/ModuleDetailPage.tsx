@@ -4,6 +4,7 @@ import Link from '@docusaurus/Link';
 import { motion } from 'framer-motion';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import RAGChatbotSDK from '../sdk/rag-chatbot-sdk';
+import RAGChatbot from './RAGChatbot';
 
 interface ModuleDetailPageProps {
   moduleData: {
@@ -1072,96 +1073,6 @@ Understanding Physical AI fundamentals is crucial for developing robots that can
 
                 {/* Chatbot Response Area - prepared for streaming */}
                 <div style={{
-                  marginTop: '1.5rem',
-                  padding: '1.2rem',
-                  background: 'rgba(10, 10, 10, 0.7)',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(15, 227, 192, 0.2)',
-                  minHeight: '100px',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '0.8rem',
-                    color: '#0FE3C0',
-                    fontFamily: 'Sora, sans-serif',
-                    fontWeight: 700,
-                  }}>
-                    <span style={{ marginRight: '0.5rem' }}>🤖</span>
-                    AI Response
-                  </div>
-
-                  {/* Error Message Display */}
-                  <div id="error-message" style={{
-                    display: 'none',
-                    color: '#ff6b6b',
-                    fontFamily: 'Sora, sans-serif',
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    marginBottom: '0.8rem',
-                    padding: '0.8rem',
-                    background: 'rgba(255, 107, 107, 0.1)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 107, 107, 0.3)'
-                  }}>
-                    <!-- Error messages will appear here -->
-                  </div>
-
-                  {/* Typing Indicator */}
-                  <div id="typing-indicator" style={{
-                    display: 'none',
-                    color: '#0FE3C0',
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '0.95rem',
-                    marginBottom: '0.5rem',
-                    fontStyle: 'italic'
-                  }}>
-                    AI is thinking...
-                  </div>
-
-                  {/* Response Content */}
-                  <div id="chat-response" style={{
-                    fontFamily: 'Inter, sans-serif',
-                    color: '#c0c0c0',
-                    lineHeight: '1.7',
-                    fontSize: '1rem'
-                  }}>
-                    <!-- Response content will appear here -->
-                  </div>
-
-                  {/* Citations */}
-                  <div id="citations" style={{
-                    marginTop: '1rem',
-                    paddingTop: '1rem',
-                    borderTop: '1px solid rgba(150, 150, 150, 0.2)',
-                    display: 'none'
-                  }}>
-                    <div style={{
-                      fontFamily: 'Sora, sans-serif',
-                      color: '#888888',
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      marginBottom: '0.5rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      Sources:
-                    </div>
-                    <ul id="citation-list" style={{
-                      fontFamily: 'Inter, sans-serif',
-                      color: '#a0a0a0',
-                      fontSize: '0.85rem',
-                      lineHeight: '1.6',
-                      margin: 0,
-                      padding: 0,
-                      listStyle: 'none'
-                    }}>
-                      <!-- Citations will appear here -->
-                    </ul>
-                  </div>
-                </div>
-
-                <div style={{
                   marginTop: '1rem',
                   padding: '0.8rem',
                   background: 'rgba(30, 30, 30, 0.6)',
@@ -1170,7 +1081,7 @@ Understanding Physical AI fundamentals is crucial for developing robots that can
                   color: '#a0a0a0',
                   border: '1px solid rgba(160, 160, 160, 0.1)',
                 }}>
-                  This AI assistant only uses content from this textbook. Answers are grounded in module content with proper citations.
+                  <p>💡 Tip: Use the chatbot icon in the bottom-right corner to ask questions about this textbook content.</p>
                 </div>
               </div>
               
@@ -1242,7 +1153,7 @@ Understanding Physical AI fundamentals is crucial for developing robots that can
               whileTap={{ scale: 0.95 }}
             >
               <Link
-                to="/modules"
+                to="/docs/module-1/"
                 style={{
                   display: 'inline-block',
                   padding: '1rem 2.5rem',

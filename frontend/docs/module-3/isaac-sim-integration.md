@@ -1,1753 +1,1353 @@
 ---
 sidebar_position: 6
-title: "Isaac Sim Integration"
+title: "NVIDIA Isaac Sim: Photorealistic Simulation"
 ---
 
-# Isaac Sim Integration
+# NVIDIA Isaac Sim: Photorealistic Simulation
 
-## Introduction to Isaac Sim for Humanoid Robotics
+## Introduction to Isaac Sim
 
-Isaac Sim is NVIDIA's reference application for simulating robots in complex environments. Built on the Omniverse platform, Isaac Sim provides high-fidelity physics simulation, photorealistic rendering, and seamless integration with Isaac ROS. For humanoid robotics, Isaac Sim enables safe testing of complex behaviors, generation of synthetic training data for AI models, and validation of control algorithms before deployment on physical hardware.
+NVIDIA Isaac Sim is a comprehensive robotics simulation environment built on NVIDIA Omniverse, designed specifically for robotics development. It provides photorealistic rendering, accurate physics simulation, and seamless integration with the broader Isaac ecosystem, making it an ideal platform for developing, testing, and training robotic systems.
 
-## Isaac Sim Architecture and Components
+Isaac Sim addresses key challenges in robotics simulation:
+- **Photorealistic Rendering**: High-quality visual simulation for computer vision tasks
+- **Accurate Physics**: Realistic physical interactions and dynamics
+- **Synthetic Data Generation**: Large-scale data generation for AI training
+- **Domain Randomization**: Tools for robust algorithm development
+- **Hardware Acceleration**: GPU-accelerated simulation and rendering
 
-### 1. Omniverse Foundation
+## Architecture and Components
 
-Isaac Sim is built on NVIDIA's Omniverse platform, which provides:
+### Omniverse Foundation
 
-#### USD (Universal Scene Description)
-- **Scene Representation**: Hierarchical, layered scene description
-- **Multi-Application**: Share scenes between different tools
-- **Version Control**: Track changes to complex scenes
-- **Extensibility**: Custom schemas and plugins
+Isaac Sim is built on NVIDIA Omniverse, a scalable simulation and collaboration platform:
 
-#### PhysX Integration
-- **Rigid Body Dynamics**: Accurate collision detection and response
-- **Soft Body Simulation**: Deformable objects and cloth simulation
-- **Fluid Simulation**: Water, smoke, and particle systems
-- **Vehicle Dynamics**: Specialized simulation for wheeled and legged robots
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Isaac Sim Architecture                       │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   Rendering     │  │   Physics       │  │   AI/ML         │  │
+│  │   Engine        │  │   Engine        │  │   Integration   │  │
+│  │ - RTX Ray       │  │ - PhysX         │  │ - Synthetic     │  │
+│  │   Tracing       │  │ - Accurate      │  │   Data Gen      │  │
+│  │ - Material      │  │   Dynamics      │  │ - Training      │  │
+│  │   System        │  │ - Collision     │  │   Integration   │  │
+│  └─────────────────┘  │   Detection     │  └─────────────────┘  │
+│                       └─────────────────┘                      │
+│                              │                                  │
+│                              ▼                                  │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
+│  │   USD Format    │  │   Extensions    │  │   ROS/ROS2      │  │
+│  │   Integration   │  │   Framework     │  │   Bridge        │  │
+│  │ - Universal     │  │ - Custom        │  │ - Message       │  │
+│  │   Scene         │  │   Extensions    │  │   Translation   │  │
+│  │   Description   │  │ - Robot         │  │ - Protocol      │  │
+│  └─────────────────┘  │   Configs       │  │   Support       │  │
+│                       └─────────────────┘  └─────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### 2. Isaac Sim Core Components
+### Core Components
 
-#### Robot Simulation
+#### 1. PhysX Physics Engine
+- Accurate multi-body dynamics simulation
+- Realistic collision detection and response
+- Support for complex contact scenarios
+- GPU-accelerated physics computation
+
+#### 2. RTX Rendering Engine
+- Real-time ray tracing for photorealistic visuals
+- Physically-based rendering (PBR) materials
+- Advanced lighting simulation
+- High-quality shadows and reflections
+
+#### 3. USD (Universal Scene Description)
+- Scalable scene representation format
+- Hierarchical scene composition
+- Extensible metadata system
+- Multi-application collaboration support
+
+## Installation and Setup
+
+### System Requirements
+
+#### Minimum Requirements
+- **GPU**: NVIDIA RTX series (RTX 2060 or equivalent)
+- **VRAM**: 8GB or more
+- **CPU**: Multi-core processor (Intel i7 or AMD Ryzen 7)
+- **RAM**: 16GB system memory
+- **OS**: Ubuntu 20.04 LTS or Windows 10/11
+
+#### Recommended Requirements
+- **GPU**: NVIDIA RTX 4080/4090 or A6000/A100
+- **VRAM**: 16GB or more
+- **CPU**: High-core count processor
+- **RAM**: 32GB or more system memory
+
+### Installation Process
+
+#### 1. Install NVIDIA Omniverse
+```bash
+# Download Omniverse Launcher from NVIDIA Developer website
+# Install and launch Omniverse
+
+# Install Isaac Sim extension through Omniverse
+# Navigate to Extensions → Isaac → Isaac Sim
+```
+
+#### 2. Install Isaac Sim via pip (Alternative)
+```bash
+# Create virtual environment
+python -m venv isaac_sim_env
+source isaac_sim_env/bin/activate  # On Windows: isaac_sim_env\Scripts\activate
+
+# Install Isaac Sim
+pip install omni.isaac.sim
+pip install omni.isaac.orbit  # Additional robotics extensions
+```
+
+#### 3. Verify Installation
 ```python
-# Isaac Sim robot simulation setup
+# Test Isaac Sim installation
 import omni
 from omni.isaac.core import World
-from omni.isaac.core.robots import Robot
-from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.stage import add_reference_to_stage
-import carb
 
-class HumanoidRobotSim:
-    def __init__(self):
-        self.world = World(stage_units_in_meters=1.0)
-        self.robot = None
+# Initialize Isaac Sim
+world = World(stage_units_in_meters=1.0)
+print("Isaac Sim initialized successfully")
+```
+
+### Docker Installation (Recommended)
+
+```bash
+# Pull Isaac Sim Docker image
+docker pull nvcr.io/nvidia/isaac-sim:latest
+
+# Run Isaac Sim container with GPU support
+docker run --gpus all -it --rm \
+    --name isaac-sim \
+    --network host \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    --env DISPLAY=$DISPLAY \
+    --env NVIDIA_VISIBLE_DEVICES=all \
+    --env NVIDIA_DRIVER_CAPABILITIES=all \
+    --env PYTHONPATH=/isaac-sim/python \
+    nvcr.io/nvidia/isaac-sim:latest
+```
+
+## Basic Usage and Environment Setup
+
+### Creating a Basic Simulation Environment
+
+```python
+import omni
+from omni.isaac.core import World
+from omni.isaac.core.utils.stage import add_reference_to_stage
+from omni.isaac.core.utils.nucleus import get_assets_root_path
+from omni.isaac.core.utils.prims import get_prim_at_path
+from omni.isaac.core.robots import Robot
+import numpy as np
+
+class BasicIsaacSimEnvironment:
+    def __init__(self, stage_units_in_meters=1.0):
+        # Initialize Isaac Sim world
+        self.world = World(stage_units_in_meters=stage_units_in_meters)
+
+        # Get assets root path
         self.assets_root_path = get_assets_root_path()
+        if self.assets_root_path is None:
+            raise Exception("Could not find Isaac Sim assets. Please check your Isaac Sim installation.")
 
-    def setup_robot(self, robot_usd_path, position=[0, 0, 0], orientation=[0, 0, 0, 1]):
-        """Setup humanoid robot in simulation"""
-        # Add robot to stage
-        add_reference_to_stage(
-            usd_path=robot_usd_path,
-            prim_path="/World/HumanoidRobot"
-        )
+        # Robot configuration
+        self.robot = None
+        self.objects = []
 
-        # Create robot object
-        self.robot = Robot(
-            prim_path="/World/HumanoidRobot",
-            name="humanoid_robot",
-            position=position,
-            orientation=orientation
-        )
+    def setup_environment(self):
+        """Set up the basic simulation environment"""
+        # Add ground plane
+        self.add_ground_plane()
 
-        # Add to world
-        self.world.scene.add(self.robot)
+        # Add robot
+        self.add_robot()
 
-        # Initialize physics
+        # Add objects for interaction
+        self.add_objects()
+
+        # Reset the world to initialize all components
         self.world.reset()
 
-    def get_robot_state(self):
-        """Get current robot state"""
-        if self.robot:
-            # Get joint positions and velocities
-            joint_positions = self.robot.get_joint_positions()
-            joint_velocities = self.robot.get_joint_velocities()
+    def add_ground_plane(self):
+        """Add a ground plane to the simulation"""
+        from omni.isaac.core.utils.prims import create_primitive
+        create_primitive(
+            prim_path="/World/GroundPlane",
+            prim_type="Plane",
+            scale=np.array([10, 10, 1]),
+            position=np.array([0, 0, 0]),
+            orientation=np.array([0, 0, 0, 1])
+        )
 
-            # Get end-effector poses
-            ee_poses = self.robot.get_end_effector_positions()
+    def add_robot(self):
+        """Add a robot to the simulation"""
+        # Example: Adding a Franka robot
+        robot_path = f"{self.assets_root_path}/Isaac/Robots/Franka/franka_alt_fingers.usd"
+        add_reference_to_stage(usd_path=robot_path, prim_path="/World/Robot")
 
-            # Get base pose
-            base_position, base_orientation = self.robot.get_world_pose()
+        # Create robot object
+        self.robot = self.world.scene.add(
+            Robot(
+                prim_path="/World/Robot",
+                name="franka_robot",
+                position=np.array([0.0, 0.0, 0.0]),
+                orientation=np.array([0, 0, 0, 1])
+            )
+        )
 
-            return {
-                'joint_positions': joint_positions,
-                'joint_velocities': joint_velocities,
-                'end_effectors': ee_poses,
-                'base_pose': (base_position, base_orientation)
-            }
-        return None
+    def add_objects(self):
+        """Add objects to the environment"""
+        # Add a cube for manipulation
+        cube_path = f"{self.assets_root_path}/Isaac/Props/Blocks/block_instanceable.usd"
+        add_reference_to_stage(usd_path=cube_path, prim_path="/World/Object")
 
-    def apply_joint_commands(self, joint_commands):
-        """Apply joint position/velocity/effort commands"""
-        if self.robot:
-            self.robot.set_joint_positions(joint_commands['positions'], joint_indices=None)
-            if 'velocities' in joint_commands:
-                self.robot.set_joint_velocities(joint_commands['velocities'], joint_indices=None)
-            if 'efforts' in joint_commands:
-                self.robot.set_joint_efforts(joint_commands['efforts'], joint_indices=None)
+        # Set initial position for the object
+        from omni.isaac.core.utils.transformations import combine_transforms
+        from omni.isaac.core.utils.stage import get_current_stage
+        from pxr import Gf
 
-    def run_simulation(self, num_frames=1000):
-        """Run simulation for specified number of frames"""
-        for frame in range(num_frames):
+        # Get the prim and set its position
+        prim = get_prim_at_path("/World/Object")
+        if prim:
+            prim.GetAttribute("xformOp:translate").Set(Gf.Vec3d(0.5, 0.0, 0.1))
+
+    def run_simulation(self, steps=1000):
+        """Run the simulation for specified number of steps"""
+        for step in range(steps):
+            # Perform any actions here
             self.world.step(render=True)
 
-            # Get robot state at each step
-            robot_state = self.get_robot_state()
+            # Print robot joint positions periodically
+            if step % 100 == 0:
+                joint_positions = self.robot.get_joint_positions()
+                print(f"Step {step}: Joint positions: {joint_positions[:6]}")  # First 6 joints
 
-            # Process state, apply controls, etc.
-            self.process_robot_state(robot_state)
+# Example usage
+if __name__ == "__main__":
+    env = BasicIsaacSimEnvironment()
+    env.setup_environment()
+    env.run_simulation(1000)
+```
 
-            # Print progress
-            if frame % 100 == 0:
-                carb.log_info(f"Simulation frame: {frame}/{num_frames}")
+### Advanced Environment Configuration
 
-    def process_robot_state(self, state):
-        """Process robot state for control or monitoring"""
-        # Implement state processing logic
+```python
+class AdvancedIsaacSimEnvironment(BasicIsaacSimEnvironment):
+    def __init__(self, stage_units_in_meters=1.0):
+        super().__init__(stage_units_in_meters)
+
+        # Lighting configuration
+        self.lighting_config = {
+            'intensity': 3000,
+            'color': [0.9, 0.9, 1.0],  # Slightly blue-white
+            'position': [5, 5, 10]
+        }
+
+        # Physics configuration
+        self.physics_config = {
+            'solver_type': 'TGS',  # Time-marching Gauss-Seidel
+            'num_position_iterations': 4,
+            'num_velocity_iterations': 1,
+            'max_depenetration_velocity': 10.0
+        }
+
+    def setup_advanced_environment(self):
+        """Set up advanced simulation environment"""
+        # Add lighting
+        self.add_lighting()
+
+        # Configure physics settings
+        self.configure_physics()
+
+        # Add multiple robots
+        self.add_multiple_robots()
+
+        # Add complex environment
+        self.add_complex_environment()
+
+        # Apply domain randomization
+        self.setup_domain_randomization()
+
+        self.world.reset()
+
+    def add_lighting(self):
+        """Add advanced lighting to the scene"""
+        from omni.isaac.core.utils.prims import create_prim
+        from omni.isaac.core.light import DistantLight
+
+        # Add a distant light (sun-like)
+        self.world.scene.add(
+            DistantLight(
+                prim_path="/World/Sun",
+                name="distant_light",
+                intensity=self.lighting_config['intensity'],
+                color=np.array(self.lighting_config['color'])
+            )
+        )
+
+        # Add additional point lights for better illumination
+        create_prim(
+            prim_path="/World/PointLight1",
+            prim_type="SphereLight",
+            position=np.array([2, 2, 3]),
+            attributes={
+                "inputs:intensity": 500,
+                "inputs:color": np.array([1.0, 1.0, 1.0])
+            }
+        )
+
+    def configure_physics(self):
+        """Configure advanced physics settings"""
+        # This would involve setting physics scene parameters
+        # In practice, this is often done through USD or Omniverse UI
+        pass
+
+    def add_multiple_robots(self):
+        """Add multiple robots to the environment"""
+        robot_path = f"{self.assets_root_path}/Isaac/Robots/Franka/franka_alt_fingers.usd"
+
+        # Add first robot
+        add_reference_to_stage(usd_path=robot_path, prim_path="/World/Robot1")
+        self.world.scene.add(
+            Robot(
+                prim_path="/World/Robot1",
+                name="franka_robot_1",
+                position=np.array([-1.0, 0.0, 0.0]),
+                orientation=np.array([0, 0, 0, 1])
+            )
+        )
+
+        # Add second robot
+        add_reference_to_stage(usd_path=robot_path, prim_path="/World/Robot2")
+        self.world.scene.add(
+            Robot(
+                prim_path="/World/Robot2",
+                name="franka_robot_2",
+                position=np.array([1.0, 0.0, 0.0]),
+                orientation=np.array([0, 0, 0, 1])
+            )
+        )
+
+    def add_complex_environment(self):
+        """Add a complex environment with multiple objects and obstacles"""
+        # Add a table
+        table_path = f"{self.assets_root_path}/Isaac/Props/Table/table.usd"
+        add_reference_to_stage(usd_path=table_path, prim_path="/World/Table")
+
+        # Add various objects for manipulation
+        objects_config = [
+            {"name": "cube1", "position": [0.4, -0.2, 0.65], "type": "cube"},
+            {"name": "cube2", "position": [0.6, 0.2, 0.65], "type": "cube"},
+            {"name": "sphere", "position": [0.5, 0.0, 0.7], "type": "sphere"},
+        ]
+
+        for obj_config in objects_config:
+            if obj_config["type"] == "cube":
+                obj_path = f"{self.assets_root_path}/Isaac/Props/Blocks/block_instanceable.usd"
+            elif obj_config["type"] == "sphere":
+                obj_path = f"{self.assets_root_path}/Isaac/Props/Spheres/sphere_instanceable.usd"
+            else:
+                continue
+
+            prim_path = f"/World/{obj_config['name']}"
+            add_reference_to_stage(usd_path=obj_path, prim_path=prim_path)
+
+            # Set position
+            prim = get_prim_at_path(prim_path)
+            if prim:
+                from pxr import Gf
+                prim.GetAttribute("xformOp:translate").Set(
+                    Gf.Vec3d(*obj_config["position"])
+                )
+
+    def setup_domain_randomization(self):
+        """Set up domain randomization parameters"""
+        # This would involve setting up randomization for various parameters
+        # such as lighting, materials, object positions, etc.
         pass
 ```
 
-#### Sensor Simulation
-```python
-# Isaac Sim sensor simulation
-from omni.isaac.sensor import Camera, LidarRtx
-from omni.isaac.core.utils.prims import get_prim_at_path
-import numpy as np
+## Photorealistic Rendering Features
 
-class SensorSimulator:
+### Material System and PBR
+
+Isaac Sim uses Physically-Based Rendering (PBR) for realistic material appearance:
+
+```python
+class PhotorealisticMaterials:
     def __init__(self, world):
         self.world = world
-        self.cameras = {}
-        self.lidars = {}
-        self.imus = {}
-
-    def add_camera(self, name, prim_path, resolution=(640, 480), position=[0, 0, 0]):
-        """Add RGB camera to robot"""
-        camera = Camera(
-            prim_path=prim_path,
-            frequency=30,  # Hz
-            resolution=resolution
-        )
-
-        # Set camera properties
-        camera.set_focal_length(24.0)  # mm
-        camera.set_horizontal_aperture(20.955)  # mm
-        camera.set_vertical_aperture(15.2908)  # mm
-
-        self.cameras[name] = camera
-        return camera
-
-    def add_lidar(self, name, prim_path, min_range=0.1, max_range=25.0):
-        """Add LiDAR sensor to robot"""
-        lidar = LidarRtx(
-            prim_path=prim_path,
-            translation=np.array([0, 0, 0]),
-            orientation=np.array([1, 0, 0, 0]),
-            config="Example_Rotary",
-            min_range=min_range,
-            max_range=max_range,
-            fov=360
-        )
-
-        self.lidars[name] = lidar
-        return lidar
-
-    def get_camera_data(self, camera_name):
-        """Get RGB image data from camera"""
-        if camera_name in self.cameras:
-            camera = self.cameras[camera_name]
-
-            # Get RGB data
-            rgb_data = camera.get_rgb()
-
-            # Get depth data
-            depth_data = camera.get_depth()
-
-            # Get pose data
-            pose_data = camera.get_world_pose()
-
-            return {
-                'rgb': rgb_data,
-                'depth': depth_data,
-                'pose': pose_data
-            }
-        return None
-
-    def get_lidar_data(self, lidar_name):
-        """Get LiDAR point cloud data"""
-        if lidar_name in self.lidars:
-            lidar = self.lidars[lidar_name]
-
-            # Get point cloud
-            point_cloud = lidar.get_point_cloud()
-
-            # Get distances
-            distances = lidar.get_linear_depth_data()
-
-            return {
-                'point_cloud': point_cloud,
-                'distances': distances
-            }
-        return None
-
-    def simulate_sensor_noise(self, sensor_data, sensor_type):
-        """Add realistic noise to sensor data"""
-        if sensor_type == 'camera':
-            # Add noise to RGB image
-            noisy_rgb = self.add_camera_noise(sensor_data['rgb'])
-            sensor_data['rgb'] = noisy_rgb
-
-            # Add noise to depth
-            noisy_depth = self.add_depth_noise(sensor_data['depth'])
-            sensor_data['depth'] = noisy_depth
-
-        elif sensor_type == 'lidar':
-            # Add noise to LiDAR data
-            noisy_points = self.add_lidar_noise(sensor_data['point_cloud'])
-            sensor_data['point_cloud'] = noisy_points
-
-        return sensor_data
-
-    def add_camera_noise(self, image):
-        """Add realistic camera noise"""
-        # Add Gaussian noise
-        noise = np.random.normal(0, 0.01, image.shape)
-        noisy_image = np.clip(image + noise, 0, 1)
-
-        # Add shot noise (proportional to signal)
-        shot_noise = np.random.poisson(noisy_image * 255) / 255.0
-        final_image = np.clip(noisy_image + (shot_noise - noisy_image) * 0.1, 0, 1)
-
-        return final_image
-
-    def add_depth_noise(self, depth):
-        """Add realistic depth sensor noise"""
-        # Add bias and random noise
-        bias = 0.01  # 1cm bias
-        random_noise = np.random.normal(0, 0.005, depth.shape)  # 5mm std dev
-
-        noisy_depth = depth + bias + random_noise
-        return np.clip(noisy_depth, 0.01, 100.0)  # Valid depth range
-
-    def add_lidar_noise(self, point_cloud):
-        """Add realistic LiDAR noise"""
-        # Add angular and distance noise
-        noise_magnitude = 0.01  # 1cm noise
-        noise = np.random.normal(0, noise_magnitude, point_cloud.shape)
-        return point_cloud + noise
-```
-
-### 3. Physics Configuration
-
-```python
-# Physics configuration for humanoid simulation
-from omni.isaac.core.utils.prims import set_targets
-from omni.isaac.core.utils.stage import get_current_stage
-from pxr import UsdPhysics, PhysxSchema
-import omni.physx
-
-class PhysicsConfigurator:
-    def __init__(self, world):
-        self.world = world
-        self.stage = get_current_stage()
-
-    def configure_physics_scene(self, gravity=-9.81, solver_type="TGS", substeps=1):
-        """Configure physics scene parameters"""
-        # Get physics scene
-        scene = self.world.scene._physics_scene
-        scene_path = scene.prim.GetPath().pathString
-
-        # Set gravity
-        scene.set_gravity(gravity)
-
-        # Configure solver
-        physx_scene_api = PhysxSchema.PhysxSceneAPI.Apply(self.stage.GetPrimAtPath(scene_path))
-        physx_scene_api.CreateSolverTypeAttr().Set(solver_type)
-        physx_scene_api.CreateSubdivisionsPerFrameAttr().Set(substeps)
-
-        # Set broadphase type
-        physx_scene_api.CreateBroadphaseTypeAttr().Set("MBP")
-
-    def configure_robot_dynamics(self, robot_prim_path, link_configs):
-        """Configure dynamics properties for robot links"""
-        for link_name, config in link_configs.items():
-            link_path = f"{robot_prim_path}/{link_name}"
-            link_prim = self.stage.GetPrimAtPath(link_path)
-
-            if link_prim.IsValid():
-                # Set mass
-                if 'mass' in config:
-                    UsdPhysics.MassAPI.Apply(link_prim).CreateMassAttr().Set(config['mass'])
-
-                # Set inertia
-                if 'inertia' in config:
-                    inertia_api = UsdPhysics.InverseInertiaAPI.Apply(link_prim)
-                    inertia_api.CreateInverseInertiaAttr().Set(config['inertia'])
-
-                # Set damping
-                if 'linear_damping' in config or 'angular_damping' in config:
-                    damping_api = UsdPhysics.DriveAPI.Apply(link_prim)
-                    if 'linear_damping' in config:
-                        damping_api.CreateLinearDampingAttr().Set(config['linear_damping'])
-                    if 'angular_damping' in config:
-                        damping_api.CreateAngularDampingAttr().Set(config['angular_damping'])
-
-    def configure_joint_limits(self, robot_prim_path, joint_configs):
-        """Configure joint limits and dynamics"""
-        for joint_name, config in joint_configs.items():
-            joint_path = f"{robot_prim_path}/{joint_name}"
-            joint_prim = self.stage.GetPrimAtPath(joint_path)
-
-            if joint_prim.IsValid():
-                # Set joint limits
-                if 'limits' in config:
-                    limit_api = UsdPhysics.LimitAPI.Apply(joint_prim)
-                    if 'lower' in config['limits']:
-                        limit_api.CreateLowerAttr().Set(config['limits']['lower'])
-                    if 'upper' in config['limits']:
-                        limit_api.CreateUpperAttr().Set(config['limits']['upper'])
-
-                # Set drive parameters
-                if 'drive' in config:
-                    drive_api = UsdPhysics.DriveAPI.Apply(joint_prim)
-                    if 'stiffness' in config['drive']:
-                        drive_api.CreateStiffnessAttr().Set(config['drive']['stiffness'])
-                    if 'damping' in config:
-                        drive_api.CreateDampingAttr().Set(config['drive']['damping'])
-                    if 'max_force' in config['drive']:
-                        drive_api.CreateMaxForceAttr().Set(config['drive']['max_force'])
-
-    def create_terrain(self, terrain_type="plane", size=(10, 10), heightfield_path=None):
-        """Create terrain for humanoid navigation"""
-        if terrain_type == "plane":
-            # Create a simple ground plane
-            from omni.isaac.core.utils.prims import create_primitive
-            create_primitive(
-                prim_path="/World/ground_plane",
-                prim_type="Plane",
-                scale=[size[0], size[1], 1],
-                position=[0, 0, 0],
-                orientation=[0, 0, 0, 1]
-            )
-        elif terrain_type == "heightfield":
-            # Create heightfield terrain from file
-            from omni.isaac.core.utils.stage import add_reference_to_stage
-            if heightfield_path:
-                add_reference_to_stage(
-                    usd_path=heightfield_path,
-                    prim_path="/World/heightfield_terrain"
-                )
-        elif terrain_type == "random":
-            # Create randomly generated terrain
-            self.create_random_terrain(size)
-
-    def create_random_terrain(self, size):
-        """Create randomly generated terrain with obstacles"""
-        import random
-
-        # Create ground plane
-        from omni.isaac.core.utils.primitives import VisualMesh
-        VisualMesh(
-            prim_path="/World/ground_plane",
-            name="ground_plane",
-            position=[0, 0, 0],
-            size=size,
-            visible=True
-        )
-
-        # Add random obstacles
-        num_obstacles = random.randint(5, 15)
-        for i in range(num_obstacles):
-            x = random.uniform(-size[0]/2 + 1, size[0]/2 - 1)
-            y = random.uniform(-size[1]/2 + 1, size[1]/2 - 1)
-            z = 0.5  # Height
-
-            # Random obstacle type
-            obstacle_type = random.choice(['box', 'cylinder', 'sphere'])
-
-            if obstacle_type == 'box':
-                from omni.isaac.core.utils.primitives import DynamicCuboid
-                size_factor = random.uniform(0.2, 0.8)
-                DynamicCuboid(
-                    prim_path=f"/World/obstacle_{i}",
-                    name=f"obstacle_{i}",
-                    position=[x, y, z],
-                    size=size_factor
-                )
-            elif obstacle_type == 'cylinder':
-                from omni.isaac.core.utils.primitives import DynamicCylinder
-                radius = random.uniform(0.1, 0.4)
-                height = random.uniform(0.3, 1.0)
-                DynamicCylinder(
-                    prim_path=f"/World/obstacle_{i}",
-                    name=f"obstacle_{i}",
-                    position=[x, y, z],
-                    radius=radius,
-                    height=height
-                )
-            elif obstacle_type == 'sphere':
-                from omni.isaac.core.utils.primitives import DynamicSphere
-                radius = random.uniform(0.1, 0.5)
-                DynamicSphere(
-                    prim_path=f"/World/obstacle_{i}",
-                    name=f"obstacle_{i}",
-                    position=[x, y, z],
-                    radius=radius
-                )
-```
-
-## Isaac Sim for AI Training
-
-### 1. Synthetic Data Generation
-
-```python
-# Synthetic data generation for AI training
-import cv2
-import numpy as np
-from PIL import Image
-import json
-from omni.isaac.core.utils.stage import get_stage_units
-from omni.isaac.synthetic_utils import visualize
-import os
-
-class SyntheticDataGenerator:
-    def __init__(self, world, sensor_simulator):
-        self.world = world
-        self.sensor_simulator = sensor_simulator
-        self.data_counter = 0
-        self.dataset_path = "/workspace/synthetic_dataset"
-
-        # Create dataset directories
-        os.makedirs(f"{self.dataset_path}/images", exist_ok=True)
-        os.makedirs(f"{self.dataset_path}/labels", exist_ok=True)
-        os.makedirs(f"{self.dataset_path}/depth", exist_ok=True)
-
-    def generate_training_data_batch(self, num_samples=1000, scenarios=None):
-        """Generate batch of synthetic training data"""
-        if scenarios is None:
-            scenarios = self.get_default_scenarios()
-
-        for scenario in scenarios:
-            self.setup_scenario(scenario)
-
-            for i in range(num_samples // len(scenarios)):
-                # Capture sensor data
-                sensor_data = self.capture_sensor_data()
-
-                # Process and save data
-                self.save_training_sample(sensor_data, scenario)
-
-                # Randomize environment slightly
-                self.randomize_environment(scenario)
-
-                self.data_counter += 1
-
-                if self.data_counter % 100 == 0:
-                    print(f"Generated {self.data_counter} training samples")
-
-        # Save dataset metadata
-        self.save_dataset_metadata()
-
-    def setup_scenario(self, scenario_config):
-        """Setup specific scenario in simulation"""
-        # Clear previous scenario
-        self.clear_scenario()
-
-        # Apply scenario configuration
-        if 'lighting' in scenario_config:
-            self.configure_lighting(scenario_config['lighting'])
-
-        if 'objects' in scenario_config:
-            self.place_objects(scenario_config['objects'])
-
-        if 'camera_angles' in scenario_config:
-            self.configure_camera_angles(scenario_config['camera_angles'])
-
-        if 'weather' in scenario_config:
-            self.configure_weather(scenario_config['weather'])
-
-    def capture_sensor_data(self):
-        """Capture synchronized sensor data"""
-        # Get camera data
-        camera_data = self.sensor_simulator.get_camera_data('main_camera')
-
-        # Get LiDAR data
-        lidar_data = self.sensor_simulator.get_lidar_data('front_lidar')
-
-        # Get robot state
-        robot_state = self.get_robot_state()
-
-        # Add synthetic noise
-        camera_data = self.sensor_simulator.simulate_sensor_noise(camera_data, 'camera')
-        lidar_data = self.sensor_simulator.simulate_sensor_noise(lidar_data, 'lidar')
-
-        return {
-            'camera': camera_data,
-            'lidar': lidar_data,
-            'robot_state': robot_state,
-            'timestamp': self.world.current_time_step_index
+        self.materials_library = {}
+
+    def create_realistic_material(self, name, material_type="metal", roughness=0.1, metallic=1.0):
+        """Create a realistic PBR material"""
+        from omni.isaac.core.materials import PhysicsMaterial, VisualMaterial
+
+        # Create visual material with PBR properties
+        material_path = f"/World/Materials/{name}"
+
+        # In practice, materials are created with USD specifications
+        # This is a conceptual example
+        material_properties = {
+            "roughness": roughness,
+            "metallic": metallic,
+            "specular": 0.5,
+            "albedo": [0.8, 0.8, 0.8] if material_type == "metal" else [0.2, 0.2, 0.2]
         }
 
-    def save_training_sample(self, sensor_data, scenario):
-        """Save training sample with annotations"""
+        return material_properties
+
+    def apply_material_to_object(self, object_prim_path, material_properties):
+        """Apply material properties to an object"""
+        # This would involve applying material to USD prim
+        # Implementation depends on specific material system
+        pass
+
+    def setup_environmental_effects(self):
+        """Set up environmental effects for photorealism"""
+        # Add environmental lighting
+        # Configure atmospheric effects
+        # Set up reflections and refractions
+        pass
+```
+
+### Advanced Lighting Setup
+
+```python
+class AdvancedLightingSetup:
+    def __init__(self, world):
+        self.world = world
+        self.lighting_scenarios = {}
+
+    def setup_indoor_lighting(self):
+        """Set up realistic indoor lighting"""
+        # Main overhead lighting
+        from omni.isaac.core.light import DistantLight, SphereLight
+
+        # Overhead lights
+        for i in range(4):
+            x_pos = -2 + i * 1.3
+            self.world.scene.add(
+                SphereLight(
+                    prim_path=f"/World/OverheadLight{i}",
+                    name=f"overhead_light_{i}",
+                    position=np.array([x_pos, 0, 3]),
+                    intensity=800,
+                    color=np.array([0.98, 0.95, 0.85])  # Warm white
+                )
+            )
+
+        # Fill lights to reduce harsh shadows
+        self.world.scene.add(
+            SphereLight(
+                prim_path="/World/FillLight",
+                name="fill_light",
+                position=np.array([0, 3, 2]),
+                intensity=300,
+                color=np.array([0.9, 0.95, 1.0])  # Cool fill
+            )
+        )
+
+    def setup_outdoor_lighting(self):
+        """Set up realistic outdoor lighting"""
+        # Distant light for sun
+        self.world.scene.add(
+            DistantLight(
+                prim_path="/World/Sun",
+                name="sun",
+                intensity=10000,
+                color=np.array([1.0, 0.98, 0.9]),
+                position=np.array([10, 10, 20])
+            )
+        )
+
+        # Environmental reflections
+        # This would involve setting up environment maps
+        pass
+
+    def setup_dynamic_lighting(self):
+        """Set up lighting that changes over time"""
+        # This would involve creating lighting that changes
+        # based on time of day, weather, etc.
+        pass
+```
+
+## Synthetic Data Generation
+
+### Computer Vision Data Pipeline
+
+```python
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
+import cv2
+
+class SyntheticDataGenerator:
+    def __init__(self, world, robot):
+        self.world = world
+        self.robot = robot
+        self.camera = None
+        self.data_buffer = []
+
+        # Data augmentation parameters
+        self.augmentation_params = {
+            'brightness_range': (0.8, 1.2),
+            'contrast_range': (0.8, 1.2),
+            'saturation_range': (0.8, 1.2),
+            'hue_range': (-0.1, 0.1),
+            'noise_std': 0.01
+        }
+
+    def setup_camera(self, camera_position=[0.5, 0.5, 1.5], camera_orientation=[0, 0, 0, 1]):
+        """Set up camera for data capture"""
+        from omni.isaac.sensor import Camera
+
+        self.camera = self.world.scene.add(
+            Camera(
+                prim_path="/World/Camera",
+                name="synthetic_camera",
+                position=camera_position,
+                orientation=camera_orientation,
+                resolution=(640, 480)
+            )
+        )
+
+    def capture_synthetic_data(self, num_samples=1000, save_path="./synthetic_data/"):
+        """Capture synthetic data for computer vision tasks"""
+        import os
+        os.makedirs(save_path, exist_ok=True)
+
+        for i in range(num_samples):
+            # Randomize scene for domain randomization
+            self.randomize_scene()
+
+            # Capture RGB image
+            rgb_image = self.camera.get_rgb()
+
+            # Capture depth image
+            depth_image = self.camera.get_depth()
+
+            # Capture segmentation mask
+            seg_mask = self.camera.get_segmentation()
+
+            # Generate annotations
+            annotations = self.generate_annotations(seg_mask)
+
+            # Apply augmentations
+            augmented_rgb = self.apply_augmentations(rgb_image)
+
+            # Save data
+            self.save_data_sample(
+                augmented_rgb, depth_image, seg_mask, annotations,
+                f"{save_path}/sample_{i:05d}"
+            )
+
+            # Step simulation
+            self.world.step(render=True)
+
+    def randomize_scene(self):
+        """Randomize scene parameters for domain randomization"""
+        # Randomize lighting
+        light = self.world.scene.get_object("distant_light")
+        if light:
+            new_intensity = np.random.uniform(1000, 5000)
+            new_color = np.random.uniform([0.8, 0.8, 0.8], [1.2, 1.2, 1.2])
+            light.set_intensity(new_intensity)
+            light.set_color(new_color)
+
+        # Randomize object positions
+        for obj_name in ["cube1", "cube2", "sphere"]:
+            obj = self.world.scene.get_object(obj_name)
+            if obj:
+                new_pos = obj.get_world_pose()[0] + np.random.uniform(-0.1, 0.1, size=3)
+                # Ensure object stays on table
+                new_pos[2] = max(0.65, new_pos[2])  # Minimum height
+                obj.set_world_pose(position=new_pos)
+
+        # Randomize materials
+        self.randomize_materials()
+
+    def randomize_materials(self):
+        """Randomize materials for domain randomization"""
+        # This would involve randomizing surface properties
+        # like roughness, metallic, albedo, etc.
+        pass
+
+    def generate_annotations(self, segmentation_mask):
+        """Generate annotations from segmentation mask"""
+        # Find unique object IDs in segmentation mask
+        unique_ids = np.unique(segmentation_mask)
+
+        annotations = []
+        for obj_id in unique_ids:
+            if obj_id == 0:  # Background
+                continue
+
+            # Find bounding box for this object
+            y_coords, x_coords = np.where(segmentation_mask == obj_id)
+            if len(x_coords) > 0 and len(y_coords) > 0:
+                bbox = [
+                    int(np.min(x_coords)),  # x_min
+                    int(np.min(y_coords)),  # y_min
+                    int(np.max(x_coords)),  # x_max
+                    int(np.max(y_coords))   # y_max
+                ]
+
+                # Calculate center and area
+                center_x = int((bbox[0] + bbox[2]) / 2)
+                center_y = int((bbox[1] + bbox[3]) / 2)
+                area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+
+                annotations.append({
+                    'object_id': int(obj_id),
+                    'bbox': bbox,
+                    'center': [center_x, center_y],
+                    'area': int(area)
+                })
+
+        return annotations
+
+    def apply_augmentations(self, image):
+        """Apply data augmentations to image"""
+        # Convert to PIL Image for torchvision transforms
+        pil_image = Image.fromarray((image * 255).astype(np.uint8))
+
+        # Define augmentation pipeline
+        augmentation = transforms.Compose([
+            transforms.ColorJitter(
+                brightness=self.augmentation_params['brightness_range'],
+                contrast=self.augmentation_params['contrast_range'],
+                saturation=self.augmentation_params['saturation_range'],
+                hue=self.augmentation_params['hue_range']
+            ),
+        ])
+
+        # Apply augmentation
+        augmented_image = augmentation(pil_image)
+
+        # Convert back to numpy array
+        augmented_array = np.array(augmented_image).astype(np.float32) / 255.0
+
+        # Add noise
+        noise = np.random.normal(0, self.augmentation_params['noise_std'], augmented_array.shape)
+        augmented_array = np.clip(augmented_array + noise, 0, 1)
+
+        return augmented_array
+
+    def save_data_sample(self, rgb, depth, segmentation, annotations, base_path):
+        """Save a complete data sample"""
+        import json
+
         # Save RGB image
-        rgb_image = (sensor_data['camera']['rgb'] * 255).astype(np.uint8)
-        image_filename = f"{self.dataset_path}/images/img_{self.data_counter:06d}.png"
-        Image.fromarray(rgb_image).save(image_filename)
+        rgb_image = Image.fromarray((rgb * 255).astype(np.uint8))
+        rgb_image.save(f"{base_path}_rgb.png")
 
         # Save depth image
-        depth_data = sensor_data['camera']['depth']
-        depth_filename = f"{self.dataset_path}/depth/depth_{self.data_counter:06d}.png"
-        depth_image = (depth_data * 1000).astype(np.uint16)  # Scale for 16-bit storage
-        Image.fromarray(depth_image).save(depth_filename)
+        depth_normalized = ((depth - depth.min()) / (depth.max() - depth.min()) * 255).astype(np.uint8)
+        depth_image = Image.fromarray(depth_normalized)
+        depth_image.save(f"{base_path}_depth.png")
 
-        # Generate and save annotations
-        annotation = self.generate_annotations(sensor_data, scenario)
-        annotation_filename = f"{self.dataset_path}/labels/labels_{self.data_counter:06d}.json"
+        # Save segmentation mask
+        seg_normalized = ((segmentation - segmentation.min()) /
+                         (segmentation.max() - segmentation.min()) * 255).astype(np.uint8)
+        seg_image = Image.fromarray(seg_normalized)
+        seg_image.save(f"{base_path}_seg.png")
 
-        with open(annotation_filename, 'w') as f:
-            json.dump(annotation, f, indent=2)
+        # Save annotations
+        with open(f"{base_path}_annotations.json", 'w') as f:
+            json.dump(annotations, f, indent=2)
+```
 
-    def generate_annotations(self, sensor_data, scenario):
-        """Generate annotations for training data"""
-        annotations = {
-            'image_id': self.data_counter,
-            'file_name': f"img_{self.data_counter:06d}.png",
-            'width': 640,
-            'height': 480,
-            'date_captured': 'synthetic',
-            'scene': scenario.get('name', 'default'),
-            'objects': self.detect_objects_in_scene(),
-            'robot_pose': self.get_robot_pose_for_annotations(sensor_data),
-            'camera_intrinsics': self.get_camera_intrinsics(),
-            'sensor_data': {
-                'camera_pose': sensor_data['camera']['pose'],
-                'lighting_conditions': scenario.get('lighting', {}),
-                'weather_conditions': scenario.get('weather', {})
+### Multi-Sensor Data Generation
+
+```python
+class MultiSensorDataGenerator(SyntheticDataGenerator):
+    def __init__(self, world, robot):
+        super().__init__(world, robot)
+
+        # Additional sensors
+        self.lidar = None
+        self.imu = None
+        self.force_torque = None
+
+    def setup_multi_sensors(self):
+        """Set up multiple sensors for comprehensive data capture"""
+        # Setup camera (inherited)
+        self.setup_camera()
+
+        # Setup LiDAR sensor
+        self.setup_lidar()
+
+        # Setup IMU
+        self.setup_imu()
+
+        # Setup force/torque sensor
+        self.setup_force_torque()
+
+    def setup_lidar(self):
+        """Set up LiDAR sensor"""
+        from omni.isaac.sensor import LidarRtx
+        import omni
+        from pxr import Gf
+
+        # Create LiDAR sensor
+        self.lidar = self.world.scene.add(
+            LidarRtx(
+                prim_path="/World/Lidar",
+                name="lidar_sensor",
+                translation=np.array([0.0, 0.0, 1.0]),
+                orientation=np.array([0, 0, 0, 1]),
+                config="Example_Rotary",
+                rotation_frequency=20,
+                samples_per_scan=1024
+            )
+        )
+
+    def setup_imu(self):
+        """Set up IMU sensor"""
+        # IMU would be attached to robot links
+        # This is conceptual - actual implementation varies
+        pass
+
+    def setup_force_torque(self):
+        """Set up force/torque sensor"""
+        # Force/torque sensor in robot joints
+        # This is conceptual - actual implementation varies
+        pass
+
+    def capture_multi_sensor_data(self, num_samples=1000, save_path="./multi_sensor_data/"):
+        """Capture data from multiple sensors simultaneously"""
+        import os
+        os.makedirs(save_path, exist_ok=True)
+
+        for i in range(num_samples):
+            # Randomize scene
+            self.randomize_scene()
+
+            # Capture data from all sensors
+            sensor_data = {
+                'camera': {
+                    'rgb': self.camera.get_rgb(),
+                    'depth': self.camera.get_depth(),
+                    'segmentation': self.camera.get_segmentation()
+                },
+                'lidar': self.lidar.get_linear_depth_data() if self.lidar else None,
+                'robot_state': {
+                    'joint_positions': self.robot.get_joint_positions(),
+                    'joint_velocities': self.robot.get_joint_velocities(),
+                    'end_effector_pose': self.robot.get_end_effector_pose()
+                }
             }
+
+            # Generate comprehensive annotations
+            annotations = self.generate_comprehensive_annotations(sensor_data)
+
+            # Save multi-sensor data
+            self.save_multi_sensor_sample(sensor_data, annotations, f"{save_path}/sample_{i:05d}")
+
+            # Step simulation
+            self.world.step(render=True)
+
+    def generate_comprehensive_annotations(self, sensor_data):
+        """Generate annotations from multi-sensor data"""
+        annotations = {}
+
+        # Camera-based annotations
+        camera_annotations = self.generate_annotations(sensor_data['camera']['segmentation'])
+        annotations['camera'] = camera_annotations
+
+        # LiDAR-based annotations
+        if sensor_data['lidar'] is not None:
+            annotations['lidar'] = self.process_lidar_annotations(sensor_data['lidar'])
+
+        # Robot state annotations
+        annotations['robot'] = {
+            'joint_positions': sensor_data['robot_state']['joint_positions'].tolist(),
+            'joint_velocities': sensor_data['robot_state']['joint_velocities'].tolist(),
+            'end_effector_pose': sensor_data['robot_state']['end_effector_pose']
         }
 
         return annotations
 
-    def detect_objects_in_scene(self):
-        """Detect and annotate objects in the scene"""
-        # This would typically use computer vision techniques
-        # to identify and label objects in the synthetic scene
-        objects = []
-
-        # For synthetic data, we know the ground truth
-        # In practice, you'd use USD scene graph to extract object information
-        stage = self.world.scene.stage
-        for prim in stage.Traverse():
-            if prim.GetTypeName() in ['Cube', 'Sphere', 'Cylinder']:
-                # Extract object properties
-                object_info = {
-                    'category': prim.GetTypeName().lower(),
-                    'position': self.get_prim_position(prim),
-                    'size': self.get_prim_size(prim),
-                    'visible_in_image': True  # Since it's synthetic, we know visibility
-                }
-                objects.append(object_info)
-
-        return objects
-
-    def get_robot_pose_for_annotations(self, sensor_data):
-        """Get robot pose for annotations"""
-        # Extract robot pose from robot state
-        robot_state = sensor_data['robot_state']
+    def process_lidar_annotations(self, lidar_data):
+        """Process LiDAR data for annotations"""
+        # This would involve clustering points to identify objects
+        # and generating 3D bounding boxes from point cloud data
         return {
-            'position': robot_state['base_pose'][0],
-            'orientation': robot_state['base_pose'][1],
-            'joint_positions': robot_state['joint_positions'].tolist(),
-            'joint_velocities': robot_state['joint_velocities'].tolist()
+            'point_count': lidar_data.size if hasattr(lidar_data, 'size') else len(lidar_data),
+            'min_distance': float(np.min(lidar_data)) if lidar_data.size > 0 else 0.0,
+            'max_distance': float(np.max(lidar_data)) if lidar_data.size > 0 else 0.0
         }
 
-    def get_camera_intrinsics(self):
-        """Get camera intrinsic parameters"""
-        # These would be configured in the camera setup
-        return {
-            'fx': 320,  # Focal length x
-            'fy': 320,  # Focal length y
-            'cx': 320,  # Principal point x
-            'cy': 240,  # Principal point y
-            'width': 640,
-            'height': 480,
-            'distortion': [0, 0, 0, 0, 0]  # No distortion in simulation
-        }
+    def save_multi_sensor_sample(self, sensor_data, annotations, base_path):
+        """Save multi-sensor data sample"""
+        import json
+        import numpy as np
 
-    def save_dataset_metadata(self):
-        """Save dataset metadata file"""
-        metadata = {
-            'dataset_name': 'Humanoid Robotics Synthetic Dataset',
-            'version': '1.0',
-            'total_samples': self.data_counter,
-            'categories': ['humanoid_robot', 'obstacles', 'furniture', 'structures'],
-            'sensors': ['rgb_camera', 'depth_camera', 'lidar'],
-            'scenarios': ['indoor', 'outdoor', 'cluttered', 'open_space'],
-            'annotation_types': ['2d_bounding_boxes', '3d_poses', 'segmentation'],
-            'license': 'CC BY-NC 4.0'
-        }
+        # Save camera data (inherited method)
+        rgb_image = Image.fromarray((sensor_data['camera']['rgb'] * 255).astype(np.uint8))
+        rgb_image.save(f"{base_path}_camera_rgb.png")
 
-        metadata_path = f"{self.dataset_path}/dataset_info.json"
-        with open(metadata_path, 'w') as f:
-            json.dump(metadata, f, indent=2)
+        # Save LiDAR data as numpy array
+        if sensor_data['lidar'] is not None:
+            np.save(f"{base_path}_lidar.npy", sensor_data['lidar'])
 
-    def get_default_scenarios(self):
-        """Define default training scenarios"""
-        return [
-            {
-                'name': 'indoor_office',
-                'lighting': {'type': 'artificial', 'intensity': 1000, 'color_temp': 4000},
-                'objects': ['desk', 'chair', 'cubicle_walls'],
-                'weather': 'indoor'
-            },
-            {
-                'name': 'outdoor_park',
-                'lighting': {'type': 'natural', 'intensity': 50000, 'time_of_day': 'noon'},
-                'objects': ['trees', 'benches', 'pathways'],
-                'weather': 'sunny'
-            },
-            {
-                'name': 'warehouse',
-                'lighting': {'type': 'industrial', 'intensity': 5000, 'color_temp': 5000},
-                'objects': ['pallets', 'shelves', 'forklifts'],
-                'weather': 'indoor'
-            },
-            {
-                'name': 'home_environment',
-                'lighting': {'type': 'mixed', 'intensity': 3000, 'color_temp': 3000},
-                'objects': ['furniture', 'appliances', 'clutter'],
-                'weather': 'indoor'
-            }
-        ]
+        # Save robot state
+        np.savez(f"{base_path}_robot_state.npz",
+                joint_positions=sensor_data['robot_state']['joint_positions'],
+                joint_velocities=sensor_data['robot_state']['joint_velocities'],
+                end_effector_pose=sensor_data['robot_state']['end_effector_pose'])
 
-    def randomize_environment(self, scenario):
-        """Randomize environment parameters for data augmentation"""
-        # Randomize object positions slightly
-        self.randomize_object_positions(scenario)
-
-        # Randomize lighting conditions
-        self.randomize_lighting(scenario)
-
-        # Randomize camera parameters
-        self.randomize_camera_params()
-
-        # Step simulation to apply changes
-        self.world.step(render=False)
-
-    def randomize_object_positions(self, scenario):
-        """Randomize object positions within constraints"""
-        # Implementation would move objects by small amounts
-        pass
-
-    def randomize_lighting(self, scenario):
-        """Randomize lighting conditions"""
-        # Add small variations to lighting
-        pass
-
-    def randomize_camera_params(self):
-        """Randomize camera parameters for augmentation"""
-        # Add small camera shake or parameter variations
-        pass
-
-    def clear_scenario(self):
-        """Clear current scenario"""
-        # Reset environment to default state
-        pass
+        # Save comprehensive annotations
+        with open(f"{base_path}_annotations.json", 'w') as f:
+            json.dump(annotations, f, indent=2)
 ```
 
-### 2. Reinforcement Learning Environment
+## Integration with AI Training Pipelines
+
+### PyTorch Data Loader for Isaac Sim
 
 ```python
-# Isaac Sim RL environment for humanoid control
-import gym
-from gym import spaces
-import numpy as np
-from omni.isaac.core.utils.stage import add_reference_to_stage
-from omni.isaac.core.robots import Robot
-from omni.isaac.core.objects import DynamicCuboid
 import torch
+from torch.utils.data import Dataset, DataLoader
+import json
+import numpy as np
+from PIL import Image
 
-class HumanoidRLEnv(gym.Env):
-    """Gym environment for humanoid robot reinforcement learning in Isaac Sim"""
-
-    def __init__(self, robot_usd_path, task="walk_forward", max_episode_length=1000):
-        super().__init__()
-
-        self.robot_usd_path = robot_usd_path
+class IsaacSimDataset(Dataset):
+    def __init__(self, data_dir, transform=None, task='classification'):
+        self.data_dir = data_dir
+        self.transform = transform
         self.task = task
-        self.max_episode_length = max_episode_length
-        self.current_step = 0
 
-        # Initialize Isaac Sim world
-        self.world = None
-        self.robot = None
-        self.target_position = None
+        # Load data index
+        import os
+        self.samples = []
+        for filename in os.listdir(data_dir):
+            if filename.endswith('_rgb.png'):
+                base_name = filename.replace('_rgb.png', '')
+                self.samples.append(base_name)
 
-        # Define action and observation spaces
-        self.action_space = self.define_action_space()
-        self.observation_space = self.define_observation_space()
+    def __len__(self):
+        return len(self.samples)
 
-        # Initialize the simulation
-        self.initialize_simulation()
+    def __getitem__(self, idx):
+        sample_name = self.samples[idx]
 
-    def define_action_space(self):
-        """Define action space for humanoid robot"""
-        # For a humanoid with 28 joints, action space could be joint position commands
-        # or torque commands
-        if self.task == "walk_forward":
-            # Joint position control
-            low = np.full(28, -1.0)  # Min joint position
-            high = np.full(28, 1.0)  # Max joint position
-            return spaces.Box(low=low, high=high, dtype=np.float32)
+        # Load RGB image
+        rgb_path = f"{self.data_dir}/{sample_name}_rgb.png"
+        image = Image.open(rgb_path).convert('RGB')
+
+        # Load annotations
+        annotations_path = f"{self.data_dir}/{sample_name}_annotations.json"
+        with open(annotations_path, 'r') as f:
+            annotations = json.load(f)
+
+        if self.transform:
+            image = self.transform(image)
+
+        # Prepare targets based on task
+        if self.task == 'classification':
+            target = self.get_classification_target(annotations)
+        elif self.task == 'detection':
+            target = self.get_detection_target(annotations)
+        elif self.task == 'segmentation':
+            seg_path = f"{self.data_dir}/{sample_name}_seg.png"
+            target = self.get_segmentation_target(seg_path)
         else:
-            # Torque control
-            low = np.full(28, -100.0)  # Min torque (Nm)
-            high = np.full(28, 100.0)  # Max torque (Nm)
-            return spaces.Box(low=low, high=high, dtype=np.float32)
+            target = annotations  # Return raw annotations for other tasks
 
-    def define_observation_space(self):
-        """Define observation space for humanoid robot"""
-        # State representation:
-        # - Joint positions (28)
-        # - Joint velocities (28)
-        # - IMU readings (6: orientation + angular velocity)
-        # - Robot base position and velocity (6: pos + vel)
-        # - Target relative position (3)
-        # - Contact sensors (8: feet, hands)
+        return image, target
 
-        observation_size = 28 + 28 + 6 + 6 + 3 + 8
-        low = np.full(observation_size, -np.inf)
-        high = np.full(observation_size, np.inf)
+    def get_classification_target(self, annotations):
+        """Extract classification target from annotations"""
+        # For simplicity, return number of objects as classification target
+        # In practice, this would be more sophisticated
+        num_objects = len(annotations) if isinstance(annotations, list) else 0
+        return torch.tensor(num_objects, dtype=torch.long)
 
-        # More specific bounds for some values
-        low[0:28] = -np.pi    # Joint positions
-        high[0:28] = np.pi
-        low[28:56] = -10.0    # Joint velocities
-        high[28:56] = 10.0
-        low[56:62] = -1.0     # IMU (normalized orientation) and angular velocity
-        high[56:62] = 1.0
-        low[62:68] = -10.0    # Base pos/vel
-        high[62:68] = 10.0
-        low[68:71] = -5.0     # Target relative position
-        high[68:71] = 5.0
-        # Contact sensors are 0 or 1
+    def get_detection_target(self, annotations):
+        """Extract detection target from annotations"""
+        if not annotations or 'camera' not in annotations:
+            # Return empty target
+            return {
+                'boxes': torch.empty((0, 4), dtype=torch.float32),
+                'labels': torch.empty(0, dtype=torch.long),
+                'image_id': torch.tensor(0)
+            }
 
-        return spaces.Box(low=low, high=high, dtype=np.float32)
+        boxes = []
+        labels = []
 
-    def initialize_simulation(self):
-        """Initialize Isaac Sim world and robot"""
-        from omni.isaac.core import World
-        self.world = World(stage_units_in_meters=1.0)
+        for obj in annotations['camera']:
+            if 'bbox' in obj:
+                bbox = obj['bbox']
+                boxes.append([bbox[0], bbox[1], bbox[2], bbox[3]])  # xmin, ymin, xmax, ymax
+                labels.append(obj.get('object_id', 1))  # Default to class 1
 
-        # Add robot to stage
-        add_reference_to_stage(
-            usd_path=self.robot_usd_path,
-            prim_path="/World/HumanoidRobot"
-        )
-
-        # Create robot object
-        self.robot = Robot(
-            prim_path="/World/HumanoidRobot",
-            name="humanoid_robot",
-            position=[0, 0, 0.8],  # Start slightly above ground
-            orientation=[0, 0, 0, 1]
-        )
-
-        # Add to world
-        self.world.scene.add(self.robot)
-
-        # Create target object
-        self.create_target()
-
-        # Reset environment
-        self.reset()
-
-    def create_target(self):
-        """Create target object for navigation tasks"""
-        if self.task in ["walk_forward", "navigate"]:
-            # Create a target object
-            self.target_position = [5.0, 0, 0.2]  # 5m ahead
-
-            DynamicCuboid(
-                prim_path="/World/target",
-                name="target",
-                position=self.target_position,
-                size=0.2,
-                color=np.array([1.0, 0, 0])  # Red target
-            )
-
-    def reset(self):
-        """Reset the environment to initial state"""
-        # Reset simulation step counter
-        self.current_step = 0
-
-        # Reset robot to initial position
-        self.robot.set_world_pose(position=[0, 0, 0.8], orientation=[0, 0, 0, 1])
-
-        # Reset joint positions to default
-        default_positions = np.zeros(28)  # Default joint positions
-        self.robot.set_joint_positions(default_positions)
-
-        # Set target position
-        if hasattr(self, 'target_position'):
-            # Move target to appropriate position based on task
-            if self.task == "walk_forward":
-                # Move target forward
-                self.target_position = [5.0, 0, 0.2]
-
-        # Reset physics simulation
-        self.world.reset()
-
-        # Return initial observation
-        return self.get_observation()
-
-    def step(self, action):
-        """Execute one step in the environment"""
-        # Apply action to robot
-        self.apply_action(action)
-
-        # Step simulation
-        self.world.step(render=False)
-
-        # Get new observation
-        observation = self.get_observation()
-
-        # Calculate reward
-        reward = self.calculate_reward()
-
-        # Check if episode is done
-        done = self.is_episode_done()
-
-        # Additional info
-        info = {
-            'step': self.current_step,
-            'target_distance': self.get_target_distance(),
-            'robot_height': self.get_robot_height()
+        return {
+            'boxes': torch.tensor(boxes, dtype=torch.float32) if boxes else torch.empty((0, 4), dtype=torch.float32),
+            'labels': torch.tensor(labels, dtype=torch.long) if labels else torch.empty(0, dtype=torch.long),
+            'image_id': torch.tensor(0)
         }
 
-        self.current_step += 1
+    def get_segmentation_target(self, seg_path):
+        """Load segmentation target"""
+        seg_image = Image.open(seg_path)
+        seg_array = np.array(seg_image)
+        return torch.tensor(seg_array, dtype=torch.long)
 
-        return observation, reward, done, info
+def create_isaac_sim_dataloader(data_dir, batch_size=32, task='classification', shuffle=True):
+    """Create DataLoader for Isaac Sim dataset"""
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 
-    def apply_action(self, action):
-        """Apply action to the robot"""
-        # Scale action to appropriate range
-        if self.task == "walk_forward":
-            # For position control, directly set joint positions
-            self.robot.set_joint_positions(action)
-        else:
-            # For torque control, apply joint efforts
-            self.robot.set_joint_efforts(action)
+    dataset = IsaacSimDataset(data_dir, transform=transform, task=task)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)
 
-    def get_observation(self):
-        """Get current observation from the environment"""
-        obs = np.zeros(self.observation_space.shape[0])
-
-        # Get robot state
-        joint_positions = self.robot.get_joint_positions()
-        joint_velocities = self.robot.get_joint_velocities()
-
-        # Get IMU-like data (simplified)
-        base_pos, base_orn = self.robot.get_world_pose()
-        base_lin_vel, base_ang_vel = self.robot.get_base_velocity()
-
-        # Get target relative position
-        target_rel_pos = np.array(self.target_position) - np.array(base_pos)
-
-        # Get contact sensor data (simplified)
-        contact_data = self.get_contact_sensors()
-
-        # Fill observation vector
-        idx = 0
-        obs[idx:idx+28] = joint_positions
-        idx += 28
-        obs[idx:idx+28] = joint_velocities
-        idx += 28
-        obs[idx:idx+3] = base_orn  # Orientation (simplified)
-        idx += 3
-        obs[idx:idx+3] = base_ang_vel  # Angular velocity
-        idx += 3
-        obs[idx:idx+3] = base_pos  # Base position
-        idx += 3
-        obs[idx:idx+3] = base_lin_vel  # Base linear velocity
-        idx += 3
-        obs[idx:idx+3] = target_rel_pos  # Target relative position
-        idx += 3
-        obs[idx:idx+8] = contact_data  # Contact sensors
-
-        return obs
-
-    def get_contact_sensors(self):
-        """Get contact sensor data"""
-        # Simplified contact detection
-        # In practice, you'd use actual contact sensors
-        contact_data = np.zeros(8)  # 8 contact points (feet, hands)
-
-        # Check if robot parts are in contact with ground
-        robot_pos, _ = self.robot.get_world_pose()
-        if robot_pos[2] < 0.1:  # Close to ground
-            contact_data[0] = 1.0  # Left foot
-            contact_data[1] = 1.0  # Right foot
-
-        return contact_data
-
-    def calculate_reward(self):
-        """Calculate reward based on task"""
-        if self.task == "walk_forward":
-            # Reward for moving toward target
-            robot_pos, _ = self.robot.get_world_pose()
-            distance_to_target = np.linalg.norm(
-                np.array(self.target_position[:2]) - np.array(robot_pos[:2])
-            )
-
-            # Positive reward for moving closer to target
-            prev_distance = getattr(self, '_prev_distance', float('inf'))
-            reward = (prev_distance - distance_to_target) * 10.0
-            self._prev_distance = distance_to_target
-
-            # Bonus for reaching target
-            if distance_to_target < 0.5:
-                reward += 100.0
-
-            # Penalty for falling
-            if self.get_robot_height() < 0.3:
-                reward -= 50.0
-
-            # Penalty for joint limits
-            joint_pos = self.robot.get_joint_positions()
-            if np.any(np.abs(joint_pos) > 2.0):
-                reward -= 5.0
-
-            return reward
-        else:
-            # Default reward
-            return 0.0
-
-    def is_episode_done(self):
-        """Check if episode is done"""
-        # Episode ends if:
-        # 1. Maximum steps reached
-        if self.current_step >= self.max_episode_length:
-            return True
-
-        # 2. Robot falls (too low)
-        if self.get_robot_height() < 0.2:
-            return True
-
-        # 3. Robot moves too far from origin (optional safety constraint)
-        robot_pos, _ = self.robot.get_world_pose()
-        if np.linalg.norm(robot_pos[:2]) > 10.0:  # 10m from origin
-            return True
-
-        return False
-
-    def get_target_distance(self):
-        """Get distance to target"""
-        robot_pos, _ = self.robot.get_world_pose()
-        return np.linalg.norm(
-            np.array(self.target_position[:2]) - np.array(robot_pos[:2])
-        )
-
-    def get_robot_height(self):
-        """Get robot's Z position (height)"""
-        robot_pos, _ = self.robot.get_world_pose()
-        return robot_pos[2]
-
-    def close(self):
-        """Clean up environment"""
-        if self.world:
-            self.world.clear()
+    return dataloader
 ```
 
-## Isaac Sim for Validation and Testing
-
-### 1. Performance Validation Framework
+### Training Integration Example
 
 ```python
-# Isaac Sim validation framework
-import time
-import statistics
-from dataclasses import dataclass
-from typing import List, Dict, Any
-import pandas as pd
+import torch.nn as nn
+import torch.optim as optim
+from torchvision.models import resnet50
 
-@dataclass
-class ValidationResult:
-    """Structure for validation results"""
-    test_name: str
-    success: bool
-    metrics: Dict[str, float]
-    execution_time: float
-    notes: str = ""
+class IsaacSimTrainer:
+    def __init__(self, model, dataloader, device='cuda'):
+        self.model = model.to(device)
+        self.dataloader = dataloader
+        self.device = device
+        self.optimizer = optim.Adam(model.parameters(), lr=0.001)
+        self.criterion = nn.CrossEntropyLoss()
 
-class ValidationFramework:
-    """Comprehensive validation framework for Isaac Sim"""
+    def train_epoch(self):
+        """Train for one epoch"""
+        self.model.train()
+        total_loss = 0
+        num_batches = 0
 
-    def __init__(self, sim_world):
-        self.world = sim_world
-        self.results = []
-        self.test_history = []
+        for batch_idx, (data, target) in enumerate(self.dataloader):
+            data, target = data.to(self.device), target.to(self.device)
 
-    def run_comprehensive_validation(self):
-        """Run all validation tests"""
-        print("Starting comprehensive validation...")
+            self.optimizer.zero_grad()
+            output = self.model(data)
 
-        # Physics validation tests
-        self.run_physics_validation()
+            if isinstance(target, dict):
+                # For detection tasks, target is a dictionary
+                # This would need specific handling for detection models
+                loss = self.compute_detection_loss(output, target)
+            else:
+                loss = self.criterion(output, target)
 
-        # Sensor validation tests
-        self.run_sensor_validation()
+            loss.backward()
+            self.optimizer.step()
 
-        # Control validation tests
-        self.run_control_validation()
+            total_loss += loss.item()
+            num_batches += 1
 
-        # Performance validation tests
-        self.run_performance_validation()
+        avg_loss = total_loss / num_batches
+        return avg_loss
 
-        # Generate validation report
-        self.generate_validation_report()
+    def compute_detection_loss(self, output, target):
+        """Compute loss for detection tasks"""
+        # This would involve computing object detection loss
+        # using frameworks like torchvision detection models
+        pass
 
-        return self.results
+    def train(self, num_epochs=10):
+        """Train the model"""
+        for epoch in range(num_epochs):
+            avg_loss = self.train_epoch()
+            print(f"Epoch {epoch+1}/{num_epochs}, Average Loss: {avg_loss:.4f}")
 
-    def run_physics_validation(self):
-        """Validate physics simulation accuracy"""
-        tests = [
-            self.test_gravity_simulation,
-            self.test_collision_detection,
-            self.test_joint_dynamics,
-            self.test_balance_stability
-        ]
+# Example usage
+def train_with_synthetic_data():
+    """Example of training with synthetic data"""
+    # Create model
+    model = resnet50(pretrained=False)
+    model.fc = nn.Linear(model.fc.in_features, 10)  # 10 classes for example
 
-        for test in tests:
-            start_time = time.time()
-            result = test()
-            execution_time = time.time() - start_time
+    # Create dataloader from synthetic data
+    dataloader = create_isaac_sim_dataloader(
+        data_dir="./synthetic_data/",
+        batch_size=32,
+        task='classification'
+    )
 
-            self.results.append(ValidationResult(
-                test_name=test.__name__,
-                success=result['success'],
-                metrics=result['metrics'],
-                execution_time=execution_time,
-                notes=result.get('notes', '')
-            ))
+    # Create trainer
+    trainer = IsaacSimTrainer(model, dataloader)
 
-    def test_gravity_simulation(self):
-        """Test if gravity is simulated correctly"""
-        # Create a simple falling object
-        from omni.isaac.core.objects import DynamicCuboid
+    # Train model
+    trainer.train(num_epochs=5)
 
-        falling_object = DynamicCuboid(
-            prim_path="/World/falling_cube",
-            name="falling_cube",
-            position=[0, 0, 2.0],  # 2m high
-            size=0.1,
-            mass=1.0
-        )
+    # Save model
+    torch.save(model.state_dict(), "synthetic_trained_model.pth")
+```
 
-        self.world.reset()
+## Performance Optimization
 
-        # Record initial position
-        initial_pos, _ = falling_object.get_world_pose()
-        initial_time = self.world.current_time_step_index
+### Multi-Environment Training
 
-        # Simulate for 1 second (at 60 FPS = 60 steps)
-        for _ in range(60):
-            self.world.step(render=False)
+```python
+import multiprocessing as mp
+from omni.isaac.core import World
+import omni
 
-        # Record final position
-        final_pos, _ = falling_object.get_world_pose()
-        final_time = self.world.current_time_step_index
+class MultiEnvironmentTraining:
+    def __init__(self, num_envs=64, env_fn=None):
+        self.num_envs = num_envs
+        self.env_fn = env_fn
+        self.processes = []
 
-        # Calculate expected position under gravity: s = ut + 0.5*g*t^2
-        # Initial velocity u = 0, so s = 0.5*g*t^2
-        dt = (final_time - initial_time) * self.world.get_physics_dt()
-        expected_drop = 0.5 * 9.81 * dt * dt
-        actual_drop = initial_pos[2] - final_pos[2]
+    def create_parallel_environments(self):
+        """Create multiple parallel environments for training"""
+        # This would involve creating multiple Isaac Sim worlds
+        # in parallel processes or using Isaac Gym's parallel simulation
+        pass
 
-        # Check if simulation matches expected (with tolerance)
-        tolerance = 0.05  # 5cm tolerance
-        success = abs(expected_drop - actual_drop) < tolerance
+    def train_parallel(self, agent, total_timesteps=1000000):
+        """Train agent using parallel environments"""
+        # This would implement distributed training
+        # with multiple parallel Isaac Sim environments
+        pass
 
-        metrics = {
-            'expected_drop': expected_drop,
-            'actual_drop': actual_drop,
-            'error': abs(expected_drop - actual_drop),
-            'tolerance': tolerance,
-            'dt': dt
-        }
+class IsaacGymIntegration:
+    def __init__(self):
+        """Integration with Isaac Gym for parallel environments"""
+        # Isaac Gym provides GPU-accelerated parallel simulation
+        # This is more efficient than CPU-based multiprocessing
+        pass
 
-        return {
-            'success': success,
-            'metrics': metrics,
-            'notes': f"Gravity validation {'PASSED' if success else 'FAILED'}"
-        }
+    def create_gym_env(self):
+        """Create Isaac Gym environment"""
+        # Example of how Isaac Gym environment might be created
+        # Note: Actual Isaac Gym API may differ
+        pass
+```
 
-    def test_collision_detection(self):
-        """Test collision detection accuracy"""
-        # Create two objects that should collide
-        from omni.isaac.core.objects import DynamicCuboid
+### GPU Optimization Techniques
 
-        obj1 = DynamicCuboid(
-            prim_path="/World/cube1",
-            name="cube1",
-            position=[0, 0, 0.1],  # On ground
-            size=0.2,
-            mass=1.0
-        )
+```python
+class GPUOptimizedSimulator:
+    def __init__(self, world):
+        self.world = world
+        self.gpu_cache = {}
+        self.streams = []
 
-        obj2 = DynamicCuboid(
-            prim_path="/World/cube2",
-            name="cube2",
-            position=[0, 0, 2.0],  # 2m above first cube
-            size=0.2,
-            mass=1.0
-        )
+    def setup_gpu_streams(self):
+        """Setup CUDA streams for parallel processing"""
+        # This would involve setting up CUDA streams
+        # for parallel sensor processing and rendering
+        pass
 
-        self.world.reset()
+    def optimize_rendering(self):
+        """Optimize rendering for performance"""
+        # Reduce rendering resolution during training
+        # Use lower quality settings when photorealism isn't needed
+        # Implement level-of-detail (LOD) systems
+        pass
 
-        # Check initial state (should not be colliding)
-        initial_collision = self.check_collision(obj1, obj2)
+    def batch_processing(self):
+        """Implement batch processing for efficiency"""
+        # Process multiple sensor readings in batches
+        # Use tensor operations instead of loops
+        # Optimize memory transfers between CPU and GPU
+        pass
+```
 
-        # Simulate until objects collide
-        collision_detected = False
-        steps_simulated = 0
+## Integration with ROS/ROS2
 
-        for step in range(100):  # Max 100 steps
-            self.world.step(render=False)
-            steps_simulated += 1
+### ROS Bridge Setup
 
-            if self.check_collision(obj1, obj2):
-                collision_detected = True
-                break
+```python
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo, PointCloud2, Imu
+from geometry_msgs.msg import Twist, Pose
+from std_msgs.msg import Float64MultiArray
+import numpy as np
 
-        success = collision_detected and not initial_collision
+class IsaacSimROSBridge(Node):
+    def __init__(self):
+        super().__init__('isaac_sim_ros_bridge')
 
-        metrics = {
-            'initial_collision': initial_collision,
-            'collision_detected': collision_detected,
-            'steps_to_collision': steps_simulated if collision_detected else -1,
-            'success': success
-        }
+        # Publishers for simulated sensors
+        self.camera_pub = self.create_publisher(Image, '/camera/rgb/image_raw', 10)
+        self.depth_pub = self.create_publisher(Image, '/camera/depth/image_raw', 10)
+        self.imu_pub = self.create_publisher(Imu, '/imu/data', 10)
+        self.joint_state_pub = self.create_publisher(Float64MultiArray, '/joint_states', 10)
 
-        return {
-            'success': success,
-            'metrics': metrics,
-            'notes': f"Collision detection {'PASSED' if success else 'FAILED'}"
-        }
+        # Subscribers for robot commands
+        self.cmd_vel_sub = self.create_subscription(
+            Twist, '/cmd_vel', self.cmd_vel_callback, 10)
+        self.joint_cmd_sub = self.create_subscription(
+            Float64MultiArray, '/joint_commands', self.joint_cmd_callback, 10)
 
-    def test_joint_dynamics(self):
-        """Test humanoid joint dynamics"""
-        # Test a simple joint movement
-        joint_positions = self.robot.get_joint_positions()
-        initial_pos = joint_positions[0]  # First joint
+        # Timer for publishing sensor data
+        self.pub_timer = self.create_timer(0.05, self.publish_sensor_data)  # 20 Hz
 
-        # Apply a simple movement command
-        new_positions = joint_positions.copy()
-        new_positions[0] += 0.1  # Move first joint by 0.1 rad
+        # Isaac Sim components
+        self.isaac_world = None
+        self.isaac_robot = None
+        self.isaac_camera = None
 
-        self.robot.set_joint_positions(new_positions)
-        self.world.step(render=False)
+        self.get_logger().info('Isaac Sim ROS Bridge initialized')
 
-        # Check if joint moved as expected
-        final_pos = self.robot.get_joint_positions()[0]
-        movement_achieved = abs(final_pos - initial_pos - 0.1) < 0.01
+    def cmd_vel_callback(self, msg):
+        """Handle velocity commands from ROS"""
+        # Convert Twist message to robot actions
+        linear_vel = [msg.linear.x, msg.linear.y, msg.linear.z]
+        angular_vel = [msg.angular.x, msg.angular.y, msg.angular.z]
 
-        metrics = {
-            'initial_position': initial_pos,
-            'target_position': initial_pos + 0.1,
-            'final_position': final_pos,
-            'movement_achieved': movement_achieved,
-            'position_error': abs(final_pos - (initial_pos + 0.1))
-        }
+        # Apply to Isaac Sim robot
+        self.apply_velocity_command(linear_vel, angular_vel)
 
-        success = movement_achieved
+    def joint_cmd_callback(self, msg):
+        """Handle joint position commands from ROS"""
+        # Apply joint position commands to robot
+        joint_positions = list(msg.data)
+        self.apply_joint_commands(joint_positions)
 
-        return {
-            'success': success,
-            'metrics': metrics,
-            'notes': f"Joint dynamics {'PASSED' if success else 'FAILED'}"
-        }
+    def publish_sensor_data(self):
+        """Publish sensor data to ROS topics"""
+        if self.isaac_world is not None:
+            # Get camera data from Isaac Sim
+            if self.isaac_camera:
+                rgb_image = self.isaac_camera.get_rgb()
+                ros_image = self.isaac_image_to_ros(rgb_image, 'rgb8')
+                self.camera_pub.publish(ros_image)
 
-    def test_balance_stability(self):
-        """Test humanoid balance stability"""
-        # Initialize robot in standing position
-        self.robot.set_world_pose(position=[0, 0, 0.8], orientation=[0, 0, 0, 1])
-        self.world.reset()
+                depth_image = self.isaac_camera.get_depth()
+                ros_depth = self.isaac_image_to_ros(depth_image, '32FC1')
+                self.depth_pub.publish(ros_depth)
 
-        # Apply small perturbations and check if robot can maintain balance
-        initial_height = 0.8
-        height_threshold = 0.5  # Robot should not fall below 0.5m
+            # Get IMU data
+            if self.isaac_robot:
+                imu_data = self.isaac_robot.get_imu_data()  # Conceptual
+                ros_imu = self.create_imu_message(imu_data)
+                self.imu_pub.publish(ros_imu)
 
-        # Simulate for 2 seconds to check stability
-        for _ in range(120):  # 2 seconds at 60 FPS
-            self.world.step(render=False)
+                # Get joint states
+                joint_positions = self.isaac_robot.get_joint_positions()
+                joint_msg = Float64MultiArray()
+                joint_msg.data = joint_positions.tolist()
+                self.joint_state_pub.publish(joint_msg)
 
-            current_pos, _ = self.robot.get_world_pose()
-            if current_pos[2] < height_threshold:
-                # Robot fell
-                success = False
-                metrics = {
-                    'final_height': current_pos[2],
-                    'stability_time': 2.0 * (_ / 120.0),  # How long it stayed stable
-                    'balance_maintained': False
-                }
-                return {
-                    'success': success,
-                    'metrics': metrics,
-                    'notes': "Robot failed balance stability test - fell over"
-                }
+    def isaac_image_to_ros(self, isaac_image, encoding):
+        """Convert Isaac Sim image to ROS Image message"""
+        from sensor_msgs.msg import Image
+        import numpy as np
 
-        # Robot maintained balance
-        success = True
-        metrics = {
-            'final_height': current_pos[2],
-            'stability_time': 2.0,
-            'balance_maintained': True
-        }
+        ros_image = Image()
+        ros_image.height = isaac_image.shape[0]
+        ros_image.width = isaac_image.shape[1]
+        ros_image.encoding = encoding
+        ros_image.step = isaac_image.shape[1] * 3  # Assuming RGB
 
-        return {
-            'success': success,
-            'metrics': metrics,
-            'notes': "Balance stability test PASSED"
-        }
+        # Convert image data
+        if encoding == 'rgb8':
+            image_data = (isaac_image * 255).astype(np.uint8)
+            ros_image.data = image_data.tobytes()
+        elif encoding == '32FC1':
+            ros_image.data = isaac_image.tobytes()
 
-    def run_sensor_validation(self):
-        """Validate sensor simulation accuracy"""
-        # Test camera simulation
-        camera_test = self.test_camera_simulation()
-        self.results.append(ValidationResult(
-            test_name="camera_simulation",
-            success=camera_test['success'],
-            metrics=camera_test['metrics'],
-            execution_time=camera_test['execution_time'],
-            notes=camera_test.get('notes', '')
-        ))
+        return ros_image
 
-        # Test depth accuracy
-        depth_test = self.test_depth_accuracy()
-        self.results.append(ValidationResult(
-            test_name="depth_accuracy",
-            success=depth_test['success'],
-            metrics=depth_test['metrics'],
-            execution_time=depth_test['execution_time'],
-            notes=depth_test.get('notes', '')
-        ))
+    def create_imu_message(self, imu_data):
+        """Create IMU message from Isaac Sim data"""
+        from sensor_msgs.msg import Imu
 
-    def test_camera_simulation(self):
-        """Test camera image quality and properties"""
-        start_time = time.time()
+        imu_msg = Imu()
+        # Populate with actual IMU data from Isaac Sim
+        # This is conceptual - actual data access would depend on Isaac Sim API
+        return imu_msg
 
-        # Get camera data
-        camera_data = self.sensor_simulator.get_camera_data('main_camera')
+    def apply_velocity_command(self, linear_vel, angular_vel):
+        """Apply velocity commands to Isaac Sim robot"""
+        # Convert and apply velocity commands
+        # Implementation depends on specific robot type
+        pass
 
-        # Check image properties
-        rgb_image = camera_data['rgb']
+    def apply_joint_commands(self, joint_positions):
+        """Apply joint position commands to Isaac Sim robot"""
+        # Apply joint position targets to robot
+        # Implementation depends on specific robot type
+        pass
+```
 
-        # Validate image dimensions
-        height, width, channels = rgb_image.shape
-        expected_dims = (480, 640, 3)  # Standard resolution
+## Quality Assurance and Validation
 
-        success = (height, width, channels) == expected_dims
+### Simulation Fidelity Assessment
 
-        metrics = {
-            'height': height,
-            'width': width,
-            'channels': channels,
-            'expected_dims': expected_dims,
-            'correct_dims': success
-        }
+```python
+class SimulationFidelityAssessor:
+    def __init__(self):
+        self.metrics = {}
+        self.validation_results = []
 
-        execution_time = time.time() - start_time
+    def assess_visual_fidelity(self, synthetic_image, real_image):
+        """Assess visual fidelity between synthetic and real images"""
+        from skimage.metrics import structural_similarity as ssim
+        from skimage.metrics import peak_signal_noise_ratio as psnr
+
+        # Calculate SSIM (Structural Similarity Index)
+        ssim_score = ssim(synthetic_image, real_image, multichannel=True)
+
+        # Calculate PSNR (Peak Signal-to-Noise Ratio)
+        psnr_score = psnr(synthetic_image, real_image)
+
+        # Calculate MSE (Mean Squared Error)
+        mse = np.mean((synthetic_image - real_image) ** 2)
 
         return {
-            'success': success,
-            'metrics': metrics,
-            'execution_time': execution_time,
-            'notes': f"Camera simulation {'PASSED' if success else 'FAILED'}"
+            'ssim': ssim_score,
+            'psnr': psnr_score,
+            'mse': mse
         }
 
-    def test_depth_accuracy(self):
-        """Test depth sensor accuracy against ground truth"""
-        start_time = time.time()
+    def assess_physics_fidelity(self, synthetic_trajectory, real_trajectory):
+        """Assess physics fidelity by comparing trajectories"""
+        # Calculate RMSE between trajectories
+        rmse = np.sqrt(np.mean((synthetic_trajectory - real_trajectory) ** 2))
 
-        # Place objects at known distances
-        from omni.isaac.core.objects import DynamicCuboid
+        # Calculate correlation
+        correlation = np.corrcoef(
+            synthetic_trajectory.flatten(),
+            real_trajectory.flatten()
+        )[0, 1]
 
-        test_distances = [1.0, 2.0, 3.0, 4.0, 5.0]
-        depth_errors = []
-
-        for i, dist in enumerate(test_distances):
-            # Place cube at known distance
-            cube = DynamicCuboid(
-                prim_path=f"/World/test_cube_{i}",
-                name=f"test_cube_{i}",
-                position=[dist, 0, 0.1],  # 10cm above ground
-                size=0.1,
-                mass=0.1
-            )
-
-        self.world.reset()
-
-        # Get depth data
-        camera_data = self.sensor_simulator.get_camera_data('main_camera')
-        depth_map = camera_data['depth']
-
-        # For each test object, check if depth reading is accurate
-        for i, true_distance in enumerate(test_distances):
-            # This is simplified - in practice you'd identify the object in the depth map
-            # For now, just check if depth values are reasonable
-            if depth_map is not None:
-                mean_depth = np.mean(depth_map[depth_map > 0])  # Non-zero depths
-                error = abs(mean_depth - true_distance)
-                depth_errors.append(error)
-
-        mean_error = statistics.mean(depth_errors) if depth_errors else float('inf')
-        success = mean_error < 0.1  # Less than 10cm error
-
-        metrics = {
-            'mean_depth_error': mean_error,
-            'max_error_allowed': 0.1,
-            'success': success,
-            'individual_errors': depth_errors
-        }
-
-        execution_time = time.time() - start_time
+        # Calculate maximum deviation
+        max_deviation = np.max(np.abs(synthetic_trajectory - real_trajectory))
 
         return {
-            'success': success,
-            'metrics': metrics,
-            'execution_time': execution_time,
-            'notes': f"Depth accuracy test {'PASSED' if success else 'FAILED'} - mean error: {mean_error:.3f}m"
+            'rmse': rmse,
+            'correlation': correlation,
+            'max_deviation': max_deviation
         }
 
-    def run_control_validation(self):
-        """Validate control system integration"""
-        # Test Isaac ROS bridge
-        ros_bridge_test = self.test_ros_bridge_integration()
-        self.results.append(ValidationResult(
-            test_name="ros_bridge_integration",
-            success=ros_bridge_test['success'],
-            metrics=ros_bridge_test['metrics'],
-            execution_time=ros_bridge_test['execution_time'],
-            notes=ros_bridge_test.get('notes', '')
-        ))
+    def validate_sensor_data(self, synthetic_data, real_data, sensor_type='camera'):
+        """Validate synthetic sensor data against real data"""
+        if sensor_type == 'camera':
+            return self.assess_visual_fidelity(synthetic_data, real_data)
+        elif sensor_type == 'lidar':
+            return self.assess_lidar_fidelity(synthetic_data, real_data)
+        elif sensor_type == 'imu':
+            return self.assess_imu_fidelity(synthetic_data, real_data)
+        else:
+            return {}
 
-    def test_ros_bridge_integration(self):
-        """Test Isaac Sim to ROS bridge functionality"""
-        start_time = time.time()
+    def assess_lidar_fidelity(self, synthetic_lidar, real_lidar):
+        """Assess LiDAR data fidelity"""
+        # Compare point cloud distributions
+        # Calculate various point cloud metrics
+        pass
 
-        # This would test the actual ROS bridge integration
-        # For now, we'll simulate the test
-
-        try:
-            # Simulate checking if ROS bridge is active
-            # In practice, this would check for ROS topics, services, etc.
-            bridge_active = True  # Placeholder
-            topics_available = True  # Placeholder
-
-            success = bridge_active and topics_available
-
-            metrics = {
-                'bridge_active': bridge_active,
-                'topics_available': topics_available,
-                'control_integration': success
-            }
-
-        except Exception as e:
-            success = False
-            metrics = {
-                'bridge_active': False,
-                'topics_available': False,
-                'control_integration': False,
-                'error': str(e)
-            }
-
-        execution_time = time.time() - start_time
-
-        return {
-            'success': success,
-            'metrics': metrics,
-            'execution_time': execution_time,
-            'notes': f"ROS bridge integration {'PASSED' if success else 'FAILED'}"
-        }
-
-    def run_performance_validation(self):
-        """Validate simulation performance"""
-        performance_test = self.test_simulation_performance()
-        self.results.append(ValidationResult(
-            test_name="simulation_performance",
-            success=performance_test['success'],
-            metrics=performance_test['metrics'],
-            execution_time=performance_test['execution_time'],
-            notes=performance_test.get('notes', '')
-        ))
-
-    def test_simulation_performance(self):
-        """Test simulation performance metrics"""
-        start_time = time.time()
-
-        # Run simulation for 1000 steps and measure performance
-        num_steps = 1000
-        frame_times = []
-
-        for i in range(num_steps):
-            step_start = time.time()
-            self.world.step(render=False)
-            step_end = time.time()
-
-            frame_time = step_end - step_start
-            frame_times.append(frame_time)
-
-        avg_frame_time = statistics.mean(frame_times)
-        min_frame_time = min(frame_times)
-        max_frame_time = max(frame_times)
-        std_frame_time = statistics.stdev(frame_times) if len(frame_times) > 1 else 0
-
-        # Calculate real-time factor (should be close to 1.0 for real-time)
-        total_sim_time = num_steps * self.world.get_physics_dt()
-        total_wall_time = sum(frame_times)
-        real_time_factor = total_sim_time / total_wall_time if total_wall_time > 0 else 0
-
-        # Performance is good if we achieve > 100 FPS (or RTF > 1)
-        success = real_time_factor > 0.5  # Allow for 2x real-time
-
-        metrics = {
-            'avg_frame_time_ms': avg_frame_time * 1000,
-            'min_frame_time_ms': min_frame_time * 1000,
-            'max_frame_time_ms': max_frame_time * 1000,
-            'std_frame_time_ms': std_frame_time * 1000,
-            'avg_fps': 1.0 / avg_frame_time if avg_frame_time > 0 else 0,
-            'real_time_factor': real_time_factor,
-            'num_steps': num_steps,
-            'performance_target_met': success
-        }
-
-        execution_time = time.time() - start_time
-
-        return {
-            'success': success,
-            'metrics': metrics,
-            'execution_time': execution_time,
-            'notes': f"Performance test {'PASSED' if success else 'FAILED'} - RTF: {real_time_factor:.2f}x"
-        }
+    def assess_imu_fidelity(self, synthetic_imu, real_imu):
+        """Assess IMU data fidelity"""
+        # Compare acceleration, angular velocity, and orientation data
+        # Calculate bias, noise, and drift characteristics
+        pass
 
     def generate_validation_report(self):
         """Generate comprehensive validation report"""
-        df = pd.DataFrame([{
-            'Test': r.test_name,
-            'Success': r.success,
-            'Execution_Time_s': r.execution_time,
-            **r.metrics
-        } for r in self.results])
+        report = f"""
+        Isaac Sim Fidelity Validation Report
+        ====================================
 
-        # Save report to file
-        report_path = "/workspace/validation_report.csv"
-        df.to_csv(report_path, index=False)
+        Visual Fidelity Metrics:
+        - Average SSIM: {np.mean([r['ssim'] for r in self.validation_results if 'ssim' in r]):.3f}
+        - Average PSNR: {np.mean([r['psnr'] for r in self.validation_results if 'psnr' in r]):.3f}
+        - Average MSE: {np.mean([r['mse'] for r in self.validation_results if 'mse' in r]):.6f}
 
-        # Print summary
-        total_tests = len(self.results)
-        successful_tests = sum(1 for r in self.results if r.success)
-        success_rate = successful_tests / total_tests if total_tests > 0 else 0
+        Physics Fidelity Metrics:
+        - Average RMSE: {np.mean([r['rmse'] for r in self.validation_results if 'rmse' in r]):.6f}
+        - Average Correlation: {np.mean([r['correlation'] for r in self.validation_results if 'correlation' in r]):.3f}
 
-        print(f"\nValidation Summary:")
-        print(f"Total Tests: {total_tests}")
-        print(f"Successful Tests: {successful_tests}")
-        print(f"Success Rate: {success_rate:.2%}")
-        print(f"Report saved to: {report_path}")
+        Overall Assessment:
+        """
 
-    def check_collision(self, obj1, obj2):
-        """Check if two objects are colliding (simplified)"""
-        # This is a simplified collision check
-        # In practice, use Isaac Sim's collision detection system
-        pos1, _ = obj1.get_world_pose()
-        pos2, _ = obj2.get_world_pose()
+        avg_ssim = np.mean([r['ssim'] for r in self.validation_results if 'ssim' in r])
+        if avg_ssim > 0.8:
+            report += "Excellent visual fidelity - suitable for computer vision tasks"
+        elif avg_ssim > 0.6:
+            report += "Good visual fidelity - adequate for most applications"
+        else:
+            report += "Poor visual fidelity - requires improvement for vision tasks"
 
-        distance = np.linalg.norm(np.array(pos1) - np.array(pos2))
-        min_distance = 0.1  # Sum of approximate radii
-
-        return distance < min_distance
+        return report
 ```
 
-## Isaac Sim Deployment Pipeline
-
-### 1. Simulation-to-Reality Transfer Pipeline
-
-```python
-# Simulation to reality transfer pipeline
-import subprocess
-import yaml
-from pathlib import Path
-
-class Sim2RealPipeline:
-    """Pipeline for transferring models and behaviors from simulation to reality"""
-
-    def __init__(self, config_path):
-        with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
-
-        self.validation_framework = None
-        self.synthetic_data_generator = None
-
-    def execute_full_pipeline(self):
-        """Execute the complete sim-to-real pipeline"""
-        print("Starting Simulation-to-Reality Transfer Pipeline...")
-
-        # Step 1: Generate synthetic training data
-        print("Step 1: Generating synthetic training data...")
-        self.generate_synthetic_data()
-
-        # Step 2: Train AI models on synthetic data
-        print("Step 2: Training AI models...")
-        self.train_models()
-
-        # Step 3: Validate models in simulation
-        print("Step 3: Validating models in simulation...")
-        self.validate_in_simulation()
-
-        # Step 4: Apply domain randomization
-        print("Step 4: Applying domain randomization...")
-        self.apply_domain_randomization()
-
-        # Step 5: Generate real-world test scenarios
-        print("Step 5: Generating real-world test scenarios...")
-        self.generate_real_world_scenarios()
-
-        # Step 6: Prepare deployment package
-        print("Step 6: Preparing deployment package...")
-        self.prepare_deployment_package()
-
-        print("Simulation-to-Reality Transfer Pipeline completed successfully!")
-
-    def generate_synthetic_data(self):
-        """Generate synthetic training data using Isaac Sim"""
-        num_samples = self.config.get('synthetic_data', {}).get('num_samples', 10000)
-        scenarios = self.config.get('synthetic_data', {}).get('scenarios', [])
-
-        # Initialize synthetic data generator
-        self.synthetic_data_generator = SyntheticDataGenerator(
-            world=self.config['simulation']['world'],
-            sensor_simulator=self.config['simulation']['sensor_simulator']
-        )
-
-        # Generate training data
-        self.synthetic_data_generator.generate_training_data_batch(
-            num_samples=num_samples,
-            scenarios=scenarios
-        )
-
-    def train_models(self):
-        """Train AI models on synthetic data"""
-        model_configs = self.config.get('models', [])
-
-        for model_config in model_configs:
-            model_name = model_config['name']
-            model_type = model_config['type']
-            data_path = self.config['synthetic_data']['output_path']
-
-            print(f"Training {model_name} ({model_type})...")
-
-            # Call training script based on model type
-            if model_type == 'detection':
-                self.train_detection_model(model_config, data_path)
-            elif model_type == 'segmentation':
-                self.train_segmentation_model(model_config, data_path)
-            elif model_type == 'control':
-                self.train_control_policy(model_config, data_path)
-
-    def train_detection_model(self, config, data_path):
-        """Train object detection model"""
-        # Example: Run training script
-        cmd = [
-            'python', 'train_detection.py',
-            '--data', data_path,
-            '--model', config['architecture'],
-            '--epochs', str(config.get('epochs', 100)),
-            '--batch-size', str(config.get('batch_size', 32)),
-            '--output', f"models/{config['name']}"
-        ]
-
-        subprocess.run(cmd, check=True)
-
-    def train_segmentation_model(self, config, data_path):
-        """Train semantic segmentation model"""
-        cmd = [
-            'python', 'train_segmentation.py',
-            '--data', data_path,
-            '--model', config['architecture'],
-            '--epochs', str(config.get('epochs', 100)),
-            '--output', f"models/{config['name']}"
-        ]
-
-        subprocess.run(cmd, check=True)
-
-    def train_control_policy(self, config, data_path):
-        """Train control policy using reinforcement learning"""
-        # Initialize RL environment
-        env = HumanoidRLEnv(
-            robot_usd_path=self.config['robot']['usd_path'],
-            task=config.get('task', 'walk_forward'),
-            max_episode_length=config.get('max_episode_length', 1000)
-        )
-
-        # Train policy (simplified)
-        import stable_baselines3 as sb3
-
-        model = sb3.PPO('MlpPolicy', env, verbose=1)
-        model.learn(total_timesteps=config.get('training_steps', 100000))
-
-        # Save trained model
-        model.save(f"models/{config['name']}")
-
-    def validate_in_simulation(self):
-        """Validate trained models in simulation"""
-        # Initialize validation framework
-        self.validation_framework = ValidationFramework(
-            sim_world=self.config['simulation']['world']
-        )
-
-        # Run comprehensive validation
-        results = self.validation_framework.run_comprehensive_validation()
-
-        # Check if validation passes minimum requirements
-        success_rate = sum(1 for r in results if r.success) / len(results) if results else 0
-        min_success_rate = self.config.get('validation', {}).get('min_success_rate', 0.8)
-
-        if success_rate < min_success_rate:
-            raise RuntimeError(f"Validation failed: {success_rate:.2%} success rate, minimum required: {min_success_rate:.2%}")
-
-    def apply_domain_randomization(self):
-        """Apply domain randomization techniques"""
-        # Domain randomization helps with sim-to-real transfer
-        domain_config = self.config.get('domain_randomization', {})
-
-        if domain_config.get('enabled', False):
-            print("Applying domain randomization...")
-
-            # Randomize physics parameters
-            self.randomize_physics_parameters(domain_config.get('physics', {}))
-
-            # Randomize visual appearance
-            self.randomize_visual_parameters(domain_config.get('visual', {}))
-
-            # Randomize sensor noise
-            self.randomize_sensor_parameters(domain_config.get('sensors', {}))
-
-    def randomize_physics_parameters(self, config):
-        """Randomize physics parameters for domain randomization"""
-        # Randomize gravity
-        if config.get('gravity_randomization', False):
-            gravity_range = config.get('gravity_range', [-10.0, -9.5])
-            # Apply to simulation physics scene
-
-        # Randomize friction
-        if config.get('friction_randomization', False):
-            friction_range = config.get('friction_range', [0.4, 0.8])
-            # Apply to objects in simulation
-
-        # Randomize mass
-        if config.get('mass_randomization', False):
-            mass_variance = config.get('mass_variance', 0.2)  # ±20%
-            # Apply to robot links
-
-    def randomize_visual_parameters(self, config):
-        """Randomize visual parameters for domain randomization"""
-        # Randomize lighting conditions
-        if config.get('lighting_randomization', False):
-            # Randomize light intensity, color temperature, direction
-            pass
-
-        # Randomize material properties
-        if config.get('material_randomization', False):
-            # Randomize albedo, roughness, metallic properties
-            pass
-
-        # Randomize camera parameters
-        if config.get('camera_randomization', False):
-            # Randomize focus, exposure, noise parameters
-            pass
-
-    def generate_real_world_scenarios(self):
-        """Generate scenarios for real-world testing"""
-        # Create test scenarios that mirror simulation conditions
-        scenarios = self.config.get('real_world_scenarios', [])
-
-        for scenario in scenarios:
-            # Generate corresponding real-world test conditions
-            self.create_real_world_scenario(scenario)
-
-    def prepare_deployment_package(self):
-        """Prepare deployment package for real robot"""
-        deployment_config = self.config.get('deployment', {})
-
-        # Create deployment directory
-        deployment_dir = Path(deployment_config.get('output_dir', 'deployment_package'))
-        deployment_dir.mkdir(exist_ok=True)
-
-        # Copy trained models
-        models_dir = deployment_dir / 'models'
-        models_dir.mkdir(exist_ok=True)
-
-        # Copy necessary config files
-        config_dir = deployment_dir / 'config'
-        config_dir.mkdir(exist_ok=True)
-
-        # Create deployment script
-        deployment_script = deployment_dir / 'deploy.sh'
-        with open(deployment_script, 'w') as f:
-            f.write(self.generate_deployment_script())
-
-        # Make script executable
-        deployment_script.chmod(0o755)
-
-        print(f"Deployment package created at: {deployment_dir}")
-
-    def generate_deployment_script(self):
-        """Generate deployment script content"""
-        return '''#!/bin/bash
-# Isaac Sim to Real Robot Deployment Script
-
-set -e  # Exit on error
-
-echo "Starting deployment to real robot..."
-
-# Source ROS environment
-source /opt/ros/humble/setup.bash
-source /usr/share/ament/cyclonedds/cmake/setup.bash
-
-# Navigate to workspace
-cd /workspace/humanoid_robot
-
-# Copy trained models
-echo "Copying trained models..."
-cp -r deployment_package/models/* src/humanoid_perception/models/
-
-# Build workspace
-echo "Building workspace..."
-colcon build --packages-select humanoid_perception humanoid_control
-
-# Source built packages
-source install/setup.bash
-
-# Launch robot with trained models
-echo "Launching robot with trained models..."
-ros2 launch humanoid_bringup robot.launch.py
-
-echo "Deployment completed successfully!"
-'''
-```
-
-## Next Steps
-
-In the next module, we'll explore Vision-Language-Action (VLA) systems that enable humanoid robots to understand natural language commands and perform complex tasks by combining visual perception, language understanding, and action execution in a unified framework.
+## Best Practices for Isaac Sim Usage
+
+### 1. Performance Optimization
+- Use appropriate level-of-detail (LOD) settings
+- Optimize scene complexity for target frame rates
+- Utilize GPU acceleration effectively
+- Implement efficient data loading pipelines
+
+### 2. Realism vs. Performance Balance
+- Adjust rendering quality based on training vs. deployment needs
+- Use domain randomization to improve robustness
+- Validate simulation-to-reality transfer regularly
+- Monitor simulation fidelity metrics
+
+### 3. Data Generation Strategies
+- Use diverse scenarios for robust training data
+- Implement proper domain randomization
+- Generate sufficient data for statistical significance
+- Include edge cases and failure scenarios
+
+### 4. Safety and Validation
+- Implement safety checks in simulation
+- Validate all generated data before training
+- Monitor for data quality issues
+- Test trained models in simulation before real deployment
+
+## Troubleshooting Common Issues
+
+### 1. Performance Issues
+- **Problem**: Low frame rates in simulation
+- **Solution**: Reduce scene complexity, optimize materials, use lower resolution
+
+### 2. Rendering Artifacts
+- **Problem**: Visual artifacts in synthetic images
+- **Solution**: Adjust lighting, material settings, or rendering parameters
+
+### 3. Physics Instability
+- **Problem**: Unstable physics simulation
+- **Solution**: Adjust solver parameters, reduce time step, check mass properties
+
+### 4. Memory Issues
+- **Problem**: Out of memory errors
+- **Solution**: Reduce batch sizes, optimize asset loading, use streaming
+
+## Summary
+
+NVIDIA Isaac Sim provides a powerful platform for photorealistic robotics simulation with key capabilities:
+
+- **Photorealistic Rendering**: RTX-accelerated rendering for computer vision
+- **Accurate Physics**: PhysX engine for realistic dynamics
+- **Synthetic Data Generation**: Large-scale data creation for AI training
+- **Multi-Sensor Simulation**: Support for cameras, LiDAR, IMU, and more
+- **ROS Integration**: Seamless integration with robotics frameworks
+- **Performance Optimization**: GPU-accelerated simulation
+
+Isaac Sim enables efficient robotics development by providing realistic simulation environments that can generate high-quality training data for AI models, validate robot behaviors in safe virtual environments, and bridge the gap between simulation and reality through advanced techniques like domain randomization.
+
+In the next section, we'll explore Isaac ROS gems that provide hardware-accelerated perception capabilities for robotics applications.

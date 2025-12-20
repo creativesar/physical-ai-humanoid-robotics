@@ -168,15 +168,15 @@ export default function LuxuryAboutUs() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <PremiumButton 
-                to="/docs/intro" 
+              <PremiumButton
+                to="/docs/module-1/"
                 variant="primary"
               >
                 Read Textbook
               </PremiumButton>
               
-              <PremiumButton 
-                to="/docs/intro#why-physical-ai--humanoid-robotics" 
+              <PremiumButton
+                to="/our-vision"
                 variant="secondary"
               >
                 Our Vision

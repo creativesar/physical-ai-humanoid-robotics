@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import AuthButton from './AuthButton';
 
 const Header = () => {
@@ -8,7 +9,9 @@ const Header = () => {
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -34,23 +37,102 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Track mouse position for interactive effects
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (headerRef.current) {
+        const rect = headerRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    };
+
+    const header = headerRef.current;
+    if (header) {
+      header.addEventListener('mousemove', handleMouseMove);
+      return () => header.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, []);
+
   return (
-    <header style={{
-      background: 'linear-gradient(135deg, rgba(10, 10, 10, 0.3) 0%, rgba(5, 5, 5, 0.2) 100%)',
-      padding: '0.8rem 1.5rem',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(176, 224, 230, 0.1)',
+    <motion.header
+      ref={headerRef}
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+      style={{
+      background: isScrolled
+        ? 'linear-gradient(135deg, rgba(10, 10, 10, 0.95) 0%, rgba(5, 5, 5, 0.9) 100%)'
+        : 'linear-gradient(135deg, rgba(10, 10, 10, 0.85) 0%, rgba(5, 5, 5, 0.75) 100%)',
+      padding: isScrolled ? '0.6rem 1.5rem' : '0.8rem 1.5rem',
+      boxShadow: isScrolled
+        ? '0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(176, 224, 230, 0.15), 0 0 80px rgba(176, 224, 230, 0.05)'
+        : '0 4px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(176, 224, 230, 0.1)',
       position: 'sticky',
       top: 0,
       zIndex: 1000,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(176, 224, 230, 0.18)',
-      borderBottom: '1px solid rgba(176, 224, 230, 0.2)',
+      backdropFilter: 'blur(25px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(25px) saturate(180%)',
+      border: '1px solid rgba(176, 224, 230, 0.2)',
+      borderBottom: '1px solid rgba(176, 224, 230, 0.25)',
       transition: 'all 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
-      borderRadius: '0 0 20px 20px',
-      borderRight: '1px solid rgba(176, 224, 230, 0.15)',
-      borderLeft: '1px solid rgba(176, 224, 230, 0.15)',
+      borderRadius: '0 0 24px 24px',
+      borderRight: '1px solid rgba(176, 224, 230, 0.18)',
+      borderLeft: '1px solid rgba(176, 224, 230, 0.18)',
+      overflow: 'hidden',
+      position: 'relative' as const,
     }}>
+      {/* Animated gradient orb following mouse */}
+      <motion.div
+        animate={{
+          x: mousePosition.x - 150,
+          y: mousePosition.y - 150,
+        }}
+        transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+        style={{
+          position: 'absolute',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(176, 224, 230, 0.15) 0%, transparent 70%)',
+          borderRadius: '50%',
+          pointerEvents: 'none',
+          filter: 'blur(40px)',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Floating particles */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={i}
+          animate={{
+            y: [-20, 20, -20],
+            x: [0, Math.sin(i) * 10, 0],
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 3 + i,
+            repeat: Infinity,
+            delay: i * 0.5,
+          }}
+          style={{
+            position: 'absolute',
+            width: '4px',
+            height: '4px',
+            background: 'rgba(176, 224, 230, 0.6)',
+            borderRadius: '50%',
+            left: `${20 + i * 20}%`,
+            top: `${30 + i * 10}%`,
+            pointerEvents: 'none',
+            boxShadow: '0 0 10px rgba(176, 224, 230, 0.8)',
+            zIndex: 0,
+          }}
+        />
+      ))}
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <div style={{
         maxWidth: '1400px',
         margin: '0 auto',
@@ -75,18 +157,18 @@ const Header = () => {
             WebkitBackdropFilter: 'blur(10px)',
             transition: 'all 0.3s ease',
           }}
-          onMouseEnter={(e) => {
-            const target = e.currentTarget;
-            target.style.background = 'rgba(176, 224, 230, 0.1)';
-            target.style.transform = 'translateY(-2px)';
-            target.style.boxShadow = '0 5px 20px rgba(176, 224, 230, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            const target = e.currentTarget;
-            target.style.background = 'rgba(176, 224, 230, 0.05)';
-            target.style.transform = 'translateY(0)';
-            target.style.boxShadow = 'none';
-          }}>
+            onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
+              const target = e.currentTarget;
+              target.style.background = 'rgba(176, 224, 230, 0.1)';
+              target.style.transform = 'translateY(-2px)';
+              target.style.boxShadow = '0 5px 20px rgba(176, 224, 230, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              const target = e.currentTarget;
+              target.style.background = 'rgba(176, 224, 230, 0.05)';
+              target.style.transform = 'translateY(0)';
+              target.style.boxShadow = 'none';
+            }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -157,170 +239,164 @@ const Header = () => {
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="header-menu-toggle"
-          style={{
-            background: 'rgba(176, 224, 230, 0.05)',
-            border: '1px solid rgba(176, 224, 230, 0.15)',
-            color: '#e0f0f0',
-            fontSize: '1.4rem',
-            cursor: 'pointer',
-            padding: '0.6rem',
-            borderRadius: '10px',
-            transition: 'all 0.3s ease',
-            minWidth: '44px',
-            minHeight: '44px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-          }}
-          onMouseEnter={(e) => {
-            const target = e.currentTarget;
-            target.style.background = 'rgba(176, 224, 230, 0.15)';
-            target.style.borderColor = 'rgba(176, 224, 230, 0.25)';
-            target.style.transform = 'scale(1.05)';
-            target.style.boxShadow = '0 0 15px rgba(176, 224, 230, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            const target = e.currentTarget;
-            target.style.background = 'rgba(176, 224, 230, 0.05)';
-            target.style.borderColor = 'rgba(176, 224, 230, 0.15)';
-            target.style.transform = 'scale(1)';
-            target.style.boxShadow = 'none';
-          }}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-        >
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
-
         {/* Navigation Links with Premium Glass Hover Effects */}
         <nav className="header-nav-desktop" style={{
           display: 'flex',
-          gap: '1.5rem',
+          gap: '1rem',
           alignItems: 'center',
         }}>
-          <Link
-            to="/docs/intro"
-            style={{
-              color: hoveredLink === 'textbook' ? '#b0e0e6' : '#e0f0f0',
-              textDecoration: 'none',
-              fontSize: '1rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              textTransform: 'none',
-              letterSpacing: '0.3px',
-              transition: 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)',
-              position: 'relative',
-              padding: '0.5rem 0.8rem',
-              borderRadius: '8px',
-              background: hoveredLink === 'textbook' ? 'rgba(176, 224, 230, 0.1)' : 'transparent',
-              border: hoveredLink === 'textbook' ? '1px solid rgba(176, 224, 230, 0.2)' : '1px solid transparent',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-            }}
-            onMouseEnter={() => setHoveredLink('textbook')}
-            onMouseLeave={() => setHoveredLink(null)}
+          {/* Textbook Link */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            Textbook
-            <span style={{
-              content: '',
-              position: 'absolute',
-              bottom: '2px',
-              left: 0,
-              width: hoveredLink === 'textbook' ? '100%' : '0',
-              height: '2px',
-              background: 'linear-gradient(90deg, #b0e0e6, #87ceeb)',
-              transition: 'width 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
-              borderRadius: '1px',
-            }} />
-          </Link>
-          <Link
-            to="/modules"
-            style={{
-              color: hoveredLink === 'modules' ? '#b0e0e6' : '#e0f0f0',
-              textDecoration: 'none',
-              fontSize: '1rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              textTransform: 'none',
-              letterSpacing: '0.3px',
-              transition: 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)',
-              position: 'relative',
-              padding: '0.5rem 0.8rem',
-              borderRadius: '8px',
-              background: hoveredLink === 'modules' ? 'rgba(176, 224, 230, 0.1)' : 'transparent',
-              border: hoveredLink === 'modules' ? '1px solid rgba(176, 224, 230, 0.2)' : '1px solid transparent',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-            }}
-            onMouseEnter={() => setHoveredLink('modules')}
-            onMouseLeave={() => setHoveredLink(null)}
-          >
-            Modules
-            <span style={{
-              content: '',
-              position: 'absolute',
-              bottom: '2px',
-              left: 0,
-              width: hoveredLink === 'modules' ? '100%' : '0',
-              height: '2px',
-              background: 'linear-gradient(90deg, #b0e0e6, #87ceeb)',
-              transition: 'width 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
-              borderRadius: '1px',
-            }} />
-          </Link>
+            <Link
+              to="/docs/module-1/"
+              style={{
+                color: hoveredLink === 'textbook' ? '#ffffff' : '#e0f0f0',
+                textDecoration: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+                fontFamily: 'Inter, sans-serif',
+                textTransform: 'none',
+                letterSpacing: '0.3px',
+                position: 'relative',
+                padding: '0.6rem 1rem',
+                borderRadius: '12px',
+                background: hoveredLink === 'textbook'
+                  ? 'linear-gradient(135deg, rgba(176, 224, 230, 0.2) 0%, rgba(135, 206, 235, 0.15) 100%)'
+                  : 'transparent',
+                border: hoveredLink === 'textbook'
+                  ? '1px solid rgba(176, 224, 230, 0.3)'
+                  : '1px solid rgba(176, 224, 230, 0.1)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                display: 'inline-block',
+                boxShadow: hoveredLink === 'textbook'
+                  ? '0 8px 32px rgba(176, 224, 230, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                  : 'none',
+                transition: 'all 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
+              }}
+              onMouseEnter={() => setHoveredLink('textbook')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              {/* Glow effect on hover */}
+              <motion.span
+                animate={{
+                  opacity: hoveredLink === 'textbook' ? 1 : 0,
+                  scale: hoveredLink === 'textbook' ? 1 : 0.8,
+                }}
+                style={{
+                  position: 'absolute',
+                  inset: '-2px',
+                  background: 'linear-gradient(135deg, rgba(176, 224, 230, 0.3), rgba(135, 206, 235, 0.2))',
+                  borderRadius: '12px',
+                  filter: 'blur(8px)',
+                  zIndex: -1,
+                  pointerEvents: 'none',
+                }}
+              />
+              Textbook
+              {/* Animated underline */}
+              <motion.span
+                animate={{
+                  width: hoveredLink === 'textbook' ? '100%' : '0%',
+                }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  left: 0,
+                  height: '2px',
+                  background: 'linear-gradient(90deg, #b0e0e6, #87ceeb, #b0e0e6)',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 8px rgba(176, 224, 230, 0.8)',
+                }}
+              />
+            </Link>
+          </motion.div>
 
-
-          <Link
-            href="https://github.com/creativesar/Physical-AI-Humanoid-Robotics-Textbook"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: hoveredLink === 'github' ? '#b0e0e6' : '#e0f0f0',
-              textDecoration: 'none',
-              fontSize: '1rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              textTransform: 'none',
-              letterSpacing: '0.3px',
-              transition: 'all 0.3s cubic-bezier(0.23, 1, 0.320, 1)',
-              position: 'relative',
-              padding: '0.5rem 0.8rem',
-              borderRadius: '8px',
-              background: hoveredLink === 'github' ? 'rgba(176, 224, 230, 0.1)' : 'transparent',
-              border: hoveredLink === 'github' ? '1px solid rgba(176, 224, 230, 0.2)' : '1px solid transparent',
-              backdropFilter: 'blur(5px)',
-              WebkitBackdropFilter: 'blur(5px)',
-            }}
-            onMouseEnter={() => setHoveredLink('github')}
-            onMouseLeave={() => setHoveredLink(null)}
+          {/* GitHub Link */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            GitHub
-            <span style={{
-              content: '',
-              position: 'absolute',
-              bottom: '2px',
-              left: 0,
-              width: hoveredLink === 'github' ? '100%' : '0',
-              height: '2px',
-              background: 'linear-gradient(90deg, #b0e0e6, #87ceeb)',
-              transition: 'width 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
-              borderRadius: '1px',
-            }} />
-          </Link>
+            <Link
+              href="https://github.com/creativesar/physical-ai-humanoid-robotics"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: hoveredLink === 'github' ? '#ffffff' : '#e0f0f0',
+                textDecoration: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+                fontFamily: 'Inter, sans-serif',
+                textTransform: 'none',
+                letterSpacing: '0.3px',
+                position: 'relative',
+                padding: '0.6rem 1rem',
+                borderRadius: '12px',
+                background: hoveredLink === 'github'
+                  ? 'linear-gradient(135deg, rgba(176, 224, 230, 0.2) 0%, rgba(135, 206, 235, 0.15) 100%)'
+                  : 'transparent',
+                border: hoveredLink === 'github'
+                  ? '1px solid rgba(176, 224, 230, 0.3)'
+                  : '1px solid rgba(176, 224, 230, 0.1)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                display: 'inline-block',
+                boxShadow: hoveredLink === 'github'
+                  ? '0 8px 32px rgba(176, 224, 230, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                  : 'none',
+                transition: 'all 0.4s cubic-bezier(0.23, 1, 0.320, 1)',
+              }}
+              onMouseEnter={() => setHoveredLink('github')}
+              onMouseLeave={() => setHoveredLink(null)}
+            >
+              <motion.span
+                animate={{
+                  opacity: hoveredLink === 'github' ? 1 : 0,
+                  scale: hoveredLink === 'github' ? 1 : 0.8,
+                }}
+                style={{
+                  position: 'absolute',
+                  inset: '-2px',
+                  background: 'linear-gradient(135deg, rgba(176, 224, 230, 0.3), rgba(135, 206, 235, 0.2))',
+                  borderRadius: '12px',
+                  filter: 'blur(8px)',
+                  zIndex: -1,
+                  pointerEvents: 'none',
+                }}
+              />
+              GitHub
+              <motion.span
+                animate={{
+                  width: hoveredLink === 'github' ? '100%' : '0%',
+                }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  left: 0,
+                  height: '2px',
+                  background: 'linear-gradient(90deg, #b0e0e6, #87ceeb, #b0e0e6)',
+                  borderRadius: '2px',
+                  boxShadow: '0 0 8px rgba(176, 224, 230, 0.8)',
+                }}
+              />
+            </Link>
+          </motion.div>
           {/* Auth Button */}
           <div style={{
             marginLeft: '1rem',
-            padding: '0.2rem',
-            borderRadius: '8px',
-            background: 'rgba(176, 224, 230, 0.05)',
-            border: '1px solid rgba(176, 224, 230, 0.1)',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)',
+            padding: '0.4rem',
+            borderRadius: '10px',
+            background: 'rgba(176, 224, 230, 0.1)',
+            border: '1px solid rgba(176, 224, 230, 0.2)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
           }}>
             <AuthButton />
           </div>
@@ -359,7 +435,7 @@ const Header = () => {
           gap: '0.8rem',
         }}>
           <Link
-            to="/docs/intro"
+            to="/docs/module-1/"
             style={{
               color: '#e0f0f0',
               textDecoration: 'none',
@@ -391,39 +467,7 @@ const Header = () => {
             Textbook
           </Link>
           <Link
-            to="/modules"
-            style={{
-              color: '#e0f0f0',
-              textDecoration: 'none',
-              fontSize: '1.15rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              padding: '1.1rem',
-              borderRadius: '12px',
-              background: 'rgba(176, 224, 230, 0.08)',
-              transition: 'all 0.3s ease',
-              border: '1px solid rgba(176, 224, 230, 0.12)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-            }}
-            onClick={() => setIsMenuOpen(false)}
-            onMouseEnter={(e) => {
-              const target = e.currentTarget;
-              target.style.background = 'rgba(176, 224, 230, 0.15)';
-              target.style.transform = 'translateX(4px)';
-              target.style.boxShadow = '0 0 20px rgba(176, 224, 230, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              const target = e.currentTarget;
-              target.style.background = 'rgba(176, 224, 230, 0.08)';
-              target.style.transform = 'translateX(0)';
-              target.style.boxShadow = 'none';
-            }}
-          >
-            Modules
-          </Link>
-          <Link
-            href="https://github.com/creativesar/Physical-AI-Humanoid-Robotics-Textbook"
+            href="https://github.com/creativesar/physical-ai-humanoid-robotics"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -458,18 +502,21 @@ const Header = () => {
           </Link>
           {/* Auth Button in Mobile Menu */}
           <div style={{
-            padding: '1.1rem',
+            padding: '1.2rem',
             borderRadius: '12px',
-            background: 'rgba(176, 224, 230, 0.08)',
-            border: '1px solid rgba(176, 224, 230, 0.12)',
+            background: 'rgba(176, 224, 230, 0.1)',
+            border: '1px solid rgba(176, 224, 230, 0.2)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
           }}>
             <AuthButton />
           </div>
         </div>
       </div>
-    </header>
+      </div>
+    </motion.header>
   );
 };
 

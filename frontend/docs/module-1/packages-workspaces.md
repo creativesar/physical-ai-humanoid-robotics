@@ -1,397 +1,394 @@
 ---
 sidebar_position: 4
-title: "Packages and Workspaces"
+title: "Building ROS 2 Packages with Python"
 ---
 
-# Packages and Workspaces
+# Building ROS 2 Packages with Python
 
-## Understanding ROS 2 Packages
+## Introduction to ROS 2 Packages
 
-Packages are the fundamental unit of organization in ROS 2. They contain source code, configuration files, launch files, and other resources needed for a specific functionality. In humanoid robotics, packages typically represent individual robot components, algorithms, or complete subsystems.
+A ROS 2 package is the basic unit of organization for ROS 2 software. It contains nodes, libraries, configuration files, and other resources needed for a specific functionality. Packages provide a way to organize, distribute, and reuse ROS 2 software.
 
 ## Package Structure
 
 A typical ROS 2 package has the following structure:
 
 ```
-my_robot_package/
+my_package/
 ├── CMakeLists.txt          # Build configuration for C++
-├── package.xml             # Package metadata and dependencies
-├── src/                    # Source code files
-├── include/                # Header files (C++)
+├── package.xml             # Package metadata
+├── setup.py                # Python package setup
+├── setup.cfg               # Installation configuration
+├── my_package/             # Python module
+│   ├── __init__.py
+│   └── my_module.py
 ├── launch/                 # Launch files
+│   └── my_launch_file.py
 ├── config/                 # Configuration files
-├── params/                 # Parameter files
+│   └── params.yaml
 ├── test/                   # Test files
-└── scripts/                # Python scripts
+│   └── test_my_module.py
+└── resource/               # Resource files
+    └── my_package
 ```
 
-### package.xml
+## Creating a Python Package
 
-The `package.xml` file contains metadata about the package:
+### 1. Using colcon to create a package
+
+```bash
+# Create a new workspace
+mkdir -p ~/ros2_workspace/src
+cd ~/ros2_workspace/src
+
+# Create a new Python package
+ros2 pkg create --build-type ament_python my_robot_package --dependencies rclpy std_msgs geometry_msgs
+```
+
+### 2. Package.xml Configuration
+
+The `package.xml` file contains metadata about your package:
 
 ```xml
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>humanoid_controller</name>
-  <version>0.1.0</version>
-  <description>Humanoid robot controller package</description>
-  <maintainer email="maintainer@example.com">Maintainer Name</maintainer>
-  <license>Apache-2.0</license>
+  <name>my_robot_package</name>
+  <version>0.0.0</version>
+  <description>Example robot package</description>
+  <maintainer email="user@example.com">User Name</maintainer>
+  <license>Apache License 2.0</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-
-  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
   <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>control_msgs</depend>
   <depend>geometry_msgs</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
 ```
 
-### CMakeLists.txt
+### 3. setup.py Configuration
 
-The `CMakeLists.txt` file defines how to build the package:
+The `setup.py` file defines how your Python package should be installed:
 
-```cmake
-cmake_minimum_required(VERSION 3.8)
-project(humanoid_controller)
+```python
+from setuptools import setup
+import os
+from glob import glob
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+package_name = 'my_robot_package'
 
-# Find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(control_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-
-# Create executable
-add_executable(humanoid_controller_node
-  src/humanoid_controller.cpp)
-
-# Link libraries
-ament_target_dependencies(humanoid_controller_node
-  rclcpp
-  std_msgs
-  sensor_msgs
-  control_msgs
-  geometry_msgs)
-
-# Install targets
-install(TARGETS
-  humanoid_controller_node
-  DESTINATION lib/${PROJECT_NAME})
-
-ament_package()
-```
-
-## Creating a New Package
-
-### Using colcon
-
-The recommended way to create a new package is using the `ros2 pkg create` command:
-
-```bash
-# Create a new package with C++ support
-ros2 pkg create --build-type ament_cmake --dependencies rclcpp std_msgs sensor_msgs humanoid_bringup
-
-# Create a new package with Python support
-ros2 pkg create --build-type ament_python --dependencies rclpy std_msgs sensor_msgs humanoid_bringup_py
-```
-
-### Manual Package Creation
-
-You can also create packages manually by following the structure and creating the required files.
-
-## Workspaces
-
-### What is a Workspace?
-
-A workspace is a directory where you modify and build ROS 2 code. It typically contains multiple packages that work together to form a complete robot system.
-
-### Workspace Structure
-
-```
-~/ros2_ws/                 # Workspace root
-├── src/                   # Source directory (contains packages)
-│   ├── humanoid_controller/
-│   ├── humanoid_description/
-│   ├── humanoid_bringup/
-│   └── humanoid_perception/
-├── build/                 # Build artifacts (created during build)
-├── install/               # Installation directory (created after build)
-└── log/                   # Build logs
-```
-
-## Building Packages
-
-### Using colcon
-
-The `colcon` build system is used to build ROS 2 packages:
-
-```bash
-# Build all packages in the workspace
-cd ~/ros2_ws
-colcon build
-
-# Build specific packages
-colcon build --packages-select humanoid_controller humanoid_description
-
-# Build with additional options
-colcon build --packages-select humanoid_controller --cmake-args -DCMAKE_BUILD_TYPE=Release
-
-# Build and install to a specific location
-colcon build --install-base /opt/my_robot
-```
-
-### Sourcing the Workspace
-
-After building, you need to source the workspace to use the packages:
-
-```bash
-# Source the workspace
-source ~/ros2_ws/install/setup.bash
-
-# Add to your bashrc to source automatically
-echo "source ~/ros2_ws/install/setup.bash" >> ~/.bashrc
-```
-
-## Package Dependencies
-
-### Build Dependencies
-
-Dependencies required to build the package:
-
-```xml
-<buildtool_depend>ament_cmake</buildtool_depend>
-<build_depend>geometry_msgs</build_depend>
-<build_depend>sensor_msgs</build_depend>
-```
-
-### Execution Dependencies
-
-Dependencies required to run the package:
-
-```xml
-<exec_depend>rclcpp</exec_depend>
-<exec_depend>std_msgs</exec_depend>
-```
-
-### Test Dependencies
-
-Dependencies required for testing:
-
-```xml
-<test_depend>ament_lint_auto</test_depend>
-<test_depend>ament_cmake_gtest</test_depend>
-```
-
-## Package Management Best Practices
-
-### 1. Naming Conventions
-
-- Use lowercase names with underscores as separators
-- Use descriptive names that clearly indicate package purpose
-- Use prefixes to group related packages (e.g., `humanoid_`)
-
-### 2. Dependency Management
-
-- Only depend on packages that are actually used
-- Use specific version dependencies when necessary
-- Group related packages in the same repository when appropriate
-
-### 3. Versioning
-
-- Follow semantic versioning (MAJOR.MINOR.PATCH)
-- Update versions when making breaking changes
-- Use version tags for releases
-
-## Humanoid Robotics Package Organization
-
-### Common Package Categories
-
-1. **Description Packages**: Robot URDF, meshes, and visual assets
-2. **Controller Packages**: Joint controllers and robot control
-3. **Perception Packages**: Vision, sensors, and perception algorithms
-4. **Navigation Packages**: Path planning and navigation
-5. **Simulation Packages**: Gazebo plugins and simulation utilities
-6. **Interface Packages**: Human-robot interaction and teleoperation
-
-### Example Package Structure
-
-```
-humanoid_robot_ws/
-├── src/
-│   ├── humanoid_description/     # Robot URDF and meshes
-│   ├── humanoid_control/         # Controllers and hardware interfaces
-│   ├── humanoid_perception/      # Vision and sensor processing
-│   ├── humanoid_navigation/      # Path planning and localization
-│   ├── humanoid_bringup/         # Launch files and configurations
-│   ├── humanoid_msgs/            # Custom message definitions
-│   ├── humanoid_sim/             # Gazebo plugins and simulation
-│   └── humanoid_apps/            # High-level applications
-```
-
-## Creating Custom Message Types
-
-Sometimes you need custom message types for your humanoid robot:
-
-```bash
-# Create a new message definition
-mkdir -p humanoid_msgs/msg
-```
-
-Create `humanoid_msgs/msg/JointCommand.msg`:
-```
-# Custom joint command message
-string joint_name
-float64 position
-float64 velocity
-float64 effort
-float64 k_p
-float64 k_i
-float64 k_d
-```
-
-Update `package.xml`:
-```xml
-<depend>builtin_interfaces</depend>
-<member_of_group>rosidl_interface_packages</member_of_group>
-```
-
-Update `CMakeLists.txt`:
-```cmake
-find_package(rosidl_default_generators REQUIRED)
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/JointCommand.msg"
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        # Include all launch files
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
+        # Include all config files
+        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='User Name',
+    maintainer_email='user@example.com',
+    description='Example robot package',
+    license='Apache License 2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'my_node = my_robot_package.my_node:main',
+            'another_node = my_robot_package.another_node:main',
+        ],
+    },
 )
 ```
 
-## Launch Files
+## Python Node Implementation
 
-Launch files allow you to start multiple nodes with a single command:
-
-### XML Launch File Example
-
-```xml
-<launch>
-  <!-- Arguments -->
-  <arg name="robot_name" default="atlas"/>
-  <arg name="use_sim_time" default="false"/>
-
-  <!-- Robot state publisher -->
-  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher">
-    <param name="robot_description" value="$(find-pkg-share humanoid_description)/urdf/humanoid.urdf"/>
-    <param name="use_sim_time" value="$(var use_sim_time)"/>
-  </node>
-
-  <!-- Joint state publisher -->
-  <node pkg="joint_state_publisher" exec="joint_state_publisher" name="joint_state_publisher">
-    <param name="use_sim_time" value="$(var use_sim_time)"/>
-  </node>
-
-  <!-- Humanoid controller -->
-  <node pkg="humanoid_control" exec="humanoid_controller_node" name="humanoid_controller" output="screen">
-    <param name="robot_name" value="$(var robot_name)"/>
-    <param name="control_frequency" value="100"/>
-  </node>
-</launch>
-```
-
-### Python Launch File Example
+### Basic Node Structure
 
 ```python
+#!/usr/bin/env python3
+"""
+Example ROS 2 node implementation
+"""
+
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+
+
+class MyRobotNode(Node):
+    def __init__(self):
+        super().__init__('my_robot_node')
+
+        # Create publishers
+        self.cmd_vel_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.status_publisher = self.create_publisher(String, '/robot_status', 10)
+
+        # Create subscribers
+        self.cmd_subscriber = self.create_subscription(
+            String,
+            '/command',
+            self.command_callback,
+            10
+        )
+
+        # Create timers
+        self.timer = self.create_timer(0.1, self.timer_callback)  # 10 Hz
+
+        # Declare parameters
+        self.declare_parameter('robot_name', 'my_robot')
+        self.declare_parameter('max_velocity', 1.0)
+
+        self.get_logger().info('MyRobotNode initialized')
+
+    def command_callback(self, msg):
+        """Handle incoming commands"""
+        self.get_logger().info(f'Received command: {msg.data}')
+        # Process command logic here
+
+    def timer_callback(self):
+        """Timer callback - runs at 10 Hz"""
+        # Publish robot status
+        status_msg = String()
+        status_msg.data = 'Operating normally'
+        self.status_publisher.publish(status_msg)
+
+        # Other periodic tasks
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    node = MyRobotNode()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+## Workspace Management
+
+### Creating a Workspace
+
+```bash
+# Create workspace directory
+mkdir -p ~/my_robot_ws/src
+
+# Navigate to source directory
+cd ~/my_robot_ws/src
+
+# Create or copy packages to src directory
+# (packages can be created with ros2 pkg create or copied from elsewhere)
+
+# Build the workspace
+cd ~/my_robot_ws
+colcon build --packages-select my_robot_package
+
+# Source the workspace
+source install/setup.bash
+```
+
+### Building with colcon
+
+```bash
+# Build all packages in workspace
+colcon build
+
+# Build specific package
+colcon build --packages-select my_robot_package
+
+# Build with additional options
+colcon build --packages-select my_robot_package --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+
+## Advanced Package Features
+
+### 1. Parameter Management
+
+```python
+class ParameterNode(Node):
+    def __init__(self):
+        super().__init__('parameter_node')
+
+        # Declare parameters with default values
+        self.declare_parameter('robot_name', 'default_robot')
+        self.declare_parameter('wheel_diameter', 0.1)
+        self.declare_parameter('max_speed', 1.0)
+
+        # Get parameter values
+        self.robot_name = self.get_parameter('robot_name').value
+        self.wheel_diameter = self.get_parameter('wheel_diameter').value
+        self.max_speed = self.get_parameter('max_speed').value
+
+        # Add parameter callback for dynamic reconfiguration
+        self.add_on_set_parameters_callback(self.parameter_callback)
+
+    def parameter_callback(self, params):
+        """Handle parameter changes"""
+        for param in params:
+            if param.name == 'max_speed' and param.value > 5.0:
+                return SetParametersResult(successful=False, reason='Max speed too high')
+        return SetParametersResult(successful=True)
+```
+
+### 2. Lifecycle Nodes
+
+```python
+from rclpy.lifecycle import LifecycleNode
+from rclpy.lifecycle import LifecycleState
+from rclpy.lifecycle import TransitionCallbackReturn
+
+
+class LifecycleRobotNode(LifecycleNode):
+    def __init__(self):
+        super().__init__('lifecycle_robot_node')
+
+    def on_configure(self, state):
+        """Called when transitioning to CONFIGURING state"""
+        self.get_logger().info('Configuring lifecycle node')
+        # Initialize resources
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state):
+        """Called when transitioning to ACTIVATING state"""
+        self.get_logger().info('Activating lifecycle node')
+        # Activate publishers/subscribers
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_deactivate(self, state):
+        """Called when transitioning to DEACTIVATING state"""
+        self.get_logger().info('Deactivating lifecycle node')
+        # Deactivate publishers/subscribers
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_cleanup(self, state):
+        """Called when transitioning to CLEANINGUP state"""
+        self.get_logger().info('Cleaning up lifecycle node')
+        # Clean up resources
+        return TransitionCallbackReturn.SUCCESS
+```
+
+## Testing Your Package
+
+### Unit Tests
+
+```python
+# test/test_my_robot_package.py
+import unittest
+import rclpy
+from my_robot_package.my_node import MyRobotNode
+
+
+class TestMyRobotNode(unittest.TestCase):
+    def setUp(self):
+        rclpy.init()
+        self.node = MyRobotNode()
+
+    def tearDown(self):
+        self.node.destroy_node()
+        rclpy.shutdown()
+
+    def test_node_initialization(self):
+        self.assertEqual(self.node.get_name(), 'my_robot_node')
+
+    def test_parameter_defaults(self):
+        # Test that parameters have expected default values
+        pass
+
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Launch Files
+
+```python
+# launch/my_launch_file.py
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
+import os
+
 
 def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('my_robot_package'),
+        'config',
+        'params.yaml'
+    )
+
+    my_robot_node = Node(
+        package='my_robot_package',
+        executable='my_node',
+        name='my_robot_node',
+        parameters=[config],
+        output='screen'
+    )
+
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'robot_name',
-            default_value='atlas',
-            description='Name of the robot'
-        ),
-
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            parameters=[{
-                'robot_description': Command(['xacro ', FindPackageShare('humanoid_description'), '/urdf/humanoid.urdf.xacro'])
-            }]
-        ),
-
-        Node(
-            package='humanoid_control',
-            executable='humanoid_controller_node',
-            name='humanoid_controller',
-            parameters=[{
-                'robot_name': LaunchConfiguration('robot_name'),
-                'control_frequency': 100
-            }]
-        )
+        my_robot_node
     ])
 ```
 
-## Managing Multiple Workspaces
+## Configuration Files
 
-### Overlaying Workspaces
+### YAML Parameter Files
 
-You can overlay workspaces to extend functionality:
-
-```bash
-# Source base workspace
-source /opt/ros/humble/setup.bash
-
-# Source your custom workspace
-source ~/ros2_ws/install/setup.bash
-
-# Build your workspace with base ROS 2 packages available
-colcon build
+```yaml
+# config/params.yaml
+my_robot_node:
+  ros__parameters:
+    robot_name: "my_custom_robot"
+    wheel_diameter: 0.15
+    max_speed: 2.0
+    sensors:
+      lidar_enabled: true
+      camera_enabled: true
+    navigation:
+      planner_frequency: 5.0
+      controller_frequency: 10.0
 ```
 
-## Testing and Quality Assurance
+## Best Practices
 
-### Unit Testing
+1. **Package Naming**: Use descriptive names that reflect the package's purpose
+2. **Dependencies**: Only declare necessary dependencies in package.xml
+3. **Documentation**: Include README files and proper docstrings
+4. **Testing**: Write unit tests for your nodes and functions
+5. **Error Handling**: Implement proper error handling and logging
+6. **Resource Management**: Properly clean up resources in node destruction
+7. **Code Style**: Follow PEP 8 and ROS 2 coding standards
 
-Create tests for your packages:
+## Summary
 
-```cpp
-// test/test_humanoid_controller.cpp
-#include <gtest/gtest.h>
-#include "humanoid_controller/humanoid_controller.hpp"
+Building ROS 2 packages with Python involves understanding the package structure, configuration files, and node implementation patterns. Key concepts include:
 
-TEST(HumanoidControllerTest, InitializationTest) {
-    // Test initialization logic
-    EXPECT_TRUE(true); // Replace with actual test
-}
-```
+- Proper package.xml metadata
+- Correct setup.py configuration
+- Well-structured Python nodes
+- Parameter management
+- Testing and launch files
 
-Update `CMakeLists.txt`:
-```cmake
-find_package(ament_cmake_gtest REQUIRED)
-
-ament_add_gtest(test_humanoid_controller
-  test/test_humanoid_controller.cpp)
-target_link_libraries(test_humanoid_controller
-  humanoid_controller_node)
-```
-
-## Next Steps
-
-In the next section, we'll explore ROS 2 tools and debugging techniques that are essential for developing and maintaining humanoid robotics systems.
+In the next section, we'll explore launch files and parameter management in detail.

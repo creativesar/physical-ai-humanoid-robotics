@@ -535,34 +535,73 @@ const HeroSection = () => {
   }, [isClient]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-gray-900 via-black to-gray-900">
       {/* Canvas for the 3D animation */}
       <canvas
         ref={canvasRef}
         id="c"
-        className="absolute top-0 left-0 w-full h-full"
+        className="absolute top-0 left-0 w-full h-full opacity-30"
       />
 
+      {/* Luxury overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80"></div>
+
       {/* Center content overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className="text-center px-4">
-          <h1 className="text-5xl md:text-7xl lg:text-9xl font-black tracking-tighter bg-gradient-to-b from-orange-400 via-red-500 to-pink-600 bg-clip-text text-transparent animate-pulse mb-4">
-            PLASMA BLAST
+      <div className="absolute inset-0 flex items-center justify-center z-10 px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-6xl mx-auto">
+          {/* Main heading with luxury styling */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 leading-tight">
+            <span className="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent font-extrabold tracking-tight">
+              Physical AI &
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500 bg-clip-text text-transparent font-extrabold tracking-tight relative">
+              Humanoid Robotics
+              <span className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1/3 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent"></span>
+            </span>
           </h1>
-          <p className="text-xl md:text-2xl lg:text-4xl text-cyan-400 tracking-widest font-mono">
-            T H U N D E R   C O R E
+
+          {/* Subtitle with premium styling */}
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 font-light mb-8 max-w-4xl mx-auto leading-relaxed tracking-wide">
+            The definitive textbook for understanding the intersection of artificial intelligence and robotics,
+            focusing on embodied intelligence and humanoid systems.
           </p>
-          <div className="mt-8">
-            <h2 className="text-2xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Sora, sans-serif' }}>
-              Physical AI & Humanoid Robotics
+
+          {/* Additional luxury subheading */}
+          <div className="mt-12">
+            <h2 className="text-lg sm:text-xl md:text-2xl text-gray-400 font-light tracking-widest uppercase mb-4">
+              Advanced Intelligence Meets Physical Form
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 mt-4 max-w-3xl mx-auto" style={{ fontFamily: 'Inter, sans-serif' }}>
-              The definitive textbook for understanding the intersection of artificial intelligence and robotics,
-              focusing on embodied intelligence and humanoid systems.
-            </p>
+            <div className="flex items-center justify-center space-x-8 text-gray-500 text-sm">
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-amber-400 rounded-full mr-2"></span>
+                ROS 2 Framework
+              </span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-amber-400 rounded-full mr-2"></span>
+                NVIDIA Isaac™ Platform
+              </span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-amber-400 rounded-full mr-2"></span>
+                Vision-Language-Action Systems
+              </span>
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="mt-16">
+            <button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-4 px-10 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/25 border border-amber-500/30">
+              Explore the Future
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Luxury corner accents */}
+      <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-amber-400/30"></div>
+      <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-amber-400/30"></div>
+      <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-amber-400/30"></div>
+      <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-amber-400/30"></div>
     </div>
   );
 };

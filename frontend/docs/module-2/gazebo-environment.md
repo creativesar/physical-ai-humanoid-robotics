@@ -1,607 +1,555 @@
 ---
-sidebar_position: 2
-title: "Gazebo Simulation Environment"
+sidebar_position: 3
+title: "Gazebo Simulation Environment Setup"
 ---
 
-# Gazebo Simulation Environment
+# Gazebo Simulation Environment Setup
 
 ## Introduction to Gazebo
 
-Gazebo is a powerful, open-source robotics simulator that provides realistic physics simulation, high-quality graphics, and convenient programmatic interfaces. For humanoid robotics, Gazebo offers an essential platform for testing algorithms, validating control systems, and training AI models before deployment to physical hardware.
+Gazebo is a powerful, open-source robotics simulator that provides high-fidelity physics simulation, realistic rendering, and convenient programmatic interfaces. It's widely used in the robotics community for testing algorithms, robot design, and training AI systems.
 
-## Key Features of Gazebo
+Gazebo features:
+- Multiple physics engines (ODE, Bullet, SimBody)
+- High-quality graphics rendering
+- Extensive robot models and environments
+- ROS/ROS 2 integration
+- Sensor simulation (cameras, LiDAR, IMU, etc.)
+- Plugins system for custom functionality
 
-### 1. Physics Simulation
-- **ODE (Open Dynamics Engine)**: Accurate rigid body dynamics
-- **Bullet Physics**: Alternative physics engine with different characteristics
-- **Simbody**: Multi-body dynamics engine for complex systems
-- **DART**: Dynamic Animation and Robotics Toolkit
+## Installing Gazebo
 
-### 2. Sensor Simulation
-- **Camera sensors**: RGB, depth, and stereo cameras
-- **IMU sensors**: Inertial measurement units for orientation and acceleration
-- **Force/Torque sensors**: Joint force and torque measurements
-- **LIDAR**: 2D and 3D laser range finders
-- **GPS**: Global positioning system simulation
-- **Contact sensors**: Detect physical contacts and collisions
+### Gazebo Garden (Latest Version)
 
-### 3. Rendering and Visualization
-- **OGRE (Object-Oriented Graphics Rendering Engine)**: High-quality 3D rendering
-- **Realistic lighting**: Dynamic lighting and shadows
-- **High-resolution textures**: Detailed visual environments
-- **Multi-window support**: Multiple camera views simultaneously
-
-## Gazebo Architecture
-
-### Core Components
-
-#### 1. Gazebo Server (gzserver)
-- **Physics engine**: Handles all physics calculations
-- **Sensor simulation**: Processes sensor data
-- **Model simulation**: Manages robot and environment models
-- **Plugin system**: Extensible functionality through plugins
-
-#### 2. Gazebo Client (gzclient)
-- **User interface**: Graphical interface for visualization
-- **Camera control**: Interactive camera movement
-- **Simulation controls**: Play, pause, reset simulation
-- **Real-time visualization**: Live rendering of simulation
-
-### Communication Architecture
-Gazebo uses a client-server model with message passing through shared memory or network connections, making it suitable for distributed simulation environments.
-
-## Setting Up Gazebo for Humanoid Robotics
-
-### Installation and Configuration
+For ROS 2 Humble and newer distributions, Gazebo Garden is recommended:
 
 ```bash
-# Install Gazebo (Garden or Fortress versions are recommended for robotics)
-sudo apt install ros-humble-gazebo-ros-pkgs ros-humble-gazebo-plugins ros-humble-gazebo-dev
+# Update package list
+sudo apt update
 
-# Verify installation
-gz sim --version
+# Install Gazebo Garden
+sudo apt install gazebo-garden
+
+# Install ROS 2 Gazebo packages
+sudo apt install ros-humble-gazebo-ros-pkgs
+sudo apt install ros-humble-gazebo-ros2-control
+sudo apt install ros-humble-gazebo-ros2-control-demos
 ```
 
-### Basic Gazebo Launch
+### Alternative: Ignition Gazebo
 
-```xml
-<!-- Example launch file for Gazebo simulation -->
-<launch>
-  <!-- Set Gazebo environment variables -->
-  <env name="GAZEBO_MODEL_PATH" value="$(find-pkg-share humanoid_description)/models:$(find-pkg-share gazebo_models)/models"/>
-  <env name="GAZEBO_RESOURCE_PATH" value="$(find-pkg-share humanoid_description)/meshes"/>
+For more recent versions:
 
-  <!-- Start Gazebo server -->
-  <node name="gazebo_server" pkg="gazebo_ros" exec="gzserver"
-        args="--verbose $(find-pkg-share humanoid_gazebo)/worlds/humanoid_world.sdf"/>
+```bash
+# Add OSRF APT repository
+sudo apt update && sudo apt install wget
+sudo sh -c 'echo "deb [arch=amd64] http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+sudo apt update
 
-  <!-- Start Gazebo client -->
-  <node name="gazebo_client" pkg="gazebo_ros" exec="gzclient"
-        args="--verbose" if="$(var use_gui)"/>
-</launch>
+# Install Ignition Gazebo
+sudo apt install ignition-harmonic
 ```
 
-## Creating Humanoid Robot Models for Gazebo
+## Basic Gazebo Setup and Configuration
 
-### URDF Integration
+### Environment Variables
 
-Gazebo works seamlessly with URDF (Unified Robot Description Format) files:
+Set up environment variables for Gazebo:
+
+```bash
+# Add to ~/.bashrc
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/.gazebo/models
+export GAZEBO_RESOURCE_PATH=$GAZEBO_RESOURCE_PATH:~/.gazebo/models
+export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:~/.gazebo/plugins
+```
+
+### Gazebo Configuration
+
+Create a basic Gazebo configuration in your ROS 2 workspace:
 
 ```xml
-<!-- Example URDF snippet with Gazebo-specific elements -->
+<!-- config/gazebo_config.xml -->
 <?xml version="1.0"?>
-<robot name="humanoid_robot">
-  <!-- Links with visual and collision properties -->
-  <link name="base_link">
-    <visual>
-      <geometry>
-        <mesh filename="package://humanoid_description/meshes/base_link.dae"/>
-      </geometry>
-    </visual>
-    <collision>
-      <geometry>
-        <mesh filename="package://humanoid_description/meshes/base_link_collision.stl"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="10.0"/>
-      <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
-    </inertial>
-  </link>
-
-  <!-- Joints with actuation -->
-  <joint name="left_hip_joint" type="revolute">
-    <parent link="base_link"/>
-    <child link="left_thigh"/>
-    <axis xyz="0 0 1"/>
-    <limit lower="-1.57" upper="1.57" effort="100" velocity="3.0"/>
-    <origin xyz="0 0.1 0" rpy="0 0 0"/>
-  </joint>
-
-  <!-- Gazebo-specific elements -->
-  <gazebo reference="left_hip_joint">
-    <implicitSpringDamper>1</implicitSpringDamper>
-    <provideFeedback>true</provideFeedback>
-  </gazebo>
-
-  <!-- Transmission for control -->
-  <transmission name="left_hip_transmission">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="left_hip_joint">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="left_hip_motor">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-  </transmission>
-</robot>
-```
-
-### SDF (Simulation Description Format)
-
-For more advanced Gazebo features, you can use SDF directly:
-
-```xml
-<?xml version="1.0" ?>
 <sdf version="1.7">
-  <world name="humanoid_world">
-    <!-- Physics engine configuration -->
-    <physics type="ode">
-      <max_step_size>0.001</max_step_size>
-      <real_time_factor>1.0</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
-      <gravity>0 0 -9.8</gravity>
-    </physics>
-
-    <!-- Ground plane -->
+  <world name="default">
+    <!-- Include standard world -->
     <include>
       <uri>model://ground_plane</uri>
     </include>
 
-    <!-- Sun light -->
     <include>
       <uri>model://sun</uri>
     </include>
 
-    <!-- Humanoid robot model -->
-    <model name="atlas_robot">
-      <!-- Model definition here -->
-    </model>
+    <!-- Physics engine configuration -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000.0</real_time_update_rate>
+      <gravity>0 0 -9.8</gravity>
+    </physics>
+  </world>
+</sdf>
+```
 
-    <!-- Custom environment objects -->
-    <model name="obstacle_1">
+## Launching Gazebo with ROS 2
+
+### Basic Launch File
+
+```python
+# launch/gazebo_launch.py
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
+def generate_launch_description():
+    # Launch arguments
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    world = LaunchConfiguration('world')
+
+    # Declare launch arguments
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation clock if true'
+    )
+
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value=[PathJoinSubstitution([FindPackageShare('my_robot_gazebo'), 'worlds', 'my_world.sdf'])],
+        description='SDF world file'
+    )
+
+    # Launch Gazebo
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([FindPackageShare('gazebo_ros'), 'launch', 'gazebo.launch.py'])
+        ]),
+        launch_arguments={
+            'world': world,
+            'use_sim_time': use_sim_time
+        }.items()
+    )
+
+    return LaunchDescription([
+        use_sim_time_arg,
+        world_arg,
+        gazebo
+    ])
+```
+
+### World File Example
+
+```xml
+<!-- worlds/simple_world.sdf -->
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="simple_world">
+    <!-- Include ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Include sun -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Add a simple box obstacle -->
+    <model name="box_obstacle">
       <pose>2 0 0.5 0 0 0</pose>
       <link name="link">
         <collision name="collision">
           <geometry>
             <box>
               <size>1 1 1</size>
+            </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
               <size>1 1 1</size>
+            </box>
           </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+            <specular>1 0 0 1</specular>
+          </material>
         </visual>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.1667</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1667</iyy>
+            <iyz>0</iyz>
+            <izz>0.1667</izz>
+          </inertia>
+        </inertial>
       </link>
     </model>
+
+    <!-- Physics configuration -->
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <gravity>0 0 -9.8</gravity>
+    </physics>
   </world>
 </sdf>
 ```
 
-## Gazebo Plugins for Humanoid Robotics
+## Integrating Robots with Gazebo
 
-### 1. Joint Control Plugins
+### Robot Spawn Launch File
 
-```cpp
-// Example custom joint control plugin
-#include <gazebo/common/Plugin.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo/transport/transport.hh>
-#include <ros_gz_interfaces/msg/joint_trajectory.hpp>
+```python
+# launch/spawn_robot.launch.py
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.substitutions import Command, LaunchConfiguration
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
+import os
 
-class HumanoidControllerPlugin : public gazebo::ModelPlugin
-{
-public:
-    void Load(gazebo::physics::ModelPtr _model, sdf::ElementPtr _sdf) override
-    {
-        this->model_ = _model;
-        this->world_ = _model->GetWorld();
 
-        // Initialize joints
-        for (const auto& joint_name : joint_names_) {
-            this->joints_.push_back(_model->GetJoint(joint_name));
-        }
+def generate_launch_description():
+    # Launch arguments
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    robot_name = LaunchConfiguration('robot_name')
+    x_pose = LaunchConfiguration('x_pose', default='0.0')
+    y_pose = LaunchConfiguration('y_pose', default='0.0')
+    z_pose = LaunchConfiguration('z_pose', default='0.0')
 
-        // Initialize ROS 2 node
-        this->ros_node_ = std::make_shared<rclcpp::Node>("gazebo_humanoid_controller");
+    # Robot description
+    robot_description_content = Command([
+        'xacro ',
+        FindPackageShare('my_robot_description'),
+        '/urdf/my_robot.urdf.xacro'
+    ])
 
-        // Create subscriber for joint commands
-        this->joint_cmd_sub_ = this->ros_node_->create_subscription<trajectory_msgs::msg::JointTrajectory>(
-            "/joint_trajectory", 10,
-            std::bind(&HumanoidControllerPlugin::JointTrajectoryCallback, this, std::placeholders::_1));
+    robot_description = {'robot_description': robot_description_content}
 
-        // Connect to Gazebo update event
-        this->update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
-            std::bind(&HumanoidControllerPlugin::OnUpdate, this));
-    }
+    # Spawn robot node
+    spawn_entity = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', robot_name,
+            '-x', x_pose,
+            '-y', y_pose,
+            '-z', z_pose
+        ],
+        output='screen'
+    )
 
-private:
-    void JointTrajectoryCallback(const trajectory_msgs::msg::JointTrajectory::SharedPtr msg)
-    {
-        // Process joint trajectory commands
-        this->desired_trajectory_ = *msg;
-    }
+    # Robot state publisher
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[robot_description]
+    )
 
-    void OnUpdate()
-    {
-        // Apply control commands to joints
-        if (!this->desired_trajectory_.points.empty()) {
-            // Implement trajectory following logic
-        }
-    }
-
-    gazebo::physics::ModelPtr model_;
-    gazebo::physics::WorldPtr world_;
-    std::vector<gazebo::physics::JointPtr> joints_;
-    std::vector<std::string> joint_names_;
-    rclcpp::Node::SharedPtr ros_node_;
-    rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr joint_cmd_sub_;
-    trajectory_msgs::msg::JointTrajectory desired_trajectory_;
-    gazebo::event::ConnectionPtr update_connection_;
-};
-
-// Register plugin
-GZ_REGISTER_MODEL_PLUGIN(HumanoidControllerPlugin)
+    return LaunchDescription([
+        robot_state_publisher,
+        spawn_entity
+    ])
 ```
 
-### 2. Sensor Plugins
+## Gazebo Plugins for ROS 2
 
-Gazebo provides various sensor plugins for humanoid robotics:
+### Joint State Publisher Plugin
 
-#### IMU Plugin
 ```xml
-<gazebo reference="imu_link">
-  <sensor name="imu_sensor" type="imu">
-    <always_on>true</always_on>
-    <update_rate>100</update_rate>
-    <visualize>true</visualize>
-    <topic>__default_topic__</topic>
-    <imu>
-      <angular_velocity>
-        <x>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>2e-4</stddev>
-          </noise>
-        </x>
-        <y>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>2e-4</stddev>
-          </noise>
-        </y>
-        <z>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>2e-4</stddev>
-          </noise>
-        </z>
-      </angular_velocity>
-      <linear_acceleration>
-        <x>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>1.7e-2</stddev>
-          </noise>
-        </x>
-        <y>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>1.7e-2</stddev>
-          </noise>
-        </y>
-        <z>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>1.7e-2</stddev>
-          </noise>
-        </z>
-      </linear_acceleration>
-    </imu>
-  </sensor>
-</gazebo>
-```
-
-#### Force/Torque Sensor Plugin
-```xml
+<!-- Include in robot URDF/XACRO -->
 <gazebo>
-  <plugin name="left_foot_force_torque" filename="libgazebo_ros_ft_sensor.so">
+  <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
     <ros>
-      <namespace>left_foot</namespace>
-      <remapping>~/out:=force_torque</remapping>
+      <namespace>/my_robot</namespace>
+      <remapping>~/out:=joint_states</remapping>
     </ros>
-    <update_rate>100</update_rate>
-    <frame_name>left_foot_link</frame_name>
+    <update_rate>30</update_rate>
+    <joint_name>joint1</joint_name>
+    <joint_name>joint2</joint_name>
   </plugin>
 </gazebo>
 ```
 
-## Advanced Simulation Features
-
-### 1. Contact Sensors
-
-For humanoid robots, contact sensors are crucial for detecting ground contact:
+### Diff Drive Controller Plugin
 
 ```xml
-<gazebo reference="left_foot_pad">
-  <sensor name="left_foot_contact" type="contact">
-    <always_on>true</always_on>
-    <update_rate>1000</update_rate>
-    <contact>
-      <collision>left_foot_pad_collision</collision>
-    </contact>
-    <plugin name="left_foot_contact_plugin" filename="libgazebo_ros_bumper.so">
-      <ros>
-        <namespace>left_foot</namespace>
-        <remapping>bumper_states:=contact</remapping>
-      </ros>
-    </plugin>
-  </sensor>
+<gazebo>
+  <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
+    <ros>
+      <namespace>/my_robot</namespace>
+      <remapping>cmd_vel:=cmd_vel</remapping>
+      <remapping>odom:=odom</remapping>
+      <remapping>tf:=tf</remapping>
+    </ros>
+    <update_rate>30</update_rate>
+    <!-- Wheel Information -->
+    <left_joint>left_wheel_joint</left_joint>
+    <right_joint>right_wheel_joint</right_joint>
+    <wheel_separation>0.3</wheel_separation>
+    <wheel_diameter>0.1</wheel_diameter>
+
+    <!-- Limits -->
+    <max_wheel_torque>20</max_wheel_torque>
+    <max_wheel_acceleration>1.0</max_wheel_acceleration>
+
+    <!-- Output -->
+    <odometry_frame>odom</odometry_frame>
+    <robot_base_frame>base_link</robot_base_frame>
+    <publish_odom>true</publish_odom>
+    <publish_odom_tf>true</publish_odom_tf>
+    <publish_wheel_tf>true</publish_wheel_tf>
+  </plugin>
 </gazebo>
 ```
 
-### 2. Terrain Simulation
+## Advanced Gazebo Configuration
 
-For realistic humanoid locomotion, terrain simulation is important:
+### Physics Engine Tuning
 
 ```xml
-<world name="humanoid_world">
-  <!-- Physics with ODE -->
-  <physics type="ode">
-    <ode>
-      <solver>
-        <type>quick</type>
-        <iters>10</iters>
-        <sor>1.3</sor>
-      </solver>
-      <constraints>
-        <cfm>0.0</cfm>
-        <erp>0.2</erp>
-        <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
-        <contact_surface_layer>0.001</contact_surface_layer>
-      </constraints>
-    </ode>
-  </physics>
+<physics type="ode">
+  <!-- Time stepping -->
+  <max_step_size>0.001</max_step_size>
+  <real_time_factor>1.0</real_time_factor>
+  <real_time_update_rate>1000.0</real_time_update_rate>
 
-  <!-- Uneven terrain for walking training -->
-  <model name="uneven_terrain">
-    <static>true</static>
-    <link name="link">
+  <!-- Gravity -->
+  <gravity>0 0 -9.8</gravity>
+
+  <!-- ODE-specific parameters -->
+  <ode>
+    <solver>
+      <type>quick</type>
+      <iters>10</iters>
+      <sor>1.3</sor>
+    </solver>
+    <constraints>
+      <cfm>0.0</cfm>
+      <erp>0.2</erp>
+      <contact_max_correcting_vel>100.0</contact_max_correcting_vel>
+      <contact_surface_layer>0.001</contact_surface_layer>
+    </constraints>
+  </ode>
+</physics>
+```
+
+### Rendering Configuration
+
+```xml
+<!-- Adjust rendering quality -->
+<scene>
+  <ambient>0.4 0.4 0.4 1.0</ambient>
+  <background>0.7 0.7 0.7 1.0</background>
+  <shadows>true</shadows>
+</scene>
+
+<!-- Camera configuration -->
+<sensor name="camera" type="camera">
+  <camera name="head">
+    <horizontal_fov>1.047</horizontal_fov>
+    <image>
+      <width>800</width>
+      <height>600</height>
+      <format>R8G8B8</format>
+    </image>
+    <clip>
+      <near>0.1</near>
+      <far>100</far>
+    </clip>
+  </camera>
+</sensor>
+```
+
+## Working with Gazebo Models
+
+### Creating Custom Models
+
+Create a directory structure for your custom model:
+
+```
+~/.gazebo/models/my_robot_model/
+├── model.config
+└── model.sdf
+```
+
+**model.config**:
+```xml
+<?xml version="1.0"?>
+<model>
+  <name>My Robot Model</name>
+  <version>1.0</version>
+  <sdf version="1.7">model.sdf</sdf>
+  <author>
+    <name>Your Name</name>
+    <email>your.email@example.com</email>
+  </author>
+  <description>A custom robot model for simulation</description>
+</model>
+```
+
+**model.sdf**:
+```xml
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="my_robot_model">
+    <link name="chassis">
+      <pose>0 0 0.1 0 0 0</pose>
       <collision name="collision">
         <geometry>
-          <heightmap>
-            <uri>model://terrain/heightmap.png</uri>
-            <size>10 10 2</size>
-            <pos>0 0 0</pos>
-          </heightmap>
+          <box>
+            <size>0.5 0.3 0.2</size>
+          </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
-          <heightmap>
-            <uri>model://terrain/heightmap.png</uri>
-            <size>10 10 2</size>
-            <pos>0 0 0</pos>
-          </heightmap>
+          <box>
+            <size>0.5 0.3 0.2</size>
+          </box>
         </geometry>
       </visual>
+      <inertial>
+        <mass>5.0</mass>
+        <inertia>
+          <ixx>0.1</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.2</iyy>
+          <iyz>0</iyz>
+          <izz>0.15</izz>
+        </inertia>
+      </inertial>
     </link>
   </model>
-</world>
+</sdf>
 ```
 
-## Simulation-to-Reality Transfer
+## Gazebo Commands and Tools
 
-### 1. Physics Parameter Tuning
+### Common Gazebo Commands
 
-To improve the simulation-to-reality transfer, carefully tune physics parameters:
+```bash
+# Launch Gazebo with a specific world
+gazebo --verbose worlds/willow.world
 
-```xml
-<!-- Robot joint with realistic friction and damping -->
-<joint name="knee_joint" type="revolute">
-  <parent link="thigh_link"/>
-  <child link="shin_link"/>
-  <axis xyz="0 1 0"/>
-  <limit lower="-0.5" upper="2.0" effort="50" velocity="2.0"/>
-  <dynamics damping="0.5" friction="0.1"/>
-</joint>
+# Launch empty world
+gazebo
 
-<gazebo reference="knee_joint">
-  <implicitSpringDamper>1</implicitSpringDamper>
-  <provideFeedback>true</provideFeedback>
-  <joint>
-    <dynamics>
-      <damping>0.5</damping>
-      <friction>0.1</friction>
-      <spring_reference>0</spring_reference>
-      <spring_stiffness>0</spring_stiffness>
-    </dynamics>
-  </joint>
-</gazebo>
+# Launch with specific configuration
+gazebo my_world.sdf
+
+# Run without GUI (headless)
+gazebo -s libgazebo_ros_init.so -s libgazebo_ros_factory.so my_world.sdf
 ```
 
-### 2. Sensor Noise Models
+### Gazebo Services and Topics
 
-Add realistic noise to sensors to make training more robust:
+```bash
+# List all Gazebo services
+rosservice list | grep gazebo
 
-```xml
-<gazebo reference="camera_link">
-  <sensor name="camera" type="camera">
-    <camera>
-      <horizontal_fov>1.047</horizontal_fov>
-      <image>
-        <width>640</width>
-        <height>480</height>
-        <format>R8G8B8</format>
-      </image>
-      <clip>
-        <near>0.1</near>
-        <far>100</far>
-      </clip>
-    </camera>
-    <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-      <ros>
-        <namespace>camera</namespace>
-        <remapping>~/image_raw:=image</remapping>
-      </ros>
-      <camera_name>head_camera</camera_name>
-      <image_topic_name>image</image_topic_name>
-      <camera_info_topic_name>camera_info</camera_info_topic_name>
-      <frame_name>camera_optical_frame</frame_name>
-      <hack_baseline>0.07</hack_baseline>
-      <distortion_k1>0.0</distortion_k1>
-      <distortion_k2>0.0</distortion_k2>
-      <distortion_k3>0.0</distortion_k3>
-      <distortion_t1>0.0</distortion_t1>
-      <distortion_t2>0.0</distortion_t2>
-    </plugin>
-  </sensor>
-</gazebo>
+# Get model states
+rosservice call /gazebo/get_model_state "model_name: 'my_robot' relative_entity_name: 'world'"
+
+# Set model state
+rosservice call /gazebo/set_model_state "model_state:
+  model_name: 'my_robot'
+  pose:
+    position: {x: 1.0, y: 0.0, z: 0.0}
+    orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}
+  twist:
+    linear: {x: 0.0, y: 0.0, z: 0.0}
+    angular: {x: 0.0, y: 0.0, z: 0.0}
+  reference_frame: 'world'"
+
+# Apply force to a link
+rosservice call /gazebo/apply_body_wrench "body_name: 'my_robot::chassis'
+reference_frame: 'world'
+reference_point: {x: 0, y: 0, z: 0}
+force: {x: 10.0, y: 0.0, z: 0.0}
+torque: {x: 0.0, y: 0.0, z: 0.0}
+duration: {sec: 1, nanosec: 0}"
 ```
 
 ## Performance Optimization
 
-### 1. Real-time Performance
+### Reducing Computational Load
 
-For humanoid robots requiring real-time performance:
+1. **Adjust Physics Update Rate**: Lower `max_step_size` and `real_time_update_rate` for less demanding simulations
+2. **Simplify Models**: Use simpler collision and visual geometries
+3. **Limit Sensor Data**: Reduce sensor update rates and resolutions
+4. **Use Threading**: Enable multi-threaded physics simulation
+
+### Multi-threaded Physics
 
 ```xml
-<world name="realtime_humanoid">
-  <physics type="ode">
-    <max_step_size>0.001</max_step_size>        <!-- 1ms time step -->
-    <real_time_factor>1.0</real_time_factor>    <!-- Real-time simulation -->
-    <real_time_update_rate>1000</real_time_update_rate>  <!-- 1000 Hz physics -->
-  </physics>
-</world>
+<physics type="ode">
+  <max_step_size>0.01</max_step_size>
+  <real_time_factor>1.0</real_time_factor>
+  <real_time_update_rate>100.0</real_time_update_rate>
+  <threads>4</threads>  <!-- Enable multi-threading -->
+</physics>
 ```
-
-### 2. Visual Quality vs Performance
-
-Balance visual quality with performance based on simulation needs:
-
-```bash
-# For high-performance training (lower visual quality)
-gz sim -r --iterations 1000000
-
-# For visualization (higher visual quality)
-gz sim --gui
-```
-
-## Integration with ROS 2
-
-### 1. ROS 2 Bridge
-
-Gazebo provides seamless integration with ROS 2 through the ROS 2 Gazebo bridge:
-
-```cpp
-// Example of using ROS 2 with Gazebo
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
-
-class GazeboRosBridge : public rclcpp::Node
-{
-public:
-    GazeboRosBridge() : Node("gazebo_ros_bridge")
-    {
-        // Publisher for joint commands
-        joint_cmd_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>(
-            "/joint_group_position_controller/commands", 10);
-
-        // Subscriber for joint states from Gazebo
-        joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-            "/joint_states", 10,
-            std::bind(&GazeboRosBridge::jointStateCallback, this, std::placeholders::_1));
-
-        // Timer for sending commands
-        cmd_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(10),  // 100Hz control
-            std::bind(&GazeboRosBridge::sendCommands, this));
-    }
-
-private:
-    void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
-    {
-        current_joint_states_ = *msg;
-    }
-
-    void sendCommands()
-    {
-        std_msgs::msg::Float64MultiArray cmd_msg;
-        // Fill command based on control algorithm
-        cmd_msg.data = computeControlCommands();
-        joint_cmd_pub_->publish(cmd_msg);
-    }
-
-    std::vector<double> computeControlCommands()
-    {
-        // Implement control algorithm
-        return std::vector<double>(28, 0.0);  // Example for 28 joints
-    }
-
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr joint_cmd_pub_;
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
-    rclcpp::TimerBase::SharedPtr cmd_timer_;
-    sensor_msgs::msg::JointState current_joint_states_;
-};
-```
-
-## Best Practices for Humanoid Robotics Simulation
-
-### 1. Model Validation
-
-- Validate URDF/SDF models before simulation
-- Check for proper inertial properties
-- Verify joint limits and ranges
-- Test collision detection
-
-### 2. Simulation Fidelity
-
-- Use appropriate physics parameters
-- Include realistic sensor noise
-- Model actuator dynamics
-- Consider environmental factors
-
-### 3. Performance Considerations
-
-- Optimize mesh complexity
-- Use appropriate simulation step sizes
-- Limit the number of contacts
-- Consider using simplified models for training
 
 ## Troubleshooting Common Issues
 
-### 1. Physics Instability
-- Reduce time step size
-- Adjust solver parameters
-- Verify inertial properties
-- Check joint limits and stiffness
+### 1. Robot Not Spawning
 
-### 2. Performance Problems
-- Simplify collision geometries
-- Reduce update rates for non-critical sensors
-- Use multi-threaded physics
-- Consider using OGRE's multi-rendering
+```bash
+# Check if robot description is valid
+check_urdf /path/to/robot.urdf
+
+# Verify that spawn_entity.py is working
+ros2 run gazebo_ros spawn_entity.py -entity my_robot -file /path/to/robot.urdf
+```
+
+### 2. Performance Issues
+
+```bash
+# Monitor Gazebo performance
+gz stats
+
+# Check ROS 2 topics for high frequency
+ros2 topic hz /joint_states
+```
 
 ### 3. Sensor Data Issues
-- Verify sensor frame transforms
-- Check sensor noise parameters
-- Validate sensor mounting positions
-- Test sensor ranges and fields of view
 
-## Next Steps
+- Verify sensor plugins are properly configured
+- Check topic connections: `ros2 topic info /camera/image_raw`
+- Confirm sensor parameters match expectations
 
-In the next section, we'll explore robot modeling in simulation, learning how to create accurate and efficient models of humanoid robots that can be used for both simulation and real-world deployment.
+## Best Practices
+
+1. **Start Simple**: Begin with basic models and gradually add complexity
+2. **Validate Physics**: Test physical properties in isolation
+3. **Use Standard Models**: Leverage existing models when possible
+4. **Document Configurations**: Keep track of working parameters
+5. **Version Control**: Store world files and configurations in version control
+6. **Performance Testing**: Regularly test simulation performance
+
+## Summary
+
+Gazebo provides a powerful platform for robotics simulation with extensive customization options. Proper setup involves configuring physics parameters, integrating with ROS 2, and creating appropriate models and worlds for your specific applications.
+
+In the next section, we'll explore URDF and SDF formats in detail, which are essential for describing robots and environments in Gazebo.
