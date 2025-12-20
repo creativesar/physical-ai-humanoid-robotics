@@ -2,14 +2,26 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 10000 !important; /* Higher z-index to ensure visibility above other elements */
+  pointer-events: all; /* Ensure the element is clickable */
+  min-height: 70px;
+  min-width: 70px;
 }
 
-/* Mobile responsiveness for the chatbot container */
+/* Enhanced mobile responsiveness for the chatbot container */
+@media (max-width: 1024px) {
+  .chatbotContainer {
+    bottom: 18px;
+    right: 18px;
+  }
+}
+
 @media (max-width: 768px) {
   .chatbotContainer {
     bottom: 15px;
     right: 15px;
+    min-height: 60px;
+    min-width: 60px;
   }
 }
 
@@ -17,6 +29,26 @@
   .chatbotContainer {
     bottom: 12px;
     right: 12px;
+    min-height: 55px;
+    min-width: 55px;
+  }
+}
+
+/* Additional media query for very small screens */
+@media (max-width: 360px) {
+  .chatbotContainer {
+    bottom: 10px;
+    right: 10px;
+    min-height: 50px;
+    min-width: 50px;
+  }
+}
+
+/* Ensure visibility on all screen sizes */
+@media (min-width: 1025px) {
+  .chatbotContainer {
+    bottom: 20px;
+    right: 20px;
   }
 }
 
@@ -38,9 +70,18 @@
   position: relative;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   animation: float 4s ease-in-out infinite, neon-glow 2s ease-in-out infinite alternate;
+  opacity: 1 !important; /* Ensure full opacity */
+  visibility: visible !important; /* Ensure visibility */
 }
 
-/* Mobile responsiveness for the chat button */
+/* Enhanced mobile responsiveness for the chat button */
+@media (max-width: 1024px) {
+  .chatButton {
+    width: 65px;
+    height: 65px;
+  }
+}
+
 @media (max-width: 768px) {
   .chatButton {
     width: 60px;
@@ -52,6 +93,14 @@
   .chatButton {
     width: 55px;
     height: 55px;
+  }
+}
+
+/* Additional media query for very small screens */
+@media (max-width: 360px) {
+  .chatButton {
+    width: 50px;
+    height: 50px;
   }
 }
 
@@ -67,16 +116,41 @@
 .chatButtonInner {
   width: 100%;
   height: 100%;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   position: relative;
+  opacity: 1 !important; /* Ensure full opacity */
 }
 
 .chatIcon {
   width: 28px;
   height: 28px;
   filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
+  opacity: 1 !important; /* Ensure full opacity */
+  display: block !important; /* Ensure it's displayed */
+}
+
+/* Responsive chat icon sizes */
+@media (max-width: 768px) {
+  .chatIcon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chatIcon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 360px) {
+  .chatIcon {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .pulseRing {
@@ -87,6 +161,8 @@
   border: 2px solid #00ffff;
   animation: pulse 1.8s infinite;
   box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+  opacity: 0.7 !important; /* Ensure visibility */
+  z-index: -1; /* Place behind the main button */
 }
 
 .pulseRing2 {
@@ -97,6 +173,8 @@
   border: 2px solid #00cccc;
   animation: pulse 2.5s infinite 0.7s;
   box-shadow: 0 0 20px rgba(0, 204, 204, 0.5);
+  opacity: 0.5 !important; /* Ensure visibility */
+  z-index: -2; /* Place behind the main button and first pulse */
 }
 
 @keyframes pulse {
@@ -155,6 +233,29 @@
   font-weight: bold;
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
   animation: badge-pulse 2s infinite;
+  z-index: 10001; /* Ensure badge is visible above other elements */
+  opacity: 1 !important; /* Ensure full opacity */
+}
+
+/* Responsive notification badge for smaller screens */
+@media (max-width: 480px) {
+  .notificationBadge {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    top: -6px;
+    right: -6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .notificationBadge {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    top: -5px;
+    right: -5px;
+  }
 }
 
 @keyframes badge-pulse {
@@ -190,6 +291,27 @@
     0 0 0 1px rgba(0, 255, 255, 0.2);
   border: 1px solid rgba(0, 255, 255, 0.3);
   animation: tooltip-glow 3s infinite alternate;
+  z-index: 9999; /* Ensure tooltip doesn't interfere with visibility */
+  max-width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Responsive tooltip for smaller screens */
+@media (max-width: 480px) {
+  .tooltip {
+    font-size: 14px;
+    padding: 8px 12px;
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 360px) {
+  .tooltip {
+    font-size: 13px;
+    padding: 6px 10px;
+    max-width: 120px;
+  }
 }
 
 @keyframes tooltip-glow {
