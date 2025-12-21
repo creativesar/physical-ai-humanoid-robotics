@@ -44,7 +44,68 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """
+    Check health status of the API and all services
+    """
+    health_status = {
+        "api": "healthy",
+        "services": {
+            "mistral": None,
+            "qdrant": None
+        },
+        "messages": []
+    }
+    
+    # Test Mistral connection
+    try:
+        from api.chat import get_mistral_service
+        mistral = get_mistral_service()
+        mistral_ok = await mistral.test_connection()
+        health_status["services"]["mistral"] = mistral_ok
+        if mistral_ok:
+            health_status["messages"].append("✓ Mistral AI is connected and responding")
+        else:
+            health_status["messages"].append("✗ Mistral AI connection test failed")
+    except Exception as e:
+        health_status["services"]["mistral"] = False
+        error_msg = str(e)
+        if "MISTRAL_API_KEY" in error_msg:
+            health_status["messages"].append("✗ Mistral AI: MISTRAL_API_KEY not set or invalid")
+        else:
+            health_status["messages"].append(f"✗ Mistral AI error: {error_msg[:100]}")
+    
+    # Test Qdrant connection
+    try:
+        from api.chat import get_qdrant_service
+        qdrant = get_qdrant_service()
+        qdrant_ok = await qdrant.test_connection()
+        health_status["services"]["qdrant"] = qdrant_ok
+        
+        if qdrant_ok:
+            try:
+                point_count = await qdrant.count_points()
+                health_status["messages"].append(f"✓ Qdrant is connected ({point_count} documents indexed)")
+            except:
+                health_status["messages"].append("✓ Qdrant is connected")
+        else:
+            health_status["messages"].append("✗ Qdrant connection test failed")
+    except Exception as e:
+        health_status["services"]["qdrant"] = False
+        error_msg = str(e)
+        if "QDRANT" in error_msg.upper():
+            health_status["messages"].append(f"✗ Qdrant: {error_msg[:100]}")
+        else:
+            health_status["messages"].append(f"✗ Qdrant error: {error_msg[:100]}")
+    
+    # Overall status
+    if health_status["services"]["mistral"] and health_status["services"]["qdrant"]:
+        health_status["status"] = "healthy"
+    elif health_status["services"]["mistral"] is False or health_status["services"]["qdrant"] is False:
+        health_status["status"] = "degraded"
+    else:
+        health_status["status"] = "unknown"
+    
+    return health_status
 
 if __name__ == "__main__":
     import uvicorn

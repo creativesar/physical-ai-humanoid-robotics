@@ -79,3 +79,44 @@ coverage/
 .drone.yml
 .gitlab-ci.yml
 .travis.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Backend specific
+backend/__pycache__/
+backend/venv/
+backend/venv/
+
+# Frontend specific
+frontend/.docusaurus/
+frontend/build/
+frontend/dist/
+frontend/node_modules/
+frontend/.cache/
+frontend/.server/
+frontend/.vercel/
