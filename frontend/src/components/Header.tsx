@@ -3,13 +3,9 @@ import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthButton from './AuthButton';
-import { useTranslation } from 'react-i18next';
-import { usePersonalization } from '../contexts/PersonalizationContext';
 
 const Header = () => {
   const { siteConfig } = useDocusaurusContext();
-  const { t, i18n } = useTranslation();
-  const { language, setLanguage } = usePersonalization();
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -40,12 +36,6 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Function to toggle language
-  const toggleLanguage = () => {
-    const newLanguage = language === 'english' ? 'urdu' : 'english';
-    setLanguage(newLanguage);
-  };
 
   // Track mouse position for interactive effects
   useEffect(() => {
@@ -396,39 +386,6 @@ const Header = () => {
               />
             </Link>
           </motion.div>
-          {/* Language Switcher Button */}
-          <motion.button
-            onClick={toggleLanguage}
-            style={{
-              marginLeft: '0.5rem',
-              padding: '0.6rem 1rem',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, rgba(176, 224, 230, 0.15) 0%, rgba(135, 206, 235, 0.1) 100%)',
-              border: '1px solid rgba(176, 224, 230, 0.25)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              color: '#e0f0f0',
-              fontSize: '1rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.3s ease',
-            }}
-            whileHover={{
-              background: 'linear-gradient(135deg, rgba(176, 224, 230, 0.25) 0%, rgba(135, 206, 235, 0.2) 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 5px 20px rgba(176, 224, 230, 0.2)',
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span style={{ fontSize: '1.2rem' }}>
-              {language === 'urdu' ? '🇵🇰' : '🇺🇸'}
-            </span>
-            {language === 'urdu' ? 'UR' : 'EN'}
-          </motion.button>
 
           {/* Auth Button */}
           <div style={{
@@ -544,40 +501,6 @@ const Header = () => {
           >
             GitHub
           </Link>
-          {/* Language Switcher Button in Mobile Menu */}
-          <motion.button
-            onClick={toggleLanguage}
-            style={{
-              padding: '1.1rem',
-              borderRadius: '12px',
-              background: 'rgba(176, 224, 230, 0.08)',
-              border: '1px solid rgba(176, 224, 230, 0.12)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              color: '#e0f0f0',
-              fontSize: '1.15rem',
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.8rem',
-              width: '100%',
-              justifyContent: 'center',
-              transition: 'all 0.3s ease',
-            }}
-            whileHover={{
-              background: 'rgba(176, 224, 230, 0.15)',
-              transform: 'translateX(4px)',
-              boxShadow: '0 0 20px rgba(176, 224, 230, 0.1)',
-            }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span style={{ fontSize: '1.3rem' }}>
-              {language === 'urdu' ? '🇵🇰' : '🇺🇸'}
-            </span>
-            {language === 'urdu' ? 'Urdu' : 'English'}
-          </motion.button>
 
           {/* Auth Button in Mobile Menu */}
           <div style={{

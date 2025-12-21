@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import i18n from '../i18n/i18n';
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
-export type Language = 'english' | 'urdu';
 
 interface UserProfile {
   name?: string;
@@ -10,15 +8,12 @@ interface UserProfile {
   softwareBackground?: string;
   hardwareBackground?: string;
   difficultyLevel?: DifficultyLevel;
-  preferredLanguage?: Language;
 }
 
 interface PersonalizationContextType {
   userProfile: UserProfile | null;
   difficultyLevel: DifficultyLevel;
-  language: Language;
   setDifficultyLevel: (level: DifficultyLevel) => void;
-  setLanguage: (lang: Language) => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   isPersonalized: boolean;
 }
@@ -30,9 +25,8 @@ const STORAGE_KEY = 'physical-ai-personalization';
 export function PersonalizationProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [difficultyLevel, setDifficultyLevelState] = useState<DifficultyLevel>('intermediate');
-  const [language, setLanguageState] = useState<Language>('english');
 
-  // Load from localStorage on mount and set i18n language
+  // Load from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -41,19 +35,9 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
           const data = JSON.parse(stored);
           setUserProfile(data.userProfile || null);
           setDifficultyLevelState(data.difficultyLevel || 'intermediate');
-
-          const storedLanguage = data.language || 'english';
-          setLanguageState(storedLanguage);
-
-          // Set the i18n language based on stored preference
-          const i18nLang = storedLanguage === 'urdu' ? 'ur' : 'en';
-          i18n.changeLanguage(i18nLang);
         } catch (error) {
           console.error('Failed to load personalization data:', error);
         }
-      } else {
-        // Set default language if no stored data
-        i18n.changeLanguage('en');
       }
     }
   }, []);
@@ -81,28 +65,17 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
       const data = {
         userProfile,
         difficultyLevel,
-        language,
         timestamp: Date.now(),
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
-  }, [userProfile, difficultyLevel, language]);
+  }, [userProfile, difficultyLevel]);
 
   const setDifficultyLevel = (level: DifficultyLevel) => {
     setDifficultyLevelState(level);
     if (userProfile) {
       setUserProfile({ ...userProfile, difficultyLevel: level });
     }
-  };
-
-  const setLanguage = (lang: Language) => {
-    const i18nLang = lang === 'urdu' ? 'ur' : 'en';
-    i18n.changeLanguage(i18nLang).then(() => {
-      setLanguageState(lang);
-      if (userProfile) {
-        setUserProfile({ ...userProfile, preferredLanguage: lang });
-      }
-    });
   };
 
   const updateUserProfile = (profile: Partial<UserProfile>) => {
@@ -112,16 +85,14 @@ export function PersonalizationProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const isPersonalized = !!(userProfile || difficultyLevel !== 'intermediate' || language !== 'english');
+  const isPersonalized = !!(userProfile || difficultyLevel !== 'intermediate');
 
   return (
     <PersonalizationContext.Provider
       value={{
         userProfile,
         difficultyLevel,
-        language,
         setDifficultyLevel,
-        setLanguage,
         updateUserProfile,
         isPersonalized,
       }}

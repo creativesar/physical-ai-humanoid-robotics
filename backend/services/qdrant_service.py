@@ -101,18 +101,17 @@ class QdrantService:
         Search for similar embeddings in Qdrant
         """
         try:
-            # Search for similar vectors using query_points method
-            from qdrant_client.http import models
-            search_results = await self.client.query_points(
+            # Search for similar vectors using search method (compatible with qdrant-client 1.7.0)
+            search_results = await self.client.search(
                 collection_name=self.collection_name,
-                query=query_vector,
+                query_vector=query_vector,
                 limit=limit,
                 with_payload=True
             )
 
             # Format results
             results = []
-            for result in search_results.points:
+            for result in search_results:
                 results.append({
                     "id": result.id,
                     "content": result.payload["content"],
