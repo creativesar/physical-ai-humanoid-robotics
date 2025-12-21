@@ -1,9 +1,0 @@
-{
-  "buildCommand": "node vercel-build.js",
-  "outputDirectory": "frontend/build",
-  "installCommand": "node vercel-install.js",
-  "framework": null,
-  "cleanUrls": true,
-  "trailingSlash": false
-}
-
