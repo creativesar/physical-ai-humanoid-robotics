@@ -6,8 +6,6 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "build": "docusaurus build",
-    "build:dist": "npm run build && npm run copy-to-dist",
-    "copy-to-dist": "node scripts/copy-to-dist.js",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
