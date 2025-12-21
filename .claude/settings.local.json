@@ -299,7 +299,13 @@
       "Bash(git rm -r --cached backend/__pycache__ backend/venv)",
       "Bash(git add .claude/settings.local.json backend/.gitignore backend/services/qdrant_service.py frontend/ public/ temp_config.txt)",
       "Bash(git commit -m \"Update settings, qdrant service, and frontend components for Physical AI & Humanoid Robotics project\n\n- Updated Claude settings with new configurations\n- Modified qdrant service for improved vector database functionality\n- Enhanced frontend components including chatbot widget, header, and layout\n- Added localization support with Urdu translations\n- Updated project dependencies and configurations\")",
-      "Bash(cat package.json)"
+      "Bash(cat package.json)",
+      "Bash(find . -type f -name \"*.py\" -exec grep -l \"fastembed\\\\|DefaultEmbedding\\\\|FlagEmbedding\\\\|JinaEmbedding\" {} ;)",
+      "Bash(find . -type f -name \"*.py\" -not -path \"./backend/venv/*\" -exec grep -l \"fastembed\\\\|DefaultEmbedding\\\\|FlagEmbedding\\\\|JinaEmbedding\" {} ;)",
+      "Bash(npm run dev)",
+      "Bash(findstr :3000)",
+      "Bash(curl -v http://127.0.0.1:3000/)",
+      "Bash(curl -v http://127.0.0.1:3000/health)"
     ]
   }
 }
