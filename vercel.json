@@ -2,11 +2,10 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/**",
+      "src": "backend/main.py",
       "use": "@vercel/python",
       "config": {
-        "runtime": "python3.11",
-        "includeFiles": ["backend/**"]
+        "runtime": "python3.12"
       }
     }
   ],
