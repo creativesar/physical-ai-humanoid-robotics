@@ -1,6 +1,11 @@
 import os
 from mangum import Mangum
-from main import app  # Import your existing FastAPI app
+
+# Try to import the full version, fallback to vercel version
+try:
+    from main import app
+except ImportError:
+    from main_vercel import app
 
 # Create Mangum handler for Vercel serverless deployment
 handler = Mangum(app, lifespan="off")

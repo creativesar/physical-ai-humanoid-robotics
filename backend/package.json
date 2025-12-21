@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "uvicorn main:app --reload --port 3000",
-    "start": "uvicorn main:app --port $PORT"
+    "start": "uvicorn main:app --port $PORT",
+    "vercel-build": "pip install -r requirements-vercel-light.txt"
   },
   "dependencies": {},
   "engines": {

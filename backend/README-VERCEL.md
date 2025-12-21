@@ -72,6 +72,12 @@ After deployment, you'll need to set the following environment variables in your
 
 ## Troubleshooting
 
+- **Size Limit Error (250MB)**: If you encounter "A Serverless Function has exceeded the unzipped maximum size of 250 MB" error:
+  - Use the lighter requirements-vercel-light.txt file instead of requirements.txt
+  - In your Vercel dashboard, change the build command to install lighter dependencies first
+  - The main-vercel.py file provides a minimal version that works with fewer dependencies
+  - Consider using Vercel's Build Cache to optimize build times
+
 - If deployment fails due to build timeout, try reducing dependencies in requirements.txt
 - If external services are not accessible, the application will start but some features may not work
 - Check Vercel logs in your dashboard for detailed error information
