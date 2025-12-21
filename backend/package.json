@@ -1,0 +1,12 @@
+{
+  "name": "physical-ai-humanoid-robotics-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "uvicorn main:app --reload --port 3000",
+    "start": "uvicorn main:app --port $PORT"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "vercel_api.py",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.11"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "vercel_api.py"
+    }
+  ],
+  "env": {
+    "MISTRAL_API_KEY": "$MISTRAL_API_KEY",
+    "QDRANT_URL": "$QDRANT_URL",
+    "QDRANT_API_KEY": "$QDRANT_API_KEY",
+    "DATABASE_URL": "$DATABASE_URL"
+  }
+}

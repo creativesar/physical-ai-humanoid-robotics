@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.24.0
+pydantic>=2.10.3
+python-dotenv==1.0.0
+mistralai==1.10.0
+qdrant-client==1.7.0
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+pydantic-settings==2.1.0
+requests==2.31.0
+tiktoken>=0.5.1
+python-multipart==0.0.6
+fastembed==0.2.7
+mangum==0.17.0

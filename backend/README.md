@@ -2,6 +2,15 @@
 
 This backend API provides RAG (Retrieval Augmented Generation) functionality for the Physical AI & Humanoid Robotics textbook, allowing users to ask questions about the content and receive contextually relevant answers.
 
+## Deployment Options
+
+This backend can be deployed to various platforms:
+
+- **Local Development**: Run with `uvicorn main:app --reload`
+- **Docker**: Use the provided Dockerfile
+- **Vercel**: Follow the instructions in [README-VERCEL.md](./README-VERCEL.md)
+- **Hugging Face Spaces**: Use the configurations mentioned in this documentation
+
 ## Features
 
 - **RAG Chat Interface**: Question-answering system using textbook content as context

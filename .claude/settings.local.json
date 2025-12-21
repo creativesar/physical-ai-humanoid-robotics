@@ -298,7 +298,8 @@
       "Bash(else echo \"No i18n packages found\")",
       "Bash(git rm -r --cached backend/__pycache__ backend/venv)",
       "Bash(git add .claude/settings.local.json backend/.gitignore backend/services/qdrant_service.py frontend/ public/ temp_config.txt)",
-      "Bash(git commit -m \"Update settings, qdrant service, and frontend components for Physical AI & Humanoid Robotics project\n\n- Updated Claude settings with new configurations\n- Modified qdrant service for improved vector database functionality\n- Enhanced frontend components including chatbot widget, header, and layout\n- Added localization support with Urdu translations\n- Updated project dependencies and configurations\")"
+      "Bash(git commit -m \"Update settings, qdrant service, and frontend components for Physical AI & Humanoid Robotics project\n\n- Updated Claude settings with new configurations\n- Modified qdrant service for improved vector database functionality\n- Enhanced frontend components including chatbot widget, header, and layout\n- Added localization support with Urdu translations\n- Updated project dependencies and configurations\")",
+      "Bash(cat package.json)"
     ]
   }
 }
