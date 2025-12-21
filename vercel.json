@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/**",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.11",
+        "includeFiles": ["backend/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "backend/main.py"
+    }
+  ]
+}
