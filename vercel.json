@@ -1,7 +1,8 @@
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
-  "outputDirectory": "frontend/build",
-  "installCommand": "cd frontend && npm ci",
+  "rootDirectory": "frontend",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "installCommand": "npm ci",
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false
