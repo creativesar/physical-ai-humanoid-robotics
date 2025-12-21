@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "install": "cd frontend && npm ci",
-    "build": "cd frontend && npm run build"
+    "install": "cd frontend || exit 1 && npm ci",
+    "build": "cd frontend || exit 1 && npm run build",
+    "vercel-install": "cd frontend && npm ci",
+    "vercel-build": "cd frontend && npm run build"
   },
   "engines": {
     "node": ">=20.0"
