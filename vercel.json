@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd frontend && npm ci && npm run build",
+  "buildCommand": "bash build.sh",
   "outputDirectory": "frontend/build",
-  "installCommand": "cd frontend && npm ci",
+  "installCommand": "bash install.sh",
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false
