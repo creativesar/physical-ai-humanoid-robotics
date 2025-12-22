@@ -332,7 +332,9 @@
       "Bash(ls -la backend/*.py)",
       "Bash(mkdir -p backend/scripts)",
       "Bash(mv backend/check_points.py backend/check_qdrant_count.py backend/check_qdrant_simple.py backend/clear_collection.py backend/final_check.py backend/ingest_from_web.py backend/ingest_from_web_chunked.py backend/scripts/)",
-      "Bash(git add -A)"
+      "Bash(git add -A)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nOrganize backend Python files into proper directory structure\n\n- Move backend-related Python scripts from root to backend/scripts directory\n- Create dedicated scripts directory for utility scripts\n- Clean up root directory by removing backend-specific Python files\n- Maintain proper project structure with all backend code in backend folder\n\nFiles moved:\n- check_points.py → backend/scripts/check_points.py\n- check_qdrant_count.py → backend/scripts/check_qdrant_count.py\n- check_qdrant_simple.py → backend/scripts/check_qdrant_simple.py\n- clear_collection.py → backend/scripts/clear_collection.py\n- final_check.py → backend/scripts/final_check.py\n- ingest_from_web.py → backend/scripts/ingest_from_web.py\n- ingest_from_web_chunked.py → backend/scripts/ingest_from_web_chunked.py\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push origin main)"
     ]
   }
 }
