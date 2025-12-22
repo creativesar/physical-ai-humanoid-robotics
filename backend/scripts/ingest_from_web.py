@@ -111,6 +111,60 @@ class WebContentIngestor:
             lines = [line.strip() for line in text_content.split('\n') if line.strip()]
             clean_content = '\n'.join(lines)
 
+            # Extract additional content like images, diagrams, and their descriptions
+            additional_content = []
+
+            # Extract images with alt text and titles
+            images = main_content.find_all('img')
+            for img in images:
+                img_alt = img.get('alt', '')
+                img_title = img.get('title', '')
+                img_src = img.get('src', '')
+                if img_alt or img_title:
+                    additional_content.append(f"Image Description: {img_alt} {img_title}")
+                elif img_src:
+                    # Extract filename or meaningful part of src
+                    img_filename = img_src.split('/')[-1].split('.')[0]
+                    additional_content.append(f"Image: {img_filename}")
+
+            # Extract diagrams, figures, and other visual content
+            figures = main_content.find_all(['figure', 'svg', 'div'], class_=lambda x: x and any(keyword in x.lower() for keyword in ['diagram', 'figure', 'chart', 'graph', 'visual', 'image', 'pic', 'illustration']))
+            for figure in figures:
+                fig_caption = figure.find(['figcaption', 'p'], class_=lambda x: x and 'caption' in x.lower())
+                if fig_caption:
+                    additional_content.append(f"Figure Caption: {fig_caption.get_text(strip=True)}")
+                else:
+                    fig_content = figure.get_text(separator=' ', strip=True)
+                    if len(fig_content) > 10:  # Only add substantial content
+                        additional_content.append(f"Visual Content: {fig_content}")
+
+            # Extract code blocks with their titles/captions
+            code_blocks = main_content.find_all(['pre', 'code'])
+            for code in code_blocks:
+                code_title = code.get('title') or ''
+                code_content = code.get_text(strip=True)[:200]  # Limit length
+                if code_content:
+                    additional_content.append(f"Code Sample: {code_content}")
+
+            # Extract tables with their captions
+            tables = main_content.find_all('table')
+            for i, table in enumerate(tables):
+                table_caption = table.find('caption')
+                if table_caption:
+                    additional_content.append(f"Table {i+1} Caption: {table_caption.get_text(strip=True)}")
+                else:
+                    # Extract header information from table
+                    headers = table.find_all(['th', 'td'])
+                    if headers:
+                        header_text = ' | '.join([h.get_text(strip=True) for h in headers[:5]])  # First 5 cells
+                        additional_content.append(f"Table Content: {header_text}")
+
+            # Combine all content
+            if additional_content:
+                all_content = clean_content + "\n\n" + "\n".join(additional_content)
+            else:
+                all_content = clean_content
+
             # Extract metadata
             path = urlparse(url).path
             chapter_id = path.replace('/', '_').strip('_') or 'home'
@@ -118,7 +172,7 @@ class WebContentIngestor:
             return {
                 'url': url,
                 'title': title_text,
-                'content': clean_content,
+                'content': all_content,
                 'chapter_id': chapter_id,
                 'path': path
             }
@@ -238,11 +292,12 @@ async def main():
         sitemap_url = "https://physical-ai-humanoid-robotics-seven-red.vercel.app/sitemap.xml"
 
         # The actual domain where content is hosted (replace sitemap URLs with this)
-        actual_domain = "physical-ai-humanoid-robotics-seven-red.vercel.app"
+        actual_domain = "physical-ai-humanoid-robotics-seven.vercel.app"
 
         # Optional: Skip non-content pages (navigation, auth pages, etc.) - using patterns
         skip_patterns = ['/about', '/contact', '/LayoutWrapper', '/markdown-page',
-                        '/our-vision', '/privacy', '/signin', '/signup', '/terms']
+                        '/our-vision', '/privacy', '/signin', '/signup', '/terms',
+                        '/github', '/discord', '/twitter', '/linkedin']
 
         # Ingest content with domain replacement
         results = await ingestor.ingest_from_sitemap(

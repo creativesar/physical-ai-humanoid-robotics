@@ -313,7 +313,26 @@
       "Bash(git add:*)",
       "Bash(git rm:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd comprehensive web content ingestion system with automatic chunking\n\n- Implemented web scraper to fetch content from sitemap\n- Added automatic chunking for documents exceeding 8192 token limit\n- Successfully indexed all 38 content pages \\(66 total chunks\\) into Qdrant\n- Updated backend dependencies \\(httpx, beautifulsoup4, lxml\\)\n- Added utility scripts for Qdrant management and monitoring\n- Moved .env.example to root directory for better visibility\n- Cleaned up deprecated Vercel deployment files\n- All content from Physical AI & Humanoid Robotics textbook now indexed\n\nKey Features:\n- Smart chunking algorithm that splits by paragraphs and sentences\n- Token counting using tiktoken for accurate size management\n- Handles large documents \\(up to 40,000+ tokens\\) by splitting into 6000-token chunks\n- Automatic domain replacement for sitemap URLs\n- Comprehensive error handling and logging\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:physical-ai-humanoid-robotics-seven-red.vercel.app)",
+      "Bash(python ingest_from_web_chunked.py)",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b50bfc7.output'' -Tail 20\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b8e9372.output'' -Tail 20\")",
+      "Bash(timeout 30s)",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b64710a.output'' -Tail 30\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b27f03b.output'' -Tail 30\")",
+      "Bash(powershell -Command \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b11ebea.output'' -Tail 50\")",
+      "Bash(timeout 30s tail -f C:UsersCodersAppDataLocalTempclaudeC--Users-Coders-Desktop-physical-ai-humanoid-roboticstasksb579a68.output)",
+      "Bash(powershell -Command \"Get-Process | Where-Object {$_ProcessName -like ''*python*''}\")",
+      "Bash(python check_qdrant_count.py)",
+      "Bash(python -c \"import os; print\\(''QDRANT_URL:'', os.getenv\\(''QDRANT_URL''\\)\\); print\\(''QDRANT_API_KEY:'', os.getenv\\(''QDRANT_API_KEY''\\)\\); print\\(''QDRANT_COLLECTION_NAME:'', os.getenv\\(''QDRANT_COLLECTION_NAME''\\)\\)\")",
+      "Bash(set QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.4ehyvT1T86bvGaL5ua_t182DkRQ9pMN2220c0hgLbh0)",
+      "Bash(dir \"C:\\\\Users\\\\Coders\\\\Desktop\\\\physical-ai-humanoid-robotics\\\\frontend\\\\docs\\\\module-3\")",
+      "Bash(mv check_points.py check_qdrant_count.py check_qdrant_simple.py clear_collection.py final_check.py ingest_from_web.py ingest_from_web_chunked.py backend/)",
+      "Bash(ls -la backend/*.py)",
+      "Bash(mkdir -p backend/scripts)",
+      "Bash(mv backend/check_points.py backend/check_qdrant_count.py backend/check_qdrant_simple.py backend/clear_collection.py backend/final_check.py backend/ingest_from_web.py backend/ingest_from_web_chunked.py backend/scripts/)",
+      "Bash(git add -A)"
     ]
   }
 }
