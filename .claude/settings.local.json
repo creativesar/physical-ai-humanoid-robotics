@@ -305,7 +305,15 @@
       "Bash(npm run dev)",
       "Bash(findstr :3000)",
       "Bash(curl -v http://127.0.0.1:3000/)",
-      "Bash(curl -v http://127.0.0.1:3000/health)"
+      "Bash(curl -v http://127.0.0.1:3000/health)",
+      "Bash(curl -s http://127.0.0.1:8000/health)",
+      "Bash(python:*)",
+      "Bash(timeout 600 python:*)",
+      "Bash(tee:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd comprehensive web content ingestion system with automatic chunking\n\n- Implemented web scraper to fetch content from sitemap\n- Added automatic chunking for documents exceeding 8192 token limit\n- Successfully indexed all 38 content pages \\(66 total chunks\\) into Qdrant\n- Updated backend dependencies \\(httpx, beautifulsoup4, lxml\\)\n- Added utility scripts for Qdrant management and monitoring\n- Moved .env.example to root directory for better visibility\n- Cleaned up deprecated Vercel deployment files\n- All content from Physical AI & Humanoid Robotics textbook now indexed\n\nKey Features:\n- Smart chunking algorithm that splits by paragraphs and sentences\n- Token counting using tiktoken for accurate size management\n- Handles large documents \\(up to 40,000+ tokens\\) by splitting into 6000-token chunks\n- Automatic domain replacement for sitemap URLs\n- Comprehensive error handling and logging\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
     ]
   }
 }

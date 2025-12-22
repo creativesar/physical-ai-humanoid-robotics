@@ -1,0 +1,402 @@
+[32m2025-12-22 14:00:38.287[0m | [33m[1mWARNING [0m | [36mfastembed.embedding[0m:[36m<module>[0m:[36m7[0m - [33m[1mDefaultEmbedding, FlagEmbedding, JinaEmbedding are deprecated.Use from fastembed import TextEmbedding instead.[0m
+INFO:__main__:Starting chunked web content ingestion...
+INFO:httpx:HTTP Request: GET https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Collection textbook_content already exists
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/sitemap.xml "HTTP/1.1 200 OK"
+INFO:__main__:Replaced domain with physical-ai-humanoid-robotics-seven-red.vercel.app
+INFO:__main__:Found 47 URLs in sitemap
+INFO:__main__:Processing 38 URLs (skipping 9)
+INFO:__main__:Processing 1/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/assessments/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/assessments/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_assessments, section docs/assessments
+INFO:__main__:Indexed: docs/assessments (18296 chars)
+INFO:__main__:Processing 2/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/conclusion
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/conclusion "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_conclusion, section docs/conclusion
+INFO:__main__:Indexed: docs/conclusion (16192 chars)
+INFO:__main__:Processing 3/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/hardware-requirements/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/hardware-requirements/ "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/hardware-requirements' (6911 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/hardware-requirements'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_hardware-requirements_chunk_0, section docs/hardware-requirements (Part 1/2)
+INFO:__main__:Indexed: docs/hardware-requirements (Part 1/2) (24031 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_hardware-requirements_chunk_1, section docs/hardware-requirements (Part 2/2)
+INFO:__main__:Indexed: docs/hardware-requirements (Part 2/2) (729 chars)
+INFO:__main__:Processing 4/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1, section docs/module-1
+INFO:__main__:Indexed: docs/module-1 (1533 chars)
+INFO:__main__:Processing 5/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/bridging-python-ros
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/bridging-python-ros "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-1/bridging-python-ros' (7037 tokens) into smaller pieces
+INFO:__main__:Created 1 chunks for 'docs/module-1/bridging-python-ros'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_bridging-python-ros, section docs/module-1/bridging-python-ros
+INFO:__main__:Indexed: docs/module-1/bridging-python-ros (22408 chars)
+INFO:__main__:Processing 6/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/nodes-communication
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/nodes-communication "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_nodes-communication, section docs/module-1/nodes-communication
+INFO:__main__:Indexed: docs/module-1/nodes-communication (8369 chars)
+INFO:__main__:Processing 7/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/packages-workspaces
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/packages-workspaces "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_packages-workspaces, section docs/module-1/packages-workspaces
+INFO:__main__:Indexed: docs/module-1/packages-workspaces (9789 chars)
+INFO:__main__:Processing 8/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/ros2-architecture
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/ros2-architecture "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_ros2-architecture, section docs/module-1/ros2-architecture
+INFO:__main__:Indexed: docs/module-1/ros2-architecture (4240 chars)
+INFO:__main__:Processing 9/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/ros2-humanoid-robotics
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/ros2-humanoid-robotics "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-1/ros2-humanoid-robotics' (9546 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-1/ros2-humanoid-robotics'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_ros2-humanoid-robotics_chunk_0, section docs/module-1/ros2-humanoid-robotics (Part 1/2)
+INFO:__main__:Indexed: docs/module-1/ros2-humanoid-robotics (Part 1/2) (24383 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_ros2-humanoid-robotics_chunk_1, section docs/module-1/ros2-humanoid-robotics (Part 2/2)
+INFO:__main__:Indexed: docs/module-1/ros2-humanoid-robotics (Part 2/2) (7050 chars)
+INFO:__main__:Processing 10/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/tools-debugging
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/tools-debugging "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_tools-debugging, section docs/module-1/tools-debugging
+INFO:__main__:Indexed: docs/module-1/tools-debugging (11147 chars)
+INFO:__main__:Processing 11/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/urdf-humanoids
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-1/urdf-humanoids "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-1/urdf-humanoids' (10348 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-1/urdf-humanoids'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_urdf-humanoids_chunk_0, section docs/module-1/urdf-humanoids (Part 1/2)
+INFO:__main__:Indexed: docs/module-1/urdf-humanoids (Part 1/2) (17619 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-1_urdf-humanoids_chunk_1, section docs/module-1/urdf-humanoids (Part 2/2)
+INFO:__main__:Indexed: docs/module-1/urdf-humanoids (Part 2/2) (6808 chars)
+INFO:__main__:Processing 12/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2, section docs/module-2
+INFO:__main__:Indexed: docs/module-2 (1682 chars)
+INFO:__main__:Processing 13/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/gazebo-environment
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/gazebo-environment "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_gazebo-environment, section docs/module-2/gazebo-environment
+INFO:__main__:Indexed: docs/module-2/gazebo-environment (13296 chars)
+INFO:__main__:Processing 14/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/introduction-to-digital-twins
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/introduction-to-digital-twins "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_introduction-to-digital-twins, section docs/module-2/introduction-to-digital-twins
+INFO:__main__:Indexed: docs/module-2/introduction-to-digital-twins (7211 chars)
+INFO:__main__:Processing 15/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/physics-dynamics
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/physics-dynamics "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_physics-dynamics, section docs/module-2/physics-dynamics
+INFO:__main__:Indexed: docs/module-2/physics-dynamics (15462 chars)
+INFO:__main__:Processing 16/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/sensor-simulation
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/sensor-simulation "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-2/sensor-simulation' (7534 tokens) into smaller pieces
+INFO:__main__:Created 1 chunks for 'docs/module-2/sensor-simulation'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_sensor-simulation, section docs/module-2/sensor-simulation
+INFO:__main__:Indexed: docs/module-2/sensor-simulation (21549 chars)
+INFO:__main__:Processing 17/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/simulation-reality-transfer
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/simulation-reality-transfer "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-2/simulation-reality-transfer' (11558 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-2/simulation-reality-transfer'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_simulation-reality-transfer_chunk_0, section docs/module-2/simulation-reality-transfer (Part 1/2)
+INFO:__main__:Indexed: docs/module-2/simulation-reality-transfer (Part 1/2) (25215 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_simulation-reality-transfer_chunk_1, section docs/module-2/simulation-reality-transfer (Part 2/2)
+INFO:__main__:Indexed: docs/module-2/simulation-reality-transfer (Part 2/2) (13750 chars)
+INFO:__main__:Processing 18/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/unity-integration
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/unity-integration "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-2/unity-integration' (6593 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-2/unity-integration'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_unity-integration_chunk_0, section docs/module-2/unity-integration (Part 1/2)
+INFO:__main__:Indexed: docs/module-2/unity-integration (Part 1/2) (27560 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_unity-integration_chunk_1, section docs/module-2/unity-integration (Part 2/2)
+INFO:__main__:Indexed: docs/module-2/unity-integration (Part 2/2) (1490 chars)
+INFO:__main__:Processing 19/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/urdf-sdf-formats
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-2/urdf-sdf-formats "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-2_urdf-sdf-formats, section docs/module-2/urdf-sdf-formats
+INFO:__main__:Indexed: docs/module-2/urdf-sdf-formats (16609 chars)
+INFO:__main__:Processing 20/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3, section docs/module-3
+INFO:__main__:Indexed: docs/module-3 (1842 chars)
+INFO:__main__:Processing 21/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/ai-model-deployment
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/ai-model-deployment "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/ai-model-deployment' (15972 tokens) into smaller pieces
+INFO:__main__:Created 3 chunks for 'docs/module-3/ai-model-deployment'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_ai-model-deployment_chunk_0, section docs/module-3/ai-model-deployment (Part 1/3)
+INFO:__main__:Indexed: docs/module-3/ai-model-deployment (Part 1/3) (24231 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_ai-model-deployment_chunk_1, section docs/module-3/ai-model-deployment (Part 2/3)
+INFO:__main__:Indexed: docs/module-3/ai-model-deployment (Part 2/3) (25433 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_ai-model-deployment_chunk_2, section docs/module-3/ai-model-deployment (Part 3/3)
+INFO:__main__:Indexed: docs/module-3/ai-model-deployment (Part 3/3) (565 chars)
+INFO:__main__:Processing 22/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/introduction-to-isaac
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/introduction-to-isaac "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_introduction-to-isaac, section docs/module-3/introduction-to-isaac
+INFO:__main__:Indexed: docs/module-3/introduction-to-isaac (12787 chars)
+INFO:__main__:Processing 23/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/isaac-ros-gems
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/isaac-ros-gems "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/isaac-ros-gems' (11699 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-3/isaac-ros-gems'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_isaac-ros-gems_chunk_0, section docs/module-3/isaac-ros-gems (Part 1/2)
+INFO:__main__:Indexed: docs/module-3/isaac-ros-gems (Part 1/2) (24105 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_isaac-ros-gems_chunk_1, section docs/module-3/isaac-ros-gems (Part 2/2)
+INFO:__main__:Indexed: docs/module-3/isaac-ros-gems (Part 2/2) (13814 chars)
+INFO:__main__:Processing 24/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/isaac-sim-integration
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/isaac-sim-integration "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/isaac-sim-integration' (13122 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-3/isaac-sim-integration'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_isaac-sim-integration_chunk_0, section docs/module-3/isaac-sim-integration (Part 1/2)
+INFO:__main__:Indexed: docs/module-3/isaac-sim-integration (Part 1/2) (23353 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_isaac-sim-integration_chunk_1, section docs/module-3/isaac-sim-integration (Part 2/2)
+INFO:__main__:Indexed: docs/module-3/isaac-sim-integration (Part 2/2) (18947 chars)
+INFO:__main__:Processing 25/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/perception-systems
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/perception-systems "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/perception-systems' (10857 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-3/perception-systems'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_perception-systems_chunk_0, section docs/module-3/perception-systems (Part 1/2)
+INFO:__main__:Indexed: docs/module-3/perception-systems (Part 1/2) (24788 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_perception-systems_chunk_1, section docs/module-3/perception-systems (Part 2/2)
+INFO:__main__:Indexed: docs/module-3/perception-systems (Part 2/2) (10524 chars)
+INFO:__main__:Processing 26/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/planning-navigation
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/planning-navigation "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/planning-navigation' (16618 tokens) into smaller pieces
+INFO:__main__:Created 3 chunks for 'docs/module-3/planning-navigation'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_planning-navigation_chunk_0, section docs/module-3/planning-navigation (Part 1/3)
+INFO:__main__:Indexed: docs/module-3/planning-navigation (Part 1/3) (24829 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_planning-navigation_chunk_1, section docs/module-3/planning-navigation (Part 2/3)
+INFO:__main__:Indexed: docs/module-3/planning-navigation (Part 2/3) (24443 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_planning-navigation_chunk_2, section docs/module-3/planning-navigation (Part 3/3)
+INFO:__main__:Indexed: docs/module-3/planning-navigation (Part 3/3) (4300 chars)
+INFO:__main__:Processing 27/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/reinforcement-learning
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/reinforcement-learning "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/reinforcement-learning' (12389 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-3/reinforcement-learning'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_reinforcement-learning_chunk_0, section docs/module-3/reinforcement-learning (Part 1/2)
+INFO:__main__:Indexed: docs/module-3/reinforcement-learning (Part 1/2) (23810 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_reinforcement-learning_chunk_1, section docs/module-3/reinforcement-learning (Part 2/2)
+INFO:__main__:Indexed: docs/module-3/reinforcement-learning (Part 2/2) (14805 chars)
+INFO:__main__:Processing 28/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/sim-transfer-techniques
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-3/sim-transfer-techniques "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-3/sim-transfer-techniques' (14108 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-3/sim-transfer-techniques'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_sim-transfer-techniques_chunk_0, section docs/module-3/sim-transfer-techniques (Part 1/2)
+INFO:__main__:Indexed: docs/module-3/sim-transfer-techniques (Part 1/2) (25230 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-3_sim-transfer-techniques_chunk_1, section docs/module-3/sim-transfer-techniques (Part 2/2)
+INFO:__main__:Indexed: docs/module-3/sim-transfer-techniques (Part 2/2) (21681 chars)
+INFO:__main__:Processing 29/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4, section docs/module-4
+INFO:__main__:Indexed: docs/module-4 (2147 chars)
+INFO:__main__:Processing 30/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/advanced-perception
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/advanced-perception "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/advanced-perception' (23892 tokens) into smaller pieces
+INFO:__main__:Created 4 chunks for 'docs/module-4/advanced-perception'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_advanced-perception_chunk_0, section docs/module-4/advanced-perception (Part 1/4)
+INFO:__main__:Indexed: docs/module-4/advanced-perception (Part 1/4) (25861 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_advanced-perception_chunk_1, section docs/module-4/advanced-perception (Part 2/4)
+INFO:__main__:Indexed: docs/module-4/advanced-perception (Part 2/4) (24368 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_advanced-perception_chunk_2, section docs/module-4/advanced-perception (Part 3/4)
+INFO:__main__:Indexed: docs/module-4/advanced-perception (Part 3/4) (24353 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_advanced-perception_chunk_3, section docs/module-4/advanced-perception (Part 4/4)
+INFO:__main__:Indexed: docs/module-4/advanced-perception (Part 4/4) (5481 chars)
+INFO:__main__:Processing 31/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/capstone-project
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/capstone-project "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/capstone-project' (29517 tokens) into smaller pieces
+INFO:__main__:Created 4 chunks for 'docs/module-4/capstone-project'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_capstone-project_chunk_0, section docs/module-4/capstone-project (Part 1/4)
+INFO:__main__:Indexed: docs/module-4/capstone-project (Part 1/4) (23933 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_capstone-project_chunk_1, section docs/module-4/capstone-project (Part 2/4)
+INFO:__main__:Indexed: docs/module-4/capstone-project (Part 2/4) (24323 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_capstone-project_chunk_2, section docs/module-4/capstone-project (Part 3/4)
+INFO:__main__:Indexed: docs/module-4/capstone-project (Part 3/4) (23932 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_capstone-project_chunk_3, section docs/module-4/capstone-project (Part 4/4)
+INFO:__main__:Indexed: docs/module-4/capstone-project (Part 4/4) (23750 chars)
+INFO:__main__:Processing 32/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/cognitive-planning
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/cognitive-planning "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/cognitive-planning' (14069 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-4/cognitive-planning'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_cognitive-planning_chunk_0, section docs/module-4/cognitive-planning (Part 1/2)
+INFO:__main__:Indexed: docs/module-4/cognitive-planning (Part 1/2) (24814 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_cognitive-planning_chunk_1, section docs/module-4/cognitive-planning (Part 2/2)
+INFO:__main__:Indexed: docs/module-4/cognitive-planning (Part 2/2) (23484 chars)
+INFO:__main__:Processing 33/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/introduction-to-vla
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/introduction-to-vla "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/introduction-to-vla' (14513 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-4/introduction-to-vla'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_introduction-to-vla_chunk_0, section docs/module-4/introduction-to-vla (Part 1/2)
+INFO:__main__:Indexed: docs/module-4/introduction-to-vla (Part 1/2) (26041 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_introduction-to-vla_chunk_1, section docs/module-4/introduction-to-vla (Part 2/2)
+INFO:__main__:Indexed: docs/module-4/introduction-to-vla (Part 2/2) (26501 chars)
+INFO:__main__:Processing 34/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/multimodal-perception
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/multimodal-perception "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/multimodal-perception' (28549 tokens) into smaller pieces
+INFO:__main__:Created 4 chunks for 'docs/module-4/multimodal-perception'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_multimodal-perception_chunk_0, section docs/module-4/multimodal-perception (Part 1/4)
+INFO:__main__:Indexed: docs/module-4/multimodal-perception (Part 1/4) (24922 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_multimodal-perception_chunk_1, section docs/module-4/multimodal-perception (Part 2/4)
+INFO:__main__:Indexed: docs/module-4/multimodal-perception (Part 2/4) (24577 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_multimodal-perception_chunk_2, section docs/module-4/multimodal-perception (Part 3/4)
+INFO:__main__:Indexed: docs/module-4/multimodal-perception (Part 3/4) (24765 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_multimodal-perception_chunk_3, section docs/module-4/multimodal-perception (Part 4/4)
+INFO:__main__:Indexed: docs/module-4/multimodal-perception (Part 4/4) (20267 chars)
+INFO:__main__:Processing 35/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/simulation-reality-transfer
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/simulation-reality-transfer "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/simulation-reality-transfer' (15616 tokens) into smaller pieces
+INFO:__main__:Created 3 chunks for 'docs/module-4/simulation-reality-transfer'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_simulation-reality-transfer_chunk_0, section docs/module-4/simulation-reality-transfer (Part 1/3)
+INFO:__main__:Indexed: docs/module-4/simulation-reality-transfer (Part 1/3) (24162 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_simulation-reality-transfer_chunk_1, section docs/module-4/simulation-reality-transfer (Part 2/3)
+INFO:__main__:Indexed: docs/module-4/simulation-reality-transfer (Part 2/3) (25501 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_simulation-reality-transfer_chunk_2, section docs/module-4/simulation-reality-transfer (Part 3/3)
+INFO:__main__:Indexed: docs/module-4/simulation-reality-transfer (Part 3/3) (1941 chars)
+INFO:__main__:Processing 36/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/voice-to-action
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/module-4/voice-to-action "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/module-4/voice-to-action' (12977 tokens) into smaller pieces
+INFO:__main__:Created 2 chunks for 'docs/module-4/voice-to-action'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_voice-to-action_chunk_0, section docs/module-4/voice-to-action (Part 1/2)
+INFO:__main__:Indexed: docs/module-4/voice-to-action (Part 1/2) (24909 chars)
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_module-4_voice-to-action_chunk_1, section docs/module-4/voice-to-action (Part 2/2)
+INFO:__main__:Indexed: docs/module-4/voice-to-action (Part 2/2) (18936 chars)
+INFO:__main__:Processing 37/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/weekly-breakdown/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/docs/weekly-breakdown/ "HTTP/1.1 200 OK"
+INFO:__main__:Chunking document 'docs/weekly-breakdown' (6055 tokens) into smaller pieces
+INFO:__main__:Created 1 chunks for 'docs/weekly-breakdown'
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter docs_weekly-breakdown, section docs/weekly-breakdown
+INFO:__main__:Indexed: docs/weekly-breakdown (28896 chars)
+INFO:__main__:Processing 38/38: https://physical-ai-humanoid-robotics-seven-red.vercel.app/
+INFO:httpx:HTTP Request: GET https://physical-ai-humanoid-robotics-seven-red.vercel.app/ "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.mistral.ai/v1/embeddings "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: PUT https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content/points?wait=true "HTTP/1.1 200 OK"
+INFO:services.qdrant_service:Stored embedding for chapter home, section Get In Touch
+INFO:__main__:Indexed: Get In Touch (5567 chars)
+INFO:__main__:================================================================================
+INFO:__main__:INGESTION COMPLETE
+INFO:__main__:================================================================================
+INFO:__main__:Total URLs in sitemap: 47
+INFO:__main__:URLs successfully processed: 38
+INFO:__main__:Total chunks created: 66
+INFO:__main__:Failed: 0
+INFO:__main__:Skipped: 9
+INFO:httpx:HTTP Request: GET https://b7fd2e52-546c-4747-8f11-3c0eecabe4f6.us-east4-0.gcp.cloud.qdrant.io:6333/collections/textbook_content "HTTP/1.1 200 OK"
+INFO:__main__:Total points in Qdrant: 66
