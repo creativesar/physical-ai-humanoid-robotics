@@ -1,6 +1,7 @@
 import os
 import glob
 import asyncio
+import re
 from typing import List, Dict, Any
 from pathlib import Path
 import logging
@@ -27,16 +28,20 @@ class ContentIngestor:
             ("####", "H4"),
         ]
 
-        # Configure recursive character splitter for fine-grained chunks
-        self.chunk_size = 300
-        self.chunk_overlap = 80
-        self.min_chunk_size = 50
+        # ULTRA FINE-GRAINED CHUNKING PARAMETERS (target: 25,000 chunks from 37 files)
+        # Average file size: ~35,000 chars -> need ~676 chunks/file
+        # With 50-char chunks: 35,000/50 = 700 chunks/file ✓
+        self.chunk_size = 50  # Very small chunks for maximum granularity
+        self.chunk_overlap = 15  # Overlap to maintain context
+        self.min_chunk_size = 20  # Skip only very tiny chunks
 
-        logger.info(f"ContentIngestor initialized with chunk_size={self.chunk_size}, overlap={self.chunk_overlap}")
+        logger.info(f"ContentIngestor initialized with ULTRA FINE-GRAINED chunking")
+        logger.info(f"  chunk_size={self.chunk_size}, overlap={self.chunk_overlap}, min={self.min_chunk_size}")
+        logger.info(f"  Target: ~25,000 chunks from 37 files (~676 chunks/file)")
 
     async def ingest_from_directory(self, docs_path: str, base_url: str = "/") -> Dict[str, Any]:
         """
-        Ingest content from a directory of markdown files with fine-grained chunking
+        Ingest content from a directory of markdown files with ULTRA fine-grained chunking
         """
         if not os.path.exists(docs_path):
             raise ValueError(f"Docs path does not exist: {docs_path}")
@@ -47,7 +52,13 @@ class ContentIngestor:
         markdown_files.extend(glob.glob(f"{docs_path}/**/*.mdx", recursive=True))
 
         logger.info(f"Found {len(markdown_files)} markdown files to process")
+        print(f"\n{'='*70}")
+        print(f"ULTRA FINE-GRAINED CONTENT INGESTION")
+        print(f"{'='*70}")
         print(f"[INFO] Found {len(markdown_files)} markdown files to process")
+        print(f"[INFO] Target: ~25,000 total chunks (~676 per file)")
+        print(f"[INFO] Chunk size: {self.chunk_size} chars, Overlap: {self.chunk_overlap} chars")
+        print(f"{'='*70}\n")
 
         # Process each file
         total_chunks = 0
@@ -59,12 +70,18 @@ class ContentIngestor:
                 chunks_created = await self._process_file(file_path, base_url)
                 total_chunks += chunks_created
                 total_files_processed += 1
-                logger.info(f"[{idx}/{len(markdown_files)}] Processed: {file_path} -> {chunks_created} chunks")
-                print(f"[{idx}/{len(markdown_files)}] Processed: {os.path.basename(file_path)} -> {chunks_created} chunks")
+
+                progress_pct = (idx / len(markdown_files)) * 100
+                logger.info(f"[{idx}/{len(markdown_files)}] ({progress_pct:.1f}%) {file_path} -> {chunks_created} chunks (Total: {total_chunks})")
+                print(f"[{idx}/{len(markdown_files)}] ({progress_pct:.1f}%) {os.path.basename(file_path):<40} -> {chunks_created:>5} chunks (Running total: {total_chunks:>6})")
             except Exception as e:
                 logger.error(f"Failed to process file {file_path}: {str(e)}")
-                print(f"[ERROR] Failed to process: {os.path.basename(file_path)} - {str(e)}")
+                print(f"[ERROR] Failed: {os.path.basename(file_path)} - {str(e)}")
                 failed_files.append({"file": file_path, "error": str(e)})
+
+        print(f"\n{'='*70}")
+        print(f"INGESTION COMPLETE")
+        print(f"{'='*70}")
 
         return {
             "total_files_processed": total_files_processed,
@@ -75,7 +92,7 @@ class ContentIngestor:
 
     async def _process_file(self, file_path: str, base_url: str) -> int:
         """
-        Process a single markdown file with fine-grained chunking
+        Process a single markdown file with ULTRA fine-grained chunking
         Returns the number of chunks created
         """
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -88,74 +105,137 @@ class ContentIngestor:
         # Create source URL
         source_url = base_url + relative_path.replace('.md', '').replace('.mdx', '').replace('\\', '/')
 
-        # Step 1: Split by markdown headers to preserve hierarchy
+        chunks_created = 0
+
+        # Strategy 1: Split by markdown headers first (preserve hierarchy)
         header_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=self.headers_to_split_on,
-            strip_headers=False  # Keep headers in the chunks for context
+            strip_headers=False  # Keep headers for context
         )
 
         try:
             header_splits = header_splitter.split_text(content)
         except Exception as e:
             logger.warning(f"Header splitting failed for {file_path}, using full content: {str(e)}")
-            header_splits = [{"content": content, "metadata": {}}]
-            # Convert to proper format
+            # Create a fallback document-like object
             class Document:
                 def __init__(self, page_content, metadata):
                     self.page_content = page_content
                     self.metadata = metadata
             header_splits = [Document(content, {})]
 
-        # Step 2: Further split each header section with RecursiveCharacterTextSplitter
+        # Strategy 2: Split each header section into ULTRA fine-grained chunks
         recursive_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
-            separators=["\n\n", "\n", ".", "!", "?", ";", ",", " ", ""],
+            separators=["\n\n", "\n", ".", "!", "?", ";", ":", ",", " ", ""],
             length_function=len,
         )
 
-        chunks_created = 0
-
-        for header_doc in header_splits:
+        for header_idx, header_doc in enumerate(header_splits):
             # Get the text content
             text = header_doc.page_content if hasattr(header_doc, 'page_content') else str(header_doc)
             header_metadata = header_doc.metadata if hasattr(header_doc, 'metadata') else {}
 
-            # Split the header section into smaller chunks
-            fine_chunks = recursive_splitter.split_text(text)
+            # Strategy 3: Additional preprocessing to maximize chunks
+            # Split by special patterns (lists, code blocks, tables)
+            preprocessed_segments = self._preprocess_for_maximum_chunks(text)
 
-            # Index each fine-grained chunk
-            for chunk_idx, chunk_text in enumerate(fine_chunks):
-                # Skip very small chunks
-                if len(chunk_text.strip()) < self.min_chunk_size:
+            for segment_idx, segment in enumerate(preprocessed_segments):
+                # Skip very small segments
+                if len(segment.strip()) < self.min_chunk_size:
                     continue
 
-                # Build rich metadata
-                chunk_metadata = self._build_chunk_metadata(
-                    file_path=file_path,
-                    relative_path=relative_path,
-                    module_name=module_name,
-                    source_url=source_url,
-                    header_metadata=header_metadata,
-                    chunk_index=chunk_idx,
-                    chunk_text=chunk_text
-                )
+                # Split each segment into ultra-fine chunks
+                fine_chunks = recursive_splitter.split_text(segment)
 
-                # Index the chunk
-                try:
-                    await self.rag_service.index_content(
-                        content=chunk_text,
-                        chapter_id=chunk_metadata["chapter_id"],
-                        section_title=chunk_metadata["section_title"],
+                # Index each fine-grained chunk
+                for chunk_idx, chunk_text in enumerate(fine_chunks):
+                    # Skip very small chunks
+                    if len(chunk_text.strip()) < self.min_chunk_size:
+                        continue
+
+                    # Build rich metadata
+                    chunk_metadata = self._build_chunk_metadata(
+                        file_path=file_path,
+                        relative_path=relative_path,
+                        module_name=module_name,
                         source_url=source_url,
-                        metadata=chunk_metadata
+                        header_metadata=header_metadata,
+                        chunk_index=chunks_created,  # Global chunk index for this file
+                        chunk_text=chunk_text,
+                        header_idx=header_idx,
+                        segment_idx=segment_idx
                     )
-                    chunks_created += 1
-                except Exception as e:
-                    logger.error(f"Error indexing chunk {chunk_idx} from {file_path}: {str(e)}")
-                    # Continue processing other chunks
+
+                    # Index the chunk
+                    try:
+                        await self.rag_service.index_content(
+                            content=chunk_text,
+                            chapter_id=chunk_metadata["chapter_id"],
+                            section_title=chunk_metadata["section_title"],
+                            source_url=source_url,
+                            metadata=chunk_metadata
+                        )
+                        chunks_created += 1
+                    except Exception as e:
+                        logger.error(f"Error indexing chunk from {file_path}: {str(e)}")
+                        # Continue processing other chunks
 
         return chunks_created
+
+    def _preprocess_for_maximum_chunks(self, text: str) -> List[str]:
+        """
+        Preprocess text to create maximum possible chunks by splitting on special patterns
+        """
+        segments = []
+
+        # Split by multiple newlines (paragraphs)
+        paragraphs = re.split(r'\n\n+', text)
+
+        for para in paragraphs:
+            if not para.strip():
+                continue
+
+            # Check for list items (bullets, numbers)
+            if re.match(r'^[\s]*[-*+•]\s', para) or re.match(r'^[\s]*\d+\.\s', para):
+                # Split list into individual items
+                list_items = re.split(r'\n[\s]*(?:[-*+•]|\d+\.)\s', para)
+                segments.extend([item.strip() for item in list_items if item.strip()])
+
+            # Check for code blocks
+            elif '```' in para:
+                # Split code blocks from text
+                code_parts = re.split(r'```[\w]*\n?', para)
+                segments.extend([part.strip() for part in code_parts if part.strip()])
+
+            # Check for tables (markdown tables with |)
+            elif '|' in para and para.count('|') >= 3:
+                # Split table rows
+                table_rows = para.split('\n')
+                segments.extend([row.strip() for row in table_rows if row.strip() and '|' in row])
+
+            # Regular paragraph - split by sentences
+            else:
+                # Split by sentence-ending punctuation
+                sentences = re.split(r'([.!?]+[\s\n]+)', para)
+                current_sentence = ""
+                for i, part in enumerate(sentences):
+                    current_sentence += part
+                    # If this is punctuation followed by space, it's end of sentence
+                    if re.match(r'[.!?]+[\s\n]+', part):
+                        if current_sentence.strip():
+                            segments.append(current_sentence.strip())
+                        current_sentence = ""
+                # Add remaining text
+                if current_sentence.strip():
+                    segments.append(current_sentence.strip())
+
+        # If preprocessing didn't split much, return original as single segment
+        if not segments:
+            segments = [text]
+
+        return segments
 
     def _get_relative_path(self, file_path: str) -> str:
         """
@@ -174,7 +254,7 @@ class ContentIngestor:
         """
         parts = relative_path.split('/')
         for part in parts:
-            if part.startswith('module-') or part in ['assessments', 'getting-started']:
+            if part.startswith('module-') or part in ['assessments', 'getting-started', 'advanced']:
                 return part
         return "general"
 
@@ -186,7 +266,9 @@ class ContentIngestor:
         source_url: str,
         header_metadata: Dict[str, Any],
         chunk_index: int,
-        chunk_text: str
+        chunk_text: str,
+        header_idx: int = 0,
+        segment_idx: int = 0
     ) -> Dict[str, Any]:
         """
         Build rich metadata for each chunk
@@ -199,12 +281,14 @@ class ContentIngestor:
 
         # Build complete metadata
         metadata = {
-            "chapter_id": f"{chapter_id}_chunk_{chunk_index}",
+            "chapter_id": f"{chapter_id}_c{chunk_index:04d}",  # c0001, c0002, etc.
             "section_title": section_title,
             "source_file": relative_path,
             "module": module_name,
             "chunk_index": chunk_index,
             "chunk_size": len(chunk_text),
+            "header_section": header_idx,
+            "segment": segment_idx,
         }
 
         # Add heading hierarchy from markdown headers

@@ -6,16 +6,17 @@ This document explains the fine-grained content ingestion system for the Physica
 
 ## Key Features
 
-### 1. **Fine-Grained Chunking**
-The ingestion pipeline creates thousands of small, meaningful chunks from markdown files to dramatically improve RAG retrieval accuracy.
+### 1. **ULTRA Fine-Grained Chunking**
+The ingestion pipeline creates **~25,000 small, meaningful chunks** from markdown files to dramatically improve RAG retrieval accuracy.
 
-**Chunking Strategy:**
+**Chunking Strategy (TARGET: 25,000 chunks from 37 files):**
 - **Step 1:** Split by markdown headers (#, ##, ###, ####) to preserve document hierarchy
-- **Step 2:** Further split each section with RecursiveCharacterTextSplitter
-  - `chunk_size = 300` characters
-  - `chunk_overlap = 80` characters
-  - Intelligent separators: `["\n\n", "\n", ".", "!", "?", ";", ",", " ", ""]`
-  - Minimum chunk size: 50 characters (smaller chunks are skipped)
+- **Step 2:** Preprocess to split lists, code blocks, tables, and sentences into separate segments
+- **Step 3:** Further split each segment with RecursiveCharacterTextSplitter
+  - `chunk_size = 50` characters (ULTRA fine-grained)
+  - `chunk_overlap = 15` characters
+  - Intelligent separators: `["\n\n", "\n", ".", "!", "?", ";", ":", ",", " ", ""]`
+  - Minimum chunk size: 20 characters (skip only tiny fragments)
 
 ### 2. **Rich Metadata**
 Each chunk includes comprehensive metadata for better retrieval:
@@ -171,15 +172,18 @@ Edit `backend/utils/content_ingestor.py` to adjust chunking:
 
 ```python
 # In ContentIngestor.__init__()
-self.chunk_size = 300           # Max characters per chunk
-self.chunk_overlap = 80         # Overlap between chunks
-self.min_chunk_size = 50        # Skip chunks smaller than this
+self.chunk_size = 50            # ULTRA fine-grained (target: 25,000 chunks)
+self.chunk_overlap = 15         # Overlap between chunks
+self.min_chunk_size = 20        # Skip chunks smaller than this
 ```
 
 **Guidelines:**
-- **Smaller chunks (200-400)**: Better for precise retrieval, more chunks
-- **Larger chunks (500-1000)**: More context per chunk, fewer total chunks
-- **Overlap (50-100)**: Prevents losing context at chunk boundaries
+- **ULTRA fine chunks (50)**: Maximum precision, ~25,000 chunks (current setting)
+- **Fine chunks (100-200)**: High precision, ~10,000-15,000 chunks
+- **Balanced chunks (300-400)**: Good precision, ~3,000-5,000 chunks
+- **Larger chunks (500-1000)**: More context, fewer chunks (~1,000-2,000)
+- **Overlap (15-20)**: Prevents losing context at chunk boundaries for small chunks
+- **Overlap (50-100)**: Better for larger chunks
 
 ### Embedding Model
 
@@ -244,24 +248,24 @@ logging.basicConfig(
 
 ## Expected Results
 
-### Before Fine-Grained Chunking
+### Before Ultra Fine-Grained Chunking
 - ~50-100 large chunks (one per file)
 - Weak retrieval (entire sections returned)
 - Generic chatbot responses
 
-### After Fine-Grained Chunking
-- ~3,000-5,000 small chunks (50-100 per file)
-- Precise retrieval (specific paragraphs/concepts)
-- Accurate, textbook-grounded responses
+### After Ultra Fine-Grained Chunking
+- **~25,000 micro chunks** (650-700 per file)
+- **MAXIMUM precision** retrieval (specific sentences/concepts)
+- Highly accurate, textbook-grounded responses
 
 ### Performance Metrics
 
 **Typical ingestion for Physical AI textbook:**
-- Files: ~45 markdown files
-- Total chunks: 3,000-4,000 (depending on content)
-- Average chunks per file: 60-80
-- Ingestion time: 5-10 minutes (depends on API rate limits)
-- Storage: ~15-20 MB in Qdrant
+- Files: **37 markdown files**
+- Total chunks: **~25,000** (target)
+- Average chunks per file: **~676**
+- Ingestion time: 10-20 minutes (depends on API rate limits)
+- Storage: ~50-75 MB in Qdrant
 
 ## Troubleshooting
 
