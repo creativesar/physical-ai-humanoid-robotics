@@ -17,42 +17,10 @@ from services.mistral_service import MistralService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Lazy initialization - services will be initialized on first use
-mistral_service = None
-qdrant_service = None
-rag_service = None
-
-def get_mistral_service():
-    global mistral_service
-    if mistral_service is None:
-        try:
-            mistral_service = MistralService()
-        except Exception as e:
-            logger.error(f"Failed to initialize MistralService: {str(e)}")
-            raise HTTPException(
-                status_code=503,
-                detail=f"Mistral service unavailable: {str(e)}. Please check MISTRAL_API_KEY environment variable."
-            )
-    return mistral_service
-
-def get_qdrant_service():
-    global qdrant_service
-    if qdrant_service is None:
-        try:
-            qdrant_service = QdrantService()
-        except Exception as e:
-            logger.error(f"Failed to initialize QdrantService: {str(e)}")
-            raise HTTPException(
-                status_code=503,
-                detail=f"Qdrant service unavailable: {str(e)}. Please check QDRANT_URL and QDRANT_API_KEY environment variables."
-            )
-    return qdrant_service
-
-def get_rag_service():
-    global rag_service
-    if rag_service is None:
-        rag_service = RAGService(get_mistral_service(), get_qdrant_service())
-    return rag_service
+# Initialize services
+mistral_service = MistralService()
+qdrant_service = QdrantService()
+rag_service = RAGService(mistral_service, qdrant_service)
 
 router = APIRouter()
 
@@ -78,10 +46,7 @@ async def index_content(content_data: ContentIndexRequest):
     try:
         logger.info(f"Indexing content for chapter: {content_data.chapter_id}")
 
-        # Get RAG service (lazy initialization)
-        rag = get_rag_service()
-
-        result = await rag.index_content(
+        result = await rag_service.index_content(
             content=content_data.content,
             chapter_id=content_data.chapter_id,
             section_title=content_data.section_title,
@@ -105,9 +70,6 @@ async def batch_index_content(content_data: BatchContentIndexRequest):
     try:
         logger.info(f"Batch indexing {len(content_data.contents)} content items")
 
-        # Get RAG service (lazy initialization)
-        rag = get_rag_service()
-
         # Convert to the format expected by the service
         contents = [
             {
@@ -119,7 +81,7 @@ async def batch_index_content(content_data: BatchContentIndexRequest):
             for item in content_data.contents
         ]
 
-        results = await rag.batch_index_content(contents)
+        results = await rag_service.batch_index_content(contents)
 
         return {
             "success": True,
@@ -136,19 +98,15 @@ async def content_status():
     Get status of the content indexing system
     """
     try:
-        # Get services (lazy initialization)
-        qdrant = get_qdrant_service()
-        mistral = get_mistral_service()
-
         # Test Qdrant connection and get point count
-        point_count = await qdrant.count_points()
+        point_count = await qdrant_service.count_points()
 
         return {
             "status": "ready",
             "indexed_documents_count": point_count,
             "services": {
-                "qdrant": await qdrant.test_connection(),
-                "mistral": await mistral.test_connection()
+                "qdrant": await qdrant_service.test_connection(),
+                "mistral": await mistral_service.test_connection()
             }
         }
     except Exception as e:
@@ -197,11 +155,8 @@ async def ingest_from_docs(background_tasks: BackgroundTasks):
             except Exception as e:
                 logger.warning(f"Could not process file {file_path}: {str(e)}")
 
-        # Get RAG service (lazy initialization)
-        rag = get_rag_service()
-
         # Index all content items
-        results = await rag.batch_index_content(content_items)
+        results = await rag_service.batch_index_content(content_items)
 
         return {
             "success": True,

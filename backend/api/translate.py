@@ -16,21 +16,8 @@ from services.mistral_service import MistralService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Lazy initialization - service will be initialized on first use
-mistral_service = None
-
-def get_mistral_service():
-    global mistral_service
-    if mistral_service is None:
-        try:
-            mistral_service = MistralService()
-        except Exception as e:
-            logger.error(f"Failed to initialize MistralService: {str(e)}")
-            raise HTTPException(
-                status_code=503,
-                detail=f"Mistral service unavailable: {str(e)}. Please check MISTRAL_API_KEY environment variable."
-            )
-    return mistral_service
+# Initialize services
+mistral_service = MistralService()
 
 router = APIRouter()
 
@@ -88,9 +75,6 @@ async def translate_to_urdu(translation_data: TranslationRequest):
                 target_language=translation_data.target_language
             )
 
-        # Get Mistral service (lazy initialization)
-        mistral = get_mistral_service()
-
         # For translation, we'll use Mistral's generation capabilities
         # In a real implementation, you might use a dedicated translation model
         prompt = f"""
@@ -103,7 +87,7 @@ async def translate_to_urdu(translation_data: TranslationRequest):
 
         # Note: For actual translation, Mistral's model supports multiple languages
         # using the language model with a translation prompt
-        translated_content = await mistral.generate_response(prompt)
+        translated_content = await mistral_service.generate_response(prompt)
 
         # Cache the result
         translation_cache[cache_key] = {
@@ -145,9 +129,6 @@ async def translate_content(translation_data: TranslationRequest):
                 target_language=translation_data.target_language
             )
 
-        # Get Mistral service (lazy initialization)
-        mistral = get_mistral_service()
-
         # Create a translation prompt
         prompt = f"""
         Translate the following text from {translation_data.source_language} to {translation_data.target_language}:
@@ -157,7 +138,7 @@ async def translate_content(translation_data: TranslationRequest):
         Please provide only the translated text without any additional commentary.
         """
 
-        translated_content = await mistral.generate_response(prompt)
+        translated_content = await mistral_service.generate_response(prompt)
 
         # Cache the result
         translation_cache[cache_key] = {
@@ -196,9 +177,6 @@ async def translate_batch_to_urdu(translation_data: TranslationBatchRequest):
                 translated_texts.append(cached_result['translated_content'])
                 logger.info(f"Returning cached translation for key: {cache_key[:30]}...")
             else:
-                # Get Mistral service (lazy initialization)
-                mistral = get_mistral_service()
-
                 # Create a translation prompt
                 prompt = f"""
                 Translate the following text from {translation_data.source_lang} to {translation_data.target_lang}:
@@ -208,7 +186,7 @@ async def translate_batch_to_urdu(translation_data: TranslationBatchRequest):
                 Please provide only the translated text without any additional commentary.
                 """
 
-                translated_text = await mistral.generate_response(prompt)
+                translated_text = await mistral_service.generate_response(prompt)
 
                 # Cache the result
                 translation_cache[cache_key] = {
@@ -299,66 +277,3 @@ async def supported_languages():
         "supported_languages": supported,
         "default_target": "ur"
     }
-
-@router.get("/test-mistral")
-async def test_mistral_only():
-    """
-    Test Mistral AI connection independently (without Qdrant)
-    """
-    try:
-        mistral = get_mistral_service()
-        
-        # Test 1: Connection test
-        connection_ok = await mistral.test_connection()
-        
-        result = {
-            "connected": connection_ok,
-            "message": "",
-            "test_response": None,
-            "embedding_test": None,
-            "model_info": {
-                "generation_model": mistral.generation_model,
-                "embedding_model": mistral.embedding_model
-            }
-        }
-        
-        if connection_ok:
-            # Test 2: Try generating a simple response
-            try:
-                test_response = await mistral.generate_response("Say hello in one word")
-                result["test_response"] = test_response
-                result["message"] = "✓ Mistral AI is working! Response received."
-            except Exception as e:
-                result["message"] = f"⚠ Connection OK but generation failed: {str(e)[:100]}"
-            
-            # Test 3: Try generating embeddings
-            try:
-                test_embedding = await mistral.generate_embeddings_query("test")
-                result["embedding_test"] = {
-                    "success": True,
-                    "dimensions": len(test_embedding)
-                }
-            except Exception as e:
-                result["embedding_test"] = {
-                    "success": False,
-                    "error": str(e)[:100]
-                }
-        else:
-            result["message"] = "✗ Mistral AI connection test failed"
-        
-        return result
-        
-    except HTTPException as e:
-        return {
-            "connected": False,
-            "message": f"✗ {e.detail}",
-            "error": str(e.detail)
-        }
-    except Exception as e:
-        error_msg = str(e)
-        return {
-            "connected": False,
-            "message": f"✗ Mistral AI error: {error_msg[:100]}",
-            "error": error_msg,
-            "issue": "Check MISTRAL_API_KEY environment variable" if "MISTRAL_API_KEY" in error_msg else None
-        }
