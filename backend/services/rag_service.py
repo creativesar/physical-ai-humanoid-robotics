@@ -12,7 +12,7 @@ class RAGService:
         self.mistral_service = mistral_service
         self.qdrant_service = qdrant_service
 
-    async def index_content(self, content: str, chapter_id: str, section_title: str, source_url: str) -> Dict[str, Any]:
+    async def index_content(self, content: str, chapter_id: str, section_title: str, source_url: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Index content by creating embeddings and storing in Qdrant
         """
@@ -29,7 +29,8 @@ class RAGService:
                 content=content,
                 chapter_id=chapter_id,
                 section_title=section_title,
-                source_url=source_url
+                source_url=source_url,
+                additional_metadata=metadata
             )
 
             return {

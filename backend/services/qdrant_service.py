@@ -61,7 +61,8 @@ class QdrantService:
                             content: str,
                             chapter_id: str,
                             section_title: str,
-                            source_url: str) -> str:
+                            source_url: str,
+                            additional_metadata: Dict[str, Any] = None) -> str:
         """
         Store an embedding with its metadata in Qdrant
         """
@@ -77,6 +78,10 @@ class QdrantService:
                 "source_url": source_url,
                 "created_at": datetime.utcnow().isoformat()
             }
+
+            # Merge additional metadata if provided
+            if additional_metadata:
+                payload.update(additional_metadata)
 
             # Store the embedding
             await self.client.upsert(
@@ -136,6 +141,19 @@ class QdrantService:
             logger.info(f"Deleted collection: {self.collection_name}")
         except Exception as e:
             logger.error(f"Error deleting collection: {str(e)}")
+            raise
+
+    async def clear_collection(self):
+        """
+        Clear all points from the collection without deleting the collection itself
+        """
+        try:
+            # Delete and recreate collection to clear all points
+            await self.delete_collection()
+            await self.create_collection()
+            logger.info(f"Cleared all points from collection: {self.collection_name}")
+        except Exception as e:
+            logger.error(f"Error clearing collection: {str(e)}")
             raise
 
     async def count_points(self) -> int:

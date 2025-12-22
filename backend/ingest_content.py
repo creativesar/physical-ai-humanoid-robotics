@@ -69,19 +69,40 @@ async def main():
         print("No markdown files found in the docs directory.")
         return
 
+    # Check current point count
+    try:
+        current_count = await qdrant_service.count_points()
+        print(f"Current points in Qdrant: {current_count}")
+    except Exception as e:
+        current_count = 0
+        print(f"Could not get current point count: {e}")
+
     # Confirm with user before proceeding
-    response = input(f"\nReady to ingest {len(markdown_files)} files into Qdrant. Continue? (y/N): ")
+    response = input(f"\nReady to ingest {len(markdown_files)} files into Qdrant. This will CLEAR existing data. Continue? (y/N): ")
     if response.lower() != 'y':
         print("Ingestion cancelled by user.")
         return
 
+    # Clear existing collection to avoid duplicates
+    print("\n[INFO] Clearing existing collection...")
+    try:
+        await qdrant_service.clear_collection()
+        print("[SUCCESS] Collection cleared successfully")
+    except Exception as e:
+        print(f"[ERROR] Failed to clear collection: {e}")
+        return
+
     # Ingest content
-    print("\nStarting ingestion process...")
+    print("\n[INFO] Starting ingestion process...")
     results = await ingestor.ingest_from_directory(docs_path)
 
     print(f"\n[SUCCESS] Ingestion completed!")
-    print(f"  - Successfully processed: {results['total_processed']} files")
+    print(f"  - Successfully processed: {results['total_files_processed']} files")
+    print(f"  - Total chunks created: {results['total_chunks_created']}")
     print(f"  - Failed: {results['total_failed']} files")
+    if results['total_files_processed'] > 0:
+        avg_chunks = results['total_chunks_created'] / results['total_files_processed']
+        print(f"  - Average chunks per file: {avg_chunks:.1f}")
 
     if results['failed']:
         print(f"\nFailed files:")
@@ -91,7 +112,7 @@ async def main():
     # Show final count
     try:
         point_count = await qdrant_service.count_points()
-        print(f"\n[SUCCESS] Total documents now in Qdrant: {point_count}")
+        print(f"\n[SUCCESS] Total points now in Qdrant: {point_count}")
     except Exception as e:
         print(f"[ERROR] Could not get final count from Qdrant: {e}")
 
