@@ -6,8 +6,6 @@ from typing import List, Dict, Any
 from pathlib import Path
 import logging
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
 from services.rag_service import RAGService
 from services.qdrant_service import QdrantService
 from services.mistral_service import MistralService
@@ -105,13 +103,7 @@ class ContentIngestor:
         # Step 2: AGGRESSIVE splitting into micro-segments
         segments = self._aggressive_split(cleaned)
 
-        # Step 3: Further chunk each segment
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap,
-            length_function=len,
-            separators=["\n\n", "\n", ". ", "! ", "? ", "; ", ": ", ", ", " ", ""]
-        )
+        # Step 3: Simple text chunking without external dependencies
 
         heading_context = ""
         for segment_idx, segment in enumerate(segments):
@@ -137,7 +129,7 @@ class ContentIngestor:
                 continue
 
             # Split segment into fine chunks
-            fine_chunks = text_splitter.split_text(segment)
+            fine_chunks = self._simple_chunk_text(segment)
 
             for chunk_text in fine_chunks:
                 if len(chunk_text.strip()) < self.min_chunk_size:
@@ -180,6 +172,53 @@ class ContentIngestor:
             )
         except Exception as e:
             logger.error(f"Error indexing chunk: {str(e)}")
+
+    def _simple_chunk_text(self, text: str) -> List[str]:
+        """
+        Simple text chunking without external dependencies
+        Splits text into chunks of specified size with overlap
+        """
+        chunks = []
+        separators = ["\n\n", "\n", ". ", "! ", "? ", "; ", ": ", ", ", " "]
+
+        def split_by_separators(text: str, seps: List[str]) -> List[str]:
+            if not seps or len(text) <= self.chunk_size:
+                return [text]
+
+            sep = seps[0]
+            parts = text.split(sep)
+            result = []
+            current = ""
+
+            for i, part in enumerate(parts):
+                test = current + sep + part if current else part
+                if len(test) > self.chunk_size and current:
+                    result.append(current)
+                    current = part
+                else:
+                    current = test
+
+            if current:
+                result.append(current)
+
+            # Further split large parts
+            final = []
+            for part in result:
+                if len(part) > self.chunk_size:
+                    final.extend(split_by_separators(part, seps[1:]))
+                else:
+                    final.append(part)
+            return final
+
+        parts = split_by_separators(text, separators)
+
+        # Add chunks with overlap
+        for i, part in enumerate(parts):
+            if len(part) < self.min_chunk_size:
+                continue
+            chunks.append(part)
+
+        return chunks
 
     def _minimal_clean(self, content: str) -> str:
         """Minimal cleaning - preserve all content"""
