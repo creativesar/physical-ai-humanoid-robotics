@@ -404,7 +404,8 @@
       "Bash(git push -u origin main)",
       "Bash(git branch -M main)",
       "Bash(git pull origin main --allow-unrelated-histories)",
-      "Bash(git commit -m \"Fix broken documentation links and enhance OpenRouter service responses\")"
+      "Bash(git commit -m \"Fix broken documentation links and enhance OpenRouter service responses\")",
+      "Bash(powershell \"Get-Content ''C:\\\\Users\\\\Coders\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Coders-Desktop-physical-ai-humanoid-robotics\\\\tasks\\\\b21f2bb.output'' -Tail 30\")"
     ]
   }
 }

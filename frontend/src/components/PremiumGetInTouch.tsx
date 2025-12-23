@@ -89,7 +89,7 @@ const PremiumGetInTouch = () => {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className={styles.header}
             >
-              <h1 className={styles.title}>Join the Future</h1>
+              <h1 className={styles.title}>Get In Touch</h1>
               <p className={styles.subtitle}>
                 Ready to explore the future of Physical AI and Humanoid Robotics?
               </p>

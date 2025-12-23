@@ -12,3 +12,4 @@ tiktoken>=0.5.1
 python-multipart==0.0.6
 fastembed==0.2.7
 mangum==0.17.0
+httpx>=0.24.0

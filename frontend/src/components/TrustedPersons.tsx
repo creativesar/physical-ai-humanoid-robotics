@@ -49,7 +49,7 @@ const TrustedPersons = () => {
           transition={{ duration: 0.7 }}
           className={styles.header}
         >
-          <h2 className={styles.title}>World-Class Experts</h2>
+          <h2 className={styles.title}>Trusted Experts</h2>
           <p className={styles.subtitle}>
             Learn from industry leaders and pioneers in Physical AI and Humanoid Robotics
           </p>

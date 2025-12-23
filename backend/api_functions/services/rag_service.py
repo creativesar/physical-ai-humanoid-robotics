@@ -17,7 +17,7 @@ class RAGService:
         Index content by creating embeddings and storing in Qdrant
         """
         try:
-            # Create embeddings for the content
+            # Create embeddings for the content using OpenRouter
             embeddings = await self.openrouter_service.generate_embeddings([content])
 
             if not embeddings or len(embeddings) == 0:
@@ -45,7 +45,7 @@ class RAGService:
         Process a query using RAG: retrieve relevant context and generate response
         """
         try:
-            # Generate embedding for the query
+            # Generate embedding for the query using OpenRouter
             query_embedding = await self.openrouter_service.generate_embeddings_query(query)
 
             # Search for similar content in Qdrant
@@ -79,7 +79,7 @@ class RAGService:
             # Combine all context parts
             context = "\n\n".join(context_parts)
 
-            # Generate response using the context
+            # Generate response using the context with OpenRouter
             answer = await self.openrouter_service.generate_response(query, context)
 
             return {

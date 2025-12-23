@@ -29,6 +29,7 @@ class QdrantService:
         else:
             self.client = AsyncQdrantClient(url=self.url)
 
+<<<<<<< HEAD
         # Collection vector size - check if using OpenRouter (1536) or Cohere (1024)
         # OpenAI text-embedding-ada-002 produces 1536-dimensional vectors
         embedding_model = os.getenv("OPENROUTER_EMBEDDING_MODEL", "")
@@ -36,6 +37,10 @@ class QdrantService:
             self.vector_size = 1536  # OpenAI text-embedding-ada-002 dimensions
         else:
             self.vector_size = 1024  # Cohere multilingual embeddings are 1024 dimensions (fallback)
+=======
+        # Collection vector size for Cohere embeddings
+        self.vector_size = 1024  # Cohere multilingual embeddings are 1024 dimensions
+>>>>>>> 18a707787d7ea29ef1f371f60f90c24acd4045c8
 
     async def create_collection(self):
         """

@@ -51,7 +51,7 @@ const CoreThinking = () => {
               transition={{ duration: 0.5 }}
               className={styles.header}
             >
-              <h2 className={styles.title}>Advanced Educational Philosophy</h2>
+              <h2 className={styles.title}>Core Thinking & Educational Philosophy</h2>
               <p className={styles.description}>
                 Our approach to teaching Physical AI and Humanoid Robotics emphasizes deep understanding, practical application, and systematic thinking to prepare you for the future of robotics.
               </p>

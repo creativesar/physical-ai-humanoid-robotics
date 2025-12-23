@@ -1,26 +1,19 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import {
-  getSession,
-  signUp as authSignUp,
   signIn as authSignIn,
   signOut as authSignOut,
-  signInWithGoogle as authSignInWithGoogle,
-  updateProfile as authUpdateProfile,
-  getCurrentUser,
-  type User,
-  type AuthSession
-} from '../lib/auth';
+  signUp as authSignUp,
+  useSession,
+  type User
+} from '../client';
 
 interface AuthContextType {
   user: User | null;
-  session: AuthSession | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signUp: (data: SignUpData) => Promise<{ success: boolean; error?: string }>;
-  signIn: (data: SignInData) => Promise<{ success: boolean; error?: string }>;
+  signUp: (data: SignUpData) => Promise<any>;
+  signIn: (data: SignInData) => Promise<any>;
   signOut: () => void;
-  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   refreshSession: () => void;
 }
 
@@ -40,76 +33,60 @@ interface SignInData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const { data: session, mutate } = useSession();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load session on mount
   useEffect(() => {
-    refreshSession();
-  }, []);
+    // Set loading to false once session data is available
+    setIsLoading(!session);
+  }, [session]);
 
   const refreshSession = () => {
-    const currentSession = getSession();
-    setSession(currentSession);
-    setUser(currentSession?.user || null);
-    setIsLoading(false);
+    mutate(); // This will refresh the session
   };
 
   const signUp = async (data: SignUpData) => {
-    const result = await authSignUp(data);
-    if (result.success && result.session) {
-      setSession(result.session);
-      setUser(result.session.user);
+    try {
+      const result = await authSignUp({
+        email: data.email,
+        password: data.password,
+        name: data.name
+      });
+      return { success: true, result };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Sign up failed' };
     }
-    return result;
   };
 
   const signIn = async (data: SignInData) => {
-    const result = await authSignIn(data);
-    if (result.success && result.session) {
-      setSession(result.session);
-      setUser(result.session.user);
+    try {
+      const result = await authSignIn('credentials', {
+        email: data.email,
+        password: data.password
+      });
+      return { success: true, result };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Sign in failed' };
     }
-    return result;
   };
 
-  const signOut = () => {
-    authSignOut();
-    setSession(null);
-    setUser(null);
-  };
-
-  const signInWithGoogle = async () => {
-    const result = await authSignInWithGoogle();
-    if (result.success && result.session) {
-      setSession(result.session);
-      setUser(result.session.user);
+  const signOut = async () => {
+    try {
+      await authSignOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
     }
-    return result;
-  };
-
-  const updateProfile = async (updates: Partial<User>) => {
-    const result = await authUpdateProfile(updates);
-    if (result.success) {
-      const updatedUser = getCurrentUser();
-      setUser(updatedUser);
-    }
-    return result;
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        session,
+        user: session?.user || null,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!session?.user,
         signUp,
         signIn,
         signOut,
-        signInWithGoogle,
-        updateProfile,
         refreshSession,
       }}
     >

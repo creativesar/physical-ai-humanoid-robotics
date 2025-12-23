@@ -179,13 +179,13 @@ function PremiumHero() {
             className={clsx('hero__title', styles.heroTitle)}
             variants={itemVariants}
           >
-            The World-Class Guide to <br /> Physical AI & Humanoid Robotics
+            Physical AI & Humanoid <br /> Robotics Textbook
           </motion.h1>
           <motion.p
             className={clsx('hero__subtitle', styles.heroSubtitle)}
             variants={itemVariants}
           >
-            Master the convergence of artificial intelligence and robotics with our world-class textbook covering ROS 2, NVIDIA Isaac, Gazebo simulations, and cutting-edge Vision-Language-Action systems.
+            Master the convergence of artificial intelligence and robotics with our comprehensive textbook covering ROS 2, NVIDIA Isaac, Gazebo simulations, and cutting-edge Vision-Language-Action systems.
           </motion.p>
 
           <motion.div
@@ -213,7 +213,7 @@ function PremiumHero() {
                   </svg>
                 }
               >
-                Access Textbook
+                Start Learning
               </PremiumButton>
 
               <PremiumButton
@@ -225,7 +225,7 @@ function PremiumHero() {
                   </svg>
                 }
               >
-                Start Learning
+                Begin Module 1
               </PremiumButton>
             </div>
           </motion.div>

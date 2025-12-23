@@ -97,7 +97,7 @@ export default function LuxuryAboutUs() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <span className={styles.badge}>WORLD-CLASS TEXTBOOK</span>
+              <span className={styles.badge}>About This Textbook</span>
             </motion.div>
 
             <motion.h2
@@ -107,7 +107,7 @@ export default function LuxuryAboutUs() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              Our Mission
+              About <span className={styles.highlight}>Us</span>
             </motion.h2>
             
             <motion.p
@@ -117,7 +117,7 @@ export default function LuxuryAboutUs() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              We are pioneering the future of embodied intelligence through a world-class, research-driven textbook that seamlessly integrates cutting-edge AI theory with real-world humanoid robotics engineering. Our mission is to democratize access to elite-level knowledge, empowering the next generation of innovators to build intelligent machines that learn, reason, and act in the physical world. Join us in shaping the next era of robotics.
+              We are pioneering the future of embodied intelligence through a world-class, research-driven textbook that seamlessly integrates cutting-edge AI theory with real-world humanoid robotics engineering. Our vision is to democratize access to elite-level knowledge, empowering the next generation of innovators to build intelligent machines that learn, reason, and act in the physical world.
             </motion.p>
 
             <motion.div
@@ -140,8 +140,8 @@ export default function LuxuryAboutUs() {
                 whileHover={{ scale: 1.05, y: -5 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <h3 className={styles.statNumber}>200+</h3>
-                <p className={styles.statLabel}>Hands-on Projects</p>
+                <h3 className={styles.statNumber}>100+</h3>
+                <p className={styles.statLabel}>Practical Exercises</p>
               </motion.div>
               <motion.div
                 className={styles.statCard}
@@ -149,7 +149,7 @@ export default function LuxuryAboutUs() {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <h3 className={styles.statNumber}>50+</h3>
-                <p className={styles.statLabel}>World-Class Experts</p>
+                <p className={styles.statLabel}>World-Class Contributors</p>
               </motion.div>
               <motion.div
                 className={styles.statCard}
@@ -172,9 +172,8 @@ export default function LuxuryAboutUs() {
                 to="/docs/module-1/"
                 variant="primary"
               >
-                Access Textbook
+                Read Textbook
               </PremiumButton>
-
               <PremiumButton
                 to="/our-vision"
                 variant="secondary"
@@ -226,7 +225,7 @@ export default function LuxuryAboutUs() {
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
                 }
-                title="Our Team"
+                title="Who We Are"
                 description="A global collective of leading AI researchers, robotics engineers, and visionary educators united at the forefront of embodied intelligence—bridging simulation, theory, and revolutionary real-world deployment."
                 delay={0.3}
               />
@@ -239,7 +238,7 @@ export default function LuxuryAboutUs() {
                     <path d="M18 9l3 3-3 3" />
                   </svg>
                 }
-                title="Our Approach"
+                title="Innovation First"
                 description="We champion breakthrough methodologies that seamlessly unite cutting-edge theoretical frameworks with battle-tested engineering practices—accelerating the journey from concept to deployment at scale."
                 delay={0.4}
               />

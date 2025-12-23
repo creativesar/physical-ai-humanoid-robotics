@@ -99,7 +99,7 @@ const PremiumCounter = () => {
           transition={{ duration: 0.7 }}
           className={styles.header}
         >
-          <h2 className={styles.title}>World-Class Impact</h2>
+          <h2 className={styles.title}>Impact & Excellence</h2>
           <p className={styles.subtitle}>
             Our commitment to excellence is reflected in the breadth and depth of our educational offerings
           </p>

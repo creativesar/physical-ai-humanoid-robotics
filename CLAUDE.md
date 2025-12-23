@@ -208,16 +208,3 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
-
-## Active Technologies
-- Neon Postgres, Qdrant Cloud Free Tier (001-physical-ai-textbook)
-
-## Recent Changes
-- 001-physical-ai-textbook: Added Neon Postgres, Qdrant Cloud Free Tier
-- **PROJECT COMPLETE**: Physical AI & Humanoid Robotics textbook fully implemented with 4 comprehensive modules covering ROS 2, Gazebo/Unity, NVIDIA Isaac™, and VLA systems
-- **Module 1**: Complete ROS 2 foundation with advanced features and navigation
-- **Module 2**: Complete simulation environments with Gazebo and Unity integration
-- **Module 3**: Complete NVIDIA Isaac™ platform integration with AI acceleration
-- **Module 4**: Complete Vision-Language-Action systems with advanced perception
-- **Assessment Framework**: Comprehensive evaluation and hardware requirements documentation
-- **Integration**: Full integration of all modules with practical applications and examples

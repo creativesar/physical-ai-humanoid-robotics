@@ -37,7 +37,7 @@ const modules = [
     id: 'module1',
     number: 'MODULE 1',
     title: 'The Robotic Nervous System (ROS 2)',
-    description: 'Master the Robot Operating System 2, the communication framework that powers the next generation of humanoid robots.',
+    description: 'Master the Robot Operating System 2, the communication framework that powers humanoid robots.',
     objectives: [
       'Understand the architecture and core concepts of ROS 2',
       'Create and manage ROS 2 packages and workspaces',
@@ -50,7 +50,7 @@ const modules = [
     id: 'module2',
     number: 'MODULE 2',
     title: 'The Digital Twin (Gazebo & Unity)',
-    description: 'Build virtual replicas of robots for safe testing and development in advanced simulation environments.',
+    description: 'Build virtual replicas of robots for safe testing and development in simulation environments.',
     objectives: [
       'Set up and configure Gazebo simulation environments',
       'Create realistic robot models and environments',
@@ -113,9 +113,9 @@ const PremiumModules = () => {
           transition={{ duration: 0.7 }}
           className={styles.header}
         >
-          <h2 className={styles.title}>Advanced Curriculum</h2>
+          <h2 className={styles.title}>Curriculum Modules</h2>
           <p className={styles.subtitle}>
-            Master the complete learning path designed to transform you into a world-class Physical AI and Humanoid Robotics expert
+            Explore our comprehensive learning path designed to transform you into a Physical AI and Humanoid Robotics expert
           </p>
         </motion.div>
 
