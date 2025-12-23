@@ -21,10 +21,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "better-auth": "^1.4.7",
-    "body-parser": "^2.2.1",
     "clsx": "^2.0.0",
-    "express": "^5.2.1",
     "framer-motion": "^12.23.26",
     "gsap": "^3.14.2",
     "prism-react-renderer": "^2.3.0",
@@ -33,6 +30,13 @@
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^16.1.0",
     "three": "^0.182.0"
+  },
+  "comments": {
+    "removed": [
+      "better-auth - Not needed, using pure localStorage auth",
+      "body-parser - Not needed, no backend API handling",
+      "express - Not needed, Docusaurus has its own dev server"
+    ]
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "3.9.2",

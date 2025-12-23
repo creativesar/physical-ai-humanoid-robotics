@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@theme/Layout';
-import { signUp } from '../client';
+import { signUp } from '../lib/auth';
 import { usePersonalization } from '../contexts/PersonalizationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,28 +53,34 @@ export default function SignUp() {
     setError('');
 
     try {
-      await signUp.email({
+      const result = await signUp({
         email: formData.email,
         password: formData.password,
         name: formData.name,
-      });
-
-      // Update personalization profile
-      updateUserProfile({
-        name: formData.name,
-        email: formData.email,
         softwareBackground: formData.softwareBackground,
         hardwareBackground: formData.hardwareBackground,
       });
 
-      // @ts-ignore
-      setDifficultyLevel(formData.difficultyLevel);
-      // @ts-ignore
-      setLanguage(formData.language);
+      if (result.success) {
+        // Update personalization profile
+        updateUserProfile({
+          name: formData.name,
+          email: formData.email,
+          softwareBackground: formData.softwareBackground,
+          hardwareBackground: formData.hardwareBackground,
+        });
 
-      // Redirect to home
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
+        // @ts-ignore
+        setDifficultyLevel(formData.difficultyLevel);
+        // @ts-ignore
+        setLanguage(formData.language);
+
+        // Redirect to home
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+      } else {
+        setError(result.error || 'Failed to create account');
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to create account');

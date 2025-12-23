@@ -69,7 +69,7 @@ const config: Config = {
     ],
   ],
   plugins: [
-    './plugins/better-auth-plugin.js',
+    // Frontend-only localStorage auth - no plugins needed
   ],
 
   themeConfig: {

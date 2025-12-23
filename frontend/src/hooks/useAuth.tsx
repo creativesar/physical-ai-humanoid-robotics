@@ -3,9 +3,10 @@ import {
   signIn as authSignIn,
   signOut as authSignOut,
   signUp as authSignUp,
-  useSession,
+  getSession,
+  getCurrentUser,
   type User
-} from '../client';
+} from '../lib/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -33,16 +34,23 @@ interface SignInData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: session, mutate } = useSession();
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadSession = () => {
+    if (typeof window !== 'undefined') {
+      const currentUser = getCurrentUser();
+      setUser(currentUser);
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Set loading to false once session data is available
-    setIsLoading(!session);
-  }, [session]);
+    loadSession();
+  }, []);
 
   const refreshSession = () => {
-    mutate(); // This will refresh the session
+    loadSession();
   };
 
   const signUp = async (data: SignUpData) => {
@@ -50,9 +58,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await authSignUp({
         email: data.email,
         password: data.password,
-        name: data.name
+        name: data.name,
+        softwareBackground: data.softwareBackground,
+        hardwareBackground: data.hardwareBackground,
       });
-      return { success: true, result };
+
+      if (result.success) {
+        setUser(result.session?.user || null);
+      }
+
+      return result;
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Sign up failed' };
     }
@@ -60,19 +75,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (data: SignInData) => {
     try {
-      const result = await authSignIn('credentials', {
+      const result = await authSignIn({
         email: data.email,
         password: data.password
       });
-      return { success: true, result };
+
+      if (result.success) {
+        setUser(result.session?.user || null);
+      }
+
+      return result;
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Sign in failed' };
     }
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     try {
-      await authSignOut();
+      authSignOut();
+      setUser(null);
+      // Redirect to home
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -81,9 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: session?.user || null,
+        user,
         isLoading,
-        isAuthenticated: !!session?.user,
+        isAuthenticated: !!user,
         signUp,
         signIn,
         signOut,

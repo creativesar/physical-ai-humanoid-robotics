@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@theme/Layout';
-import { signIn } from '../client';
+import { signIn } from '../lib/auth';
 import { motion } from 'framer-motion';
 
 export default function SignIn() {
@@ -15,14 +15,18 @@ export default function SignIn() {
     setError('');
 
     try {
-      await signIn.email({
+      const result = await signIn({
         email,
         password,
       });
 
-      // Redirect on success
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
+      if (result.success) {
+        // Redirect on success
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+      } else {
+        setError(result.error || 'Invalid email or password');
       }
     } catch (err: any) {
       setError(err?.message || 'Invalid email or password');
