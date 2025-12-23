@@ -1,0 +1,267 @@
+.heroBanner {
+  padding: 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, rgba(10, 10, 20, 0) 0%, rgba(0, 0, 0, 1) 100%), #050505;
+  background-attachment: fixed;
+}
+
+.heroBanner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(15, 227, 192, 0.1) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 20%),
+    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 30%);
+  z-index: 1;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(10px, 10px);
+  }
+
+  50% {
+    transform: translate(0, 20px);
+  }
+
+  75% {
+    transform: translate(-10px, 10px);
+  }
+}
+
+.textContainer {
+  z-index: 20;
+  position: relative;
+  max-width: 1200px;
+  padding: 2rem;
+  color: white;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroTitle {
+  font-size: clamp(1.8rem, 5.5vw, 3.8rem);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  background: linear-gradient(135deg,
+      #ffffff 0%,
+      #ffffff 40%,
+      #00d0ff 60%,
+      #0088ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(0, 208, 255, 0.3));
+  position: relative;
+}
+
+.heroTitle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(0, 208, 255, 0.1) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+
+
+.heroSubtitle {
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  margin-bottom: 2.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  line-height: 1.7;
+  text-align: center;
+  max-width: 750px;
+  letter-spacing: 0.01em;
+}
+
+.buttonContainer {
+  margin: 3rem 0 1rem 0;
+  position: relative;
+  z-index: 21;
+}
+
+/* Premium button container - override default styles */
+.buttonContainer a {
+  /* Reset default styles */
+  border: none !important;
+  background: transparent !important;
+}
+
+.buttonContainer a::before,
+.buttonContainer a::after {
+  display: none !important;
+}
+
+/* Border glow animation for premium buttons */
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Shine animation for the title */
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* Enhanced pulse animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+/* Electric flash animation */
+@keyframes electricFlash {
+  0% {
+    opacity: 0;
+    transform: scaleY(1);
+  }
+
+  5% {
+    opacity: 1;
+    transform: scaleY(1.5);
+  }
+
+  10% {
+    opacity: 0;
+    transform: scaleY(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleY(1);
+  }
+}
+
+/* Electric arcs animation */
+@keyframes electricArc {
+  0% {
+    opacity: 0;
+    clip-path: polygon(0 0, 0 0, 0 0, 0 0);
+  }
+
+  50% {
+    opacity: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  100% {
+    opacity: 0;
+    clip-path: polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%);
+  }
+}
+
+/* Gradient shift animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Scroll indicator removed */
+
+/* Responsive adjustments */
+@media screen and (max-width: 996px) {
+
+  .heroBanner {
+    height: 85vh;
+    min-height: 600px;
+  }
+
+  .heroTitle {
+    font-size: 3rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+}
+
+@media screen and (max-width: 768px) {
+
+  .heroBanner {
+    height: 75vh;
+    min-height: 500px;
+  }
+
+  .heroTitle {
+    font-size: 2.2rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .buttonContainer {
+    margin: 2rem 0;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .heroTitle {
+    font-size: 1.8rem;
+  }
+
+  .heroSubtitle {
+    font-size: 0.9rem;
+  }
+
+  .buttonContainer {
+    margin: 1.5rem 0;
+  }
+}

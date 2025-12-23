@@ -1,0 +1,284 @@
+/* Luxury Core Thinking Section - Plasma Burst Background */
+
+.section {
+  padding: 2.5rem 0;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Plasma Burst Background Effects */
+.plasmaBurst1 {
+  position: absolute;
+  top: 10%;
+  right: 5%;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, rgba(255, 165, 0, 0.1) 40%, transparent 70%);
+  filter: blur(30px);
+  z-index: 0;
+  animation: plasmaPulse 4s ease-in-out infinite;
+}
+
+.plasmaBurst2 {
+  position: absolute;
+  bottom: 15%;
+  left: 8%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(218, 165, 32, 0.2) 0%, rgba(255, 215, 0, 0.1) 40%, transparent 70%);
+  filter: blur(25px);
+  z-index: 0;
+  animation: plasmaPulse 5s ease-in-out infinite 1s;
+}
+
+.plasmaBurst3 {
+  position: absolute;
+  top: 40%;
+  left: 15%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(218, 165, 32, 0.1) 40%, transparent 70%);
+  filter: blur(20px);
+  z-index: 0;
+  animation: plasmaPulse 6s ease-in-out infinite 2s;
+}
+
+@keyframes plasmaPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Plasma Wave Effects */
+.plasmaWave {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  animation: plasmaWave 8s infinite;
+}
+
+.wave1 {
+  top: 25%;
+  left: 30%;
+  width: 60px;
+  height: 60px;
+  animation-delay: 0s;
+}
+
+.wave2 {
+  bottom: 35%;
+  right: 25%;
+  width: 80px;
+  height: 80px;
+  animation-delay: 2s;
+}
+
+.wave3 {
+  top: 65%;
+  left: 20%;
+  width: 40px;
+  height: 40px;
+  animation-delay: 4s;
+}
+
+@keyframes plasmaWave {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+/* Subtle Grain Texture Overlay */
+.grainOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.contentWrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.leftColumn {
+  padding-right: 1.25rem;
+}
+
+.rightColumn {
+  padding-left: 1.25rem;
+  border-left: 1px solid rgba(218, 165, 32, 0.2);
+}
+
+.header {
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  background: linear-gradient(90deg, #FFD700, #FFA500, #DAA520);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: titleShine 4s linear infinite;
+}
+
+@keyframes titleShine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.description {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #D3D3D3;
+  margin: 0 0 1.25rem;
+}
+
+.pointsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pointItem {
+  position: relative;
+  padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+  margin-bottom: 0.875rem;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid rgba(218, 165, 32, 0.15);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.pointItem:hover {
+  border-color: rgba(218, 165, 32, 0.4);
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              0 0 0 1px rgba(218, 165, 32, 0.2);
+}
+
+.pointItem::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #FFD700;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+}
+
+.pointTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0 0 0.25rem;
+}
+
+.pointDescription {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #A9A9A9;
+  margin: 0;
+}
+
+.highlight {
+  color: #FFD700;
+  font-weight: 600;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1023px) {
+  .section {
+    padding: 2rem 0;
+  }
+  
+  .contentWrapper {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .leftColumn {
+    padding-right: 0;
+  }
+  
+  .rightColumn {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(218, 165, 32, 0.2);
+    padding-top: 1.25rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .section {
+    padding: 1.5rem 0;
+  }
+  
+  .title {
+    font-size: 1.375rem;
+  }
+  
+  .pointItem {
+    padding: 0.625rem 0.625rem 0.625rem 2rem;
+  }
+  
+  .pointItem::before {
+    left: 0.625rem;
+    width: 4px;
+    height: 4px;
+  }
+  
+  .pointTitle {
+    font-size: 0.9375rem;
+  }
+  
+  .pointDescription {
+    font-size: 0.8125rem;
+  }
+}

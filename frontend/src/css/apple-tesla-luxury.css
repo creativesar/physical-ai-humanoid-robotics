@@ -1,0 +1,480 @@
+/**
+ * ============================================
+ * PHYSICAL AI & HUMANOID ROBOTICS TEXTBOOK
+ * Apple/Tesla Luxury Design System v3.0
+ * Minimalist | Premium | Refined
+ * ============================================
+ */
+
+/* ============================================
+   APPLE/TESLA LUXURY DESIGN TOKENS
+   ============================================ */
+:root {
+  /* Premium Color Palette - Apple/Tesla Minimalist Luxury */
+  --ifm-color-primary: #007AFF;
+  --ifm-color-primary-dark: #0066E5;
+  --ifm-color-primary-darker: #0055CC;
+  --ifm-color-primary-darkest: #0044B3;
+  --ifm-color-primary-light: #1A8FFF;
+  --ifm-color-primary-lighter: #33A3FF;
+  --ifm-color-primary-lightest: #66BFFF;
+  --ifm-color-secondary: #5856D6;
+  --ifm-color-secondary-dark: #4644B8;
+
+  /* Luxury Minimalist Palette - Refined & Subtle */
+  --luxury-blue: #007AFF;          /* Apple Blue */
+  --luxury-space-gray: #8E8E93;    /* Apple Space Gray */
+  --luxury-silver: #C7C7CC;        /* Apple Silver */
+  --luxury-red: #E31937;           /* Tesla Red */
+  --luxury-midnight: #0A0A0F;      /* Deep Black */
+  --luxury-pearl: #F5F5F7;         /* Off-White */
+  --luxury-platinum: #E5E5E7;      /* Light Gray */
+
+  /* Premium Backgrounds & Surfaces - Subtle Depth */
+  --ifm-background-color: #000000;
+  --ifm-background-surface-color: #0A0A0F;
+  --luxury-surface-elevated: rgba(20, 20, 28, 0.95);
+  --luxury-surface-glass: rgba(255, 255, 255, 0.02);
+  --luxury-surface-card: rgba(15, 15, 20, 0.85);
+  --ifm-navbar-background-color: rgba(0, 0, 0, 0.85);
+  --ifm-footer-background-color: #000000;
+
+  /* Premium Typography System - SF Pro Inspired */
+  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
+  --ifm-heading-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', var(--ifm-font-family-base);
+  --ifm-code-font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  --ifm-font-size-base: 17px;
+  --ifm-line-height-base: 1.6;
+  --ifm-heading-line-height: 1.15;
+  --ifm-heading-font-weight: 600;
+
+  /* Luxury Spacing Scale (Generous whitespace - Apple style) */
+  --luxury-space-xs: 8px;
+  --luxury-space-sm: 16px;
+  --luxury-space-md: 32px;
+  --luxury-space-lg: 64px;
+  --luxury-space-xl: 96px;
+  --luxury-space-2xl: 128px;
+
+  /* Premium Shadow System - Subtle & Refined (Apple-style) */
+  --luxury-shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --luxury-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.16);
+  --luxury-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.20);
+  --luxury-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.24);
+  --luxury-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.28);
+  --luxury-shadow-2xl: 0 24px 64px rgba(0, 0, 0, 0.32);
+  --luxury-shadow-accent: 0 0 20px rgba(0, 122, 255, 0.15);
+  --luxury-shadow-accent-hover: 0 0 32px rgba(0, 122, 255, 0.25);
+
+  /* Premium Borders & Radius - Apple's Rounded Aesthetics */
+  --luxury-border-radius-xs: 8px;
+  --luxury-border-radius-sm: 10px;
+  --luxury-border-radius-md: 14px;
+  --luxury-border-radius-lg: 18px;
+  --luxury-border-radius-xl: 24px;
+  --luxury-border-radius-2xl: 32px;
+  --luxury-border-color: rgba(255, 255, 255, 0.08);
+  --luxury-border-color-hover: rgba(255, 255, 255, 0.16);
+  --luxury-border-color-active: rgba(0, 122, 255, 0.5);
+
+  /* Premium Transitions - Smooth & Refined (Apple-style) */
+  --luxury-transition-fast: 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --luxury-transition-base: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --luxury-transition-slow: 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --luxury-transition-smooth: 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+  /* Code & Syntax */
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 122, 255, 0.12);
+
+  /* Blur Effects (Glassmorphism - Apple style) */
+  --luxury-blur-sm: blur(10px);
+  --luxury-blur-md: blur(20px);
+  --luxury-blur-lg: blur(30px);
+  --luxury-blur-xl: blur(50px);
+}
+
+/* Dark Mode Enhancements */
+[data-theme='dark'] {
+  --ifm-color-primary: #007AFF;
+  --ifm-background-color: #000000;
+  --ifm-background-surface-color: #0A0A0F;
+  --ifm-navbar-background-color: rgba(0, 0, 0, 0.85);
+  --ifm-footer-background-color: #000000;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 122, 255, 0.15);
+}
+
+/* ============================================
+   GLOBAL LUXURY ENHANCEMENTS
+   ============================================ */
+
+/* Premium Typography - SF Pro Style */
+html {
+  font-family: var(--ifm-font-family-base);
+  font-size: var(--ifm-font-size-base);
+  line-height: var(--ifm-line-height-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+}
+
+body {
+  background: #000000;
+  color: #F5F5F7;
+  letter-spacing: -0.01em;
+}
+
+/* Premium Headings - Clean & Refined */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ifm-heading-font-family);
+  font-weight: var(--ifm-heading-font-weight);
+  line-height: var(--ifm-heading-line-height);
+  letter-spacing: -0.025em;
+  color: #FFFFFF;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+}
+
+/* Premium Paragraph Styling */
+p {
+  margin-bottom: 1.5rem;
+  color: rgba(245, 245, 247, 0.85);
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+/* Premium Link Styling - Clean Underline */
+a {
+  color: var(--luxury-blue);
+  text-decoration: none;
+  transition: var(--luxury-transition-base);
+  border-bottom: 1px solid transparent;
+}
+
+a:hover {
+  color: #0066E5;
+  border-bottom-color: rgba(0, 122, 255, 0.5);
+}
+
+/* ============================================
+   PREMIUM SCROLLBAR - Minimal & Clean
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0A0A0F;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  transition: var(--luxury-transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   PREMIUM NAVIGATION - Apple Style
+   ============================================ */
+.navbar {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: var(--luxury-blur-lg);
+  -webkit-backdrop-filter: var(--luxury-blur-lg);
+  border-bottom: 1px solid var(--luxury-border-color);
+  box-shadow: none;
+  padding: 0;
+}
+
+.navbar__brand {
+  transition: var(--luxury-transition-base);
+  font-weight: 600;
+}
+
+.navbar__brand:hover {
+  opacity: 0.8;
+}
+
+.navbar__item,
+.navbar__link {
+  color: #F5F5F7;
+  font-weight: 400;
+  font-size: 14px;
+  transition: var(--luxury-transition-base);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--luxury-border-radius-xs);
+}
+
+.navbar__item:hover,
+.navbar__link:hover {
+  color: var(--luxury-blue);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.navbar__link--active {
+  color: var(--luxury-blue);
+  background: rgba(0, 122, 255, 0.1);
+}
+
+/* ============================================
+   PREMIUM HERO SECTION - Minimalist
+   ============================================ */
+.hero--primary {
+  background:
+    radial-gradient(circle at 20% 50%, rgba(0, 122, 255, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #000000 0%, #0A0A0F 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ============================================
+   PREMIUM BUTTONS - Apple/Tesla Style
+   ============================================ */
+.button {
+  border-radius: var(--luxury-border-radius-xl);
+  font-weight: 500;
+  font-family: var(--ifm-heading-font-family);
+  font-size: 14px;
+  transition: var(--luxury-transition-base);
+  padding: 12px 32px;
+  border: none;
+}
+
+.button--primary {
+  background: var(--luxury-blue);
+  color: white;
+  box-shadow: var(--luxury-shadow-sm);
+}
+
+.button--primary:hover {
+  background: #0066E5;
+  box-shadow: var(--luxury-shadow-accent-hover);
+  transform: translateY(-1px);
+}
+
+.button--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--luxury-blue);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.button--secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   PREMIUM CARDS - Clean & Refined
+   ============================================ */
+.card {
+  background: var(--luxury-surface-card);
+  backdrop-filter: var(--luxury-blur-md);
+  -webkit-backdrop-filter: var(--luxury-blur-md);
+  border: 1px solid var(--luxury-border-color);
+  border-radius: var(--luxury-border-radius-xl);
+  transition: var(--luxury-transition-smooth);
+  box-shadow: var(--luxury-shadow-sm);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--luxury-shadow-lg);
+  border-color: var(--luxury-border-color-hover);
+}
+
+/* ============================================
+   PREMIUM CODE BLOCKS - Monospaced Beauty
+   ============================================ */
+pre {
+  background: rgba(10, 10, 15, 0.95) !important;
+  border: 1px solid var(--luxury-border-color);
+  border-radius: var(--luxury-border-radius-lg);
+  box-shadow: var(--luxury-shadow-sm);
+  padding: 1.5rem !important;
+  margin: 1.5rem 0;
+}
+
+code {
+  font-family: var(--ifm-code-font-family);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--luxury-border-radius-xs);
+  font-size: 0.9em;
+}
+
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* ============================================
+   PREMIUM TABLES - Structured Data
+   ============================================ */
+table {
+  border: 1px solid var(--luxury-border-color);
+  border-radius: var(--luxury-border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--luxury-shadow-xs);
+  background: var(--luxury-surface-card);
+}
+
+th, td {
+  border: 1px solid var(--luxury-border-color);
+  padding: 1rem 1.25rem;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(245, 245, 247, 0.7);
+}
+
+tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ============================================
+   PREMIUM SIDEBAR - Navigation
+   ============================================ */
+.sidebar {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: var(--luxury-blur-lg);
+  -webkit-backdrop-filter: var(--luxury-blur-lg);
+  border-right: 1px solid var(--luxury-border-color);
+  box-shadow: none;
+}
+
+.menu__link {
+  border-radius: var(--luxury-border-radius-sm);
+  transition: var(--luxury-transition-base);
+  color: #F5F5F7;
+  padding: 0.5rem 0.75rem;
+  margin: 0.15rem 0;
+  font-size: 14px;
+}
+
+.menu__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--luxury-blue);
+}
+
+.menu__link--active {
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--luxury-blue);
+  font-weight: 500;
+}
+
+/* ============================================
+   PREMIUM FOOTER - Clean & Minimal
+   ============================================ */
+.footer {
+  background: linear-gradient(180deg, #0A0A0F 0%, #000000 100%);
+  border-top: 1px solid var(--luxury-border-color);
+  padding: 3rem 0;
+}
+
+.footer__title {
+  color: #F5F5F7;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 1rem;
+}
+
+.footer__link-item {
+  transition: var(--luxury-transition-base);
+  color: rgba(245, 245, 247, 0.6);
+  padding: 0.3rem 0;
+  font-size: 14px;
+}
+
+.footer__link-item:hover {
+  color: var(--luxury-blue) !important;
+}
+
+/* ============================================
+   PREMIUM ANIMATIONS - Smooth & Subtle
+   ============================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s var(--luxury-transition-smooth);
+}
+
+.float-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ============================================
+   RESPONSIVE LUXURY ENHANCEMENTS
+   ============================================ */
+@media (max-width: 996px) {
+  .navbar-sidebar {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: var(--luxury-blur-xl);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY & POLISH
+   ============================================ */
+:focus-visible {
+  outline: 2px solid var(--luxury-blue);
+  outline-offset: 2px;
+  border-radius: var(--luxury-border-radius-xs);
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.25);
+  color: white;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

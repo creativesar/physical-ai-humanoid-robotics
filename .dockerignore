@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+backend/venv/
+backend/venv*/
+backend/.venv/
+backend/.venv*/
+backend/env/
+backend/env*/
+backend/.env/
+backend/.env*/
+
+# Docusaurus
+.docusaurus/
+.cache/
+
+# Production builds
+build/
+dist/
+out/
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git/
+
+# Backend specific
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.env
+backend/.env.local
+
+# Frontend specific
+frontend/node_modules/
+frontend/build/
+frontend/.docusaurus/
+frontend/.cache/
+frontend/.env.local
+frontend/.env

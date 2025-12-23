@@ -1,0 +1,617 @@
+/* ============================================
+   OUR VISION - PREMIUM LUXURY DESIGN
+   ============================================ */
+
+.visionPage {
+  position: relative;
+  overflow: hidden;
+  background: #000000;
+  min-height: 100vh;
+}
+
+/* ============================================
+   ANIMATED BACKGROUND
+   ============================================ */
+.backgroundWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.gradientOrb1 {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 208, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  top: -200px;
+  left: -200px;
+  animation: floatOrb1 20s ease-in-out infinite;
+  filter: blur(80px);
+}
+
+.gradientOrb2 {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  top: 50%;
+  right: -150px;
+  animation: floatOrb2 18s ease-in-out infinite;
+  filter: blur(70px);
+}
+
+.gradientOrb3 {
+  position: absolute;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(0, 208, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: floatOrb3 22s ease-in-out infinite;
+  filter: blur(90px);
+}
+
+.meshGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 208, 255, 0.03) 0px, transparent 1px, transparent 60px, rgba(0, 208, 255, 0.03) 61px),
+    repeating-linear-gradient(90deg, rgba(0, 208, 255, 0.03) 0px, transparent 1px, transparent 60px, rgba(0, 208, 255, 0.03) 61px);
+  opacity: 0.4;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(0, 208, 255, 0.6);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 208, 255, 0.8);
+}
+
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(100px, 100px); }
+}
+
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-80px, -120px); }
+}
+
+@keyframes floatOrb3 {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-60px); }
+}
+
+/* ============================================
+   CONTAINER
+   ============================================ */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.heroSection {
+  padding: 8rem 0 6rem;
+  position: relative;
+  z-index: 1;
+}
+
+.heroContent {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 208, 255, 0.15), rgba(99, 102, 241, 0.15));
+  border: 1px solid rgba(0, 208, 255, 0.3);
+  border-radius: 50px;
+  color: #00D0FF;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(0, 208, 255, 0.2);
+}
+
+.heroTitle {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  color: #FFFFFF;
+  letter-spacing: -0.03em;
+}
+
+.highlight {
+  background: linear-gradient(135deg, #00D0FF 0%, #6366F1 50%, #00D0FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+  filter: drop-shadow(0 0 20px rgba(0, 208, 255, 0.4));
+}
+
+@keyframes shimmer {
+  to { background-position: 200% center; }
+}
+
+.heroDescription {
+  font-size: 1.25rem;
+  line-height: 1.8;
+  color: rgba(224, 240, 240, 0.85);
+  margin-bottom: 3rem;
+  max-width: 750px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.heroButtons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryBtn,
+.secondaryBtn,
+.ctaPrimary,
+.ctaSecondary {
+  padding: 1rem 2.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 200px;
+  text-align: center;
+}
+
+.primaryBtn,
+.ctaPrimary {
+  background: linear-gradient(135deg, #00D0FF, #6366F1);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 32px rgba(0, 208, 255, 0.3);
+}
+
+.primaryBtn:hover,
+.ctaPrimary:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 208, 255, 0.5);
+  color: white;
+}
+
+.secondaryBtn,
+.ctaSecondary {
+  background: transparent;
+  color: #00D0FF;
+  border: 2px solid #00D0FF;
+  box-shadow: 0 0 20px rgba(0, 208, 255, 0.2);
+}
+
+.secondaryBtn:hover,
+.ctaSecondary:hover {
+  background: rgba(0, 208, 255, 0.1);
+  border-color: #00D0FF;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 208, 255, 0.3);
+  color: #00D0FF;
+}
+
+/* ============================================
+   VISION SECTION
+   ============================================ */
+.visionSection {
+  padding: 6rem 0;
+  position: relative;
+  z-index: 1;
+  /* Add a subtle gradient background for luxury feel */
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 208, 255, 0.03) 50%, transparent 100%);
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.sectionTitle {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+}
+
+.sectionSubtitle {
+  font-size: 1.25rem;
+  color: rgba(224, 240, 240, 0.7);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.visionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+
+.visionCard {
+  position: relative;
+  padding: 3rem 2rem;
+  background:
+    linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(15, 15, 25, 0.9)),
+    radial-gradient(circle at 50% 0%, rgba(0, 208, 255, 0.08), transparent 70%);
+  border: 1px solid rgba(0, 208, 255, 0.25);
+  border-radius: 24px;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  overflow: hidden;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* Add premium glass morphism effect */
+  background-clip: padding-box;
+  z-index: 1;
+}
+
+.visionCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 208, 255, 0.08), rgba(99, 102, 241, 0.08));
+  opacity: 0;
+  transition: opacity 0.6s;
+  z-index: 0;
+}
+
+.visionCard::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    rgba(0, 208, 255, 0.3) 90deg,
+    transparent 180deg,
+    rgba(99, 102, 241, 0.3) 270deg,
+    transparent 360deg
+  );
+  opacity: 0;
+  transition: all 1s;
+  animation: rotate 8s linear infinite;
+  z-index: -1;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+.visionCard:hover::before {
+  opacity: 1;
+}
+
+.visionCard:hover::after {
+  opacity: 0.4;
+}
+
+.visionCard:hover {
+  border-color: rgba(0, 208, 255, 0.6);
+  box-shadow:
+    0 25px 70px rgba(0, 208, 255, 0.3),
+    0 0 80px rgba(0, 208, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-8px);
+}
+
+.cardGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00D0FF, transparent);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.visionCard:hover .cardGlow {
+  opacity: 1;
+}
+
+.cardNumber {
+  font-size: 4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #00D0FF, #6366F1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.15;
+  line-height: 1;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 20px rgba(0, 208, 255, 0.3);
+  letter-spacing: -0.05em;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.cardDescription {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(224, 240, 240, 0.8);
+  letter-spacing: 0.01em;
+  font-feature-settings: 'liga' on;
+}
+
+.cardBorder {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00D0FF, #6366F1);
+  transition: width 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 2px;
+}
+
+.visionCard:hover .cardBorder {
+  width: 80%;
+}
+
+/* ============================================
+   PILLARS SECTION
+   ============================================ */
+.pillarsSection {
+  padding: 6rem 0;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 208, 255, 0.02) 50%, transparent 100%);
+}
+
+.pillarsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.pillarCard {
+  padding: 2.5rem 2rem;
+  background: rgba(10, 10, 15, 0.6);
+  border: 1px solid rgba(0, 208, 255, 0.15);
+  border-radius: 20px;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  backdrop-filter: blur(10px);
+}
+
+.pillarCard:hover {
+  border-color: rgba(0, 208, 255, 0.4);
+  box-shadow: 0 15px 45px rgba(0, 208, 255, 0.15);
+  background: rgba(15, 15, 25, 0.8);
+}
+
+.pillarIcon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 208, 255, 0.15), rgba(99, 102, 241, 0.15));
+  border: 1px solid rgba(0, 208, 255, 0.3);
+  border-radius: 50%;
+  color: #00D0FF;
+  transition: all 0.4s;
+}
+
+.pillarCard:hover .pillarIcon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 0 30px rgba(0, 208, 255, 0.4);
+}
+
+.pillarIcon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.pillarTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+}
+
+.pillarDescription {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(224, 240, 240, 0.75);
+}
+
+/* ============================================
+   IMPACT SECTION
+   ============================================ */
+.impactSection {
+  padding: 6rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.impactContent {
+  text-align: center;
+}
+
+.impactTitle {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 3rem;
+  color: #FFFFFF;
+}
+
+.impactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.impactCard {
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(0, 208, 255, 0.08), rgba(99, 102, 241, 0.08));
+  border: 2px solid rgba(0, 208, 255, 0.25);
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  backdrop-filter: blur(15px);
+}
+
+.impactCard:hover {
+  border-color: rgba(0, 208, 255, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 208, 255, 0.25);
+}
+
+.impactNumber {
+  font-size: 4rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #00D0FF, #6366F1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.impactLabel {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: rgba(224, 240, 240, 0.9);
+}
+
+/* ============================================
+   CTA SECTION
+   ============================================ */
+.ctaSection {
+  padding: 8rem 0;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, rgba(0, 208, 255, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+}
+
+.ctaContent {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ctaTitle {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #FFFFFF;
+}
+
+.ctaDescription {
+  font-size: 1.25rem;
+  line-height: 1.8;
+  color: rgba(224, 240, 240, 0.85);
+  margin-bottom: 3rem;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 996px) {
+  .heroSection {
+    padding: 5rem 0 4rem;
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+
+  .visionGrid,
+  .pillarsGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .impactGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroButtons,
+  .ctaButtons {
+    flex-direction: column;
+  }
+
+  .primaryBtn,
+  .secondaryBtn,
+  .ctaPrimary,
+  .ctaSecondary {
+    width: 100%;
+  }
+
+  .sectionTitle,
+  .impactTitle,
+  .ctaTitle {
+    font-size: 2rem;
+  }
+
+  .cardNumber,
+  .impactNumber {
+    font-size: 3rem;
+  }
+}
