@@ -570,6 +570,144 @@ const HeroBackground: React.FC<HeroBackgroundProps> = ({ children }) => {
     return () => clearInterval(whiteZigzagInterval);
   }, []);
 
+  // Function to create meteor shower effects
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const meteorInterval = setInterval(() => {
+      if (container.children.length > 12) return;
+
+      const meteor = document.createElement('div');
+      meteor.className = styles.meteor;
+
+      // Random starting position (from top right area)
+      const posX = 60 + Math.random() * 40;
+      meteor.style.left = `${posX}%`;
+      meteor.style.top = `-5%`;
+
+      // Random size
+      const width = 40 + Math.random() * 60;
+      meteor.style.width = `${width}px`;
+
+      // Random animation
+      const duration = 1 + Math.random() * 1.5;
+      meteor.style.animation = `${styles.meteorFall} ${duration}s linear forwards`;
+      meteor.style.animationDelay = `${Math.random() * 2}s`;
+
+      container.appendChild(meteor);
+
+      setTimeout(() => {
+        meteor.remove();
+      }, duration * 1000);
+    }, 800);
+
+    return () => clearInterval(meteorInterval);
+  }, []);
+
+  // Function to create DNA helix strands
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const helixInterval = setInterval(() => {
+      if (container.children.length > 6) return;
+
+      const helix = document.createElement('div');
+      helix.className = styles.dnaHelix;
+
+      // Random position
+      const posX = 10 + Math.random() * 80;
+      const posY = 10 + Math.random() * 80;
+      helix.style.left = `${posX}%`;
+      helix.style.top = `${posY}%`;
+
+      // Random animation
+      const duration = 8 + Math.random() * 8;
+      helix.style.animation = `${styles.dnaRotate} ${duration}s linear infinite`;
+
+      container.appendChild(helix);
+
+      setTimeout(() => {
+        helix.remove();
+      }, (duration + 2) * 1000);
+    }, 5000);
+
+    return () => clearInterval(helixInterval);
+  }, []);
+
+  // Function to create ripple waves
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const rippleInterval = setInterval(() => {
+      if (container.children.length > 8) return;
+
+      const ripple = document.createElement('div');
+      ripple.className = styles.rippleWave;
+
+      // Random position
+      const posX = Math.random() * 100;
+      const posY = Math.random() * 100;
+      ripple.style.left = `${posX}%`;
+      ripple.style.top = `${posY}%`;
+
+      // Random color
+      const colors = ['#0FE3C0', '#6366F1', '#EC4899', '#0ea5e9'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      ripple.style.borderColor = color;
+
+      // Animation
+      const duration = 3 + Math.random() * 2;
+      ripple.style.animation = `${styles.rippleExpand} ${duration}s ease-out forwards`;
+
+      container.appendChild(ripple);
+
+      setTimeout(() => {
+        ripple.remove();
+      }, duration * 1000);
+    }, 2000);
+
+    return () => clearInterval(rippleInterval);
+  }, []);
+
+  // Function to create pulsating glow spheres
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const glowInterval = setInterval(() => {
+      if (container.children.length > 5) return;
+
+      const glow = document.createElement('div');
+      glow.className = styles.glowSphere;
+
+      // Random position
+      const posX = 20 + Math.random() * 60;
+      const posY = 20 + Math.random() * 60;
+      glow.style.left = `${posX}%`;
+      glow.style.top = `${posY}%`;
+
+      // Random size
+      const size = 80 + Math.random() * 120;
+      glow.style.width = `${size}px`;
+      glow.style.height = `${size}px`;
+
+      // Animation
+      const duration = 4 + Math.random() * 4;
+      glow.style.animation = `${styles.glowPulse} ${duration}s ease-in-out infinite`;
+
+      container.appendChild(glow);
+
+      setTimeout(() => {
+        glow.remove();
+      }, (duration * 3) * 1000);
+    }, 4000);
+
+    return () => clearInterval(glowInterval);
+  }, []);
+
   return (
     <div className={styles.heroContainer} ref={containerRef}>
       {/* Animated gradient background */}

@@ -88,18 +88,18 @@
 
 
 .heroSubtitle {
-  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
-  margin-bottom: 3.5rem;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  margin-bottom: 2.5rem;
   color: rgba(255, 255, 255, 0.8);
   font-weight: 400;
   line-height: 1.6;
   text-align: center;
-  max-width: 850px;
+  max-width: 680px;
   letter-spacing: 0.01em;
 }
 
 .buttonContainer {
-  margin: 2.5rem 0;
+  margin: 0 0 2.5rem 0;
   position: relative;
   z-index: 21;
 }
@@ -227,7 +227,7 @@
   }
 
   .heroSubtitle {
-    font-size: 1.2rem;
+    font-size: 1.05rem;
   }
 }
 
@@ -243,12 +243,12 @@
   }
 
   .heroSubtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     margin-bottom: 2rem;
   }
 
   .buttonContainer {
-    margin: 2rem 0;
+    margin: 1.25rem 0 2rem 0;
   }
 }
 
@@ -258,10 +258,10 @@
   }
 
   .heroSubtitle {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   .buttonContainer {
-    margin: 1.5rem 0;
+    margin: 1rem 0 1.5rem 0;
   }
 }

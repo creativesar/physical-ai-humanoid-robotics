@@ -175,17 +175,43 @@ function PremiumHero() {
           initial="hidden"
           animate="visible"
         >
+          {/* Premium badge */}
+          <motion.div
+            variants={itemVariants}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 20px',
+              background: 'linear-gradient(135deg, rgba(15, 227, 192, 0.15), rgba(99, 102, 241, 0.15))',
+              border: '1px solid rgba(15, 227, 192, 0.3)',
+              borderRadius: '50px',
+              marginBottom: '24px',
+              backdropFilter: 'blur(10px)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#0FE3C0',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Industry-Standard Curriculum
+          </motion.div>
+
           <motion.h1
             className={clsx('hero__title', styles.heroTitle)}
             variants={itemVariants}
           >
-            Physical AI & Humanoid <br /> Robotics Textbook
+            Master Physical AI.<br />Build the Future.
           </motion.h1>
           <motion.p
             className={clsx('hero__subtitle', styles.heroSubtitle)}
             variants={itemVariants}
           >
-            Master the convergence of artificial intelligence and robotics with our comprehensive textbook covering ROS 2, NVIDIA Isaac, Gazebo simulations, and cutting-edge Vision-Language-Action systems.
+            The definitive textbook for humanoid robotics and embodied AI. From ROS 2 fundamentals to Vision-Language-Action models—gain the expertise to create robots that see, think, and move autonomously.
           </motion.p>
 
           <motion.div
