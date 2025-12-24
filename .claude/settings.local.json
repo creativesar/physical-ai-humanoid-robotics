@@ -410,7 +410,11 @@
       "Bash(ls:*)",
       "Bash(npm uninstall:*)",
       "Bash(timeout:*)",
-      "Bash(curl -X GET http://localhost:8000/)"
+      "Bash(curl -X GET http://localhost:8000/)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nConnect frontend to deployed Hugging Face backend\n\n- Updated backend Dockerfile for HF Spaces \\(port 7860\\)\n- Added backend README with HF Space YAML config\n- Created deployment guide and automation script\n- Connected frontend components to https://creativesar-face.hf.space\n- Updated Docusaurus config with customFields for backend URL\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)"
     ]
   }
 }
