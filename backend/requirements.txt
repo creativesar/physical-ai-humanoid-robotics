@@ -12,8 +12,8 @@ tiktoken>=0.5.1
 python-multipart==0.0.6
 fastembed==0.2.7
 mangum==0.17.0
-langchain==0.1.0
-langchain-text-splitters==0.0.1
+langchain>=0.1.16
+langchain-text-splitters>=0.0.1
 sentence-transformers==2.3.1
 markdown==3.5.1
 beautifulsoup4==4.12.2
