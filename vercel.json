@@ -1,0 +1,41 @@
+{
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    },
+    {
+      "src": "backend/**/*.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "outputDirectory": "frontend/build",
+  "framework": "docusaurus",
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "installCommand": "npm install --prefix frontend",
+  "functions": {
+    "backend/**/*.py": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
+}

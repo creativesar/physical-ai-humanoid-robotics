@@ -1,8 +1,15 @@
 import logging
-from typing import List
-from fastembed import TextEmbedding
+from typing import List, Optional
 import asyncio
 import time
+
+# Optional import - fastembed may not be installed in serverless environments
+try:
+    from fastembed import TextEmbedding
+    FASTEMBED_AVAILABLE = True
+except ImportError:
+    FASTEMBED_AVAILABLE = False
+    TextEmbedding = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -13,12 +20,21 @@ class LocalEmbeddingService:
         """
         Initialize local embedding service using fastembed
         """
+        if not FASTEMBED_AVAILABLE:
+            logger.warning("fastembed not available - local embeddings disabled")
+            self._model = None
+            self.model_name = None
+            return
+
         self.model_name = model_name
         self._model = None
         self._initialize_model()
 
     def _initialize_model(self):
         """Initialize the local embedding model"""
+        if not FASTEMBED_AVAILABLE:
+            return
+
         try:
             self._model = TextEmbedding(model_name=self.model_name)
             logger.info(f"Local embedding model {self.model_name} initialized successfully")
@@ -30,6 +46,9 @@ class LocalEmbeddingService:
         """
         Generate embeddings for the given texts using local model
         """
+        if not FASTEMBED_AVAILABLE or self._model is None:
+            raise RuntimeError("Local embeddings not available - fastembed not installed")
+
         try:
             # Convert generator to list to ensure all embeddings are generated
             embeddings = list(self._model.embed(texts))
@@ -42,6 +61,9 @@ class LocalEmbeddingService:
         """
         Generate embedding for a single query using local model
         """
+        if not FASTEMBED_AVAILABLE or self._model is None:
+            raise RuntimeError("Local embeddings not available - fastembed not installed")
+
         try:
             embeddings = list(self._model.embed([text]))
             embedding = embeddings[0]
@@ -54,6 +76,10 @@ class LocalEmbeddingService:
         """
         Test local embedding generation
         """
+        if not FASTEMBED_AVAILABLE or self._model is None:
+            logger.warning("Local embeddings not available for testing")
+            return False
+
         try:
             test_embedding = await self.generate_embeddings_query("test")
             return len(test_embedding) > 0

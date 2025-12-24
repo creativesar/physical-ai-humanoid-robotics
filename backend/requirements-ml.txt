@@ -1,0 +1,6 @@
+# Heavy ML dependencies - only needed for local embedding fallback
+# Not installed by default on Vercel to avoid OOM issues
+fastembed==0.2.7
+langchain>=0.1.16
+langchain-text-splitters>=0.0.1
+sentence-transformers==2.3.1

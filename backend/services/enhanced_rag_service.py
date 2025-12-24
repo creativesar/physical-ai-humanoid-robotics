@@ -12,24 +12,32 @@ class EnhancedRAGService:
     def __init__(self, openrouter_service: OpenRouterService, qdrant_service: QdrantService):
         self.openrouter_service = openrouter_service
         self.qdrant_service = qdrant_service
-        self.local_embedding_service = LocalEmbeddingService()
+        try:
+            self.local_embedding_service = LocalEmbeddingService()
+            self.local_embeddings_available = True
+        except Exception as e:
+            logger.warning(f"Local embeddings not available: {e}")
+            self.local_embedding_service = None
+            self.local_embeddings_available = False
         self.use_local_embeddings = False  # Will switch to local if OpenRouter fails
 
     def _switch_to_local_embeddings(self):
-        """Switch to local embeddings if OpenRouter is failing"""
-        if not self.use_local_embeddings:
+        """Switch to local embeddings if OpenRouter is failing and local embeddings are available"""
+        if not self.use_local_embeddings and self.local_embeddings_available:
             logger.warning("Switching to local embeddings due to API issues")
             self.use_local_embeddings = True
+        elif not self.local_embeddings_available:
+            logger.error("Cannot switch to local embeddings - not available in this environment")
 
     async def _generate_embeddings(self, texts: List[str]):
         """Generate embeddings with fallback to local embeddings"""
-        if self.use_local_embeddings:
+        if self.use_local_embeddings and self.local_embeddings_available:
             return await self.local_embedding_service.generate_embeddings(texts)
         else:
             try:
                 return await self.openrouter_service.generate_embeddings(texts)
             except Exception as e:
-                if "rate limit" in str(e).lower() or "429" in str(e):
+                if ("rate limit" in str(e).lower() or "429" in str(e)) and self.local_embeddings_available:
                     self._switch_to_local_embeddings()
                     logger.info("Retrying with local embeddings...")
                     return await self.local_embedding_service.generate_embeddings(texts)
@@ -38,13 +46,13 @@ class EnhancedRAGService:
 
     async def _generate_query_embedding(self, text: str):
         """Generate query embedding with fallback to local embeddings"""
-        if self.use_local_embeddings:
+        if self.use_local_embeddings and self.local_embeddings_available:
             return await self.local_embedding_service.generate_embeddings_query(text)
         else:
             try:
                 return await self.openrouter_service.generate_embeddings_query(text)
             except Exception as e:
-                if "rate limit" in str(e).lower() or "429" in str(e):
+                if ("rate limit" in str(e).lower() or "429" in str(e)) and self.local_embeddings_available:
                     self._switch_to_local_embeddings()
                     logger.info("Retrying with local embeddings...")
                     return await self.local_embedding_service.generate_embeddings_query(text)
