@@ -1,54 +1,88 @@
+/* Critical: Prevent any parent overflow from hiding chatbot */
+:global(body),
+:global(html),
+:global(#__docusaurus),
+:global(.main-wrapper) {
+  overflow: visible !important;
+}
+
 .chatbotContainer {
-  position: fixed;
+  position: fixed !important;
   bottom: 20px;
   right: 20px;
-  z-index: 10000 !important; /* Higher z-index to ensure visibility above other elements */
-  pointer-events: all; /* Ensure the element is clickable */
+  z-index: 99999 !important; /* Maximum z-index to ensure visibility above ALL elements */
+  pointer-events: all !important; /* Ensure the element is clickable */
   min-height: 70px;
   min-width: 70px;
+  display: block !important; /* Force display on all devices */
+  visibility: visible !important; /* Force visibility */
+  opacity: 1 !important; /* Force full opacity */
+  isolation: isolate; /* Create new stacking context */
+  transform: translateZ(0); /* Force hardware acceleration and own layer */
+  will-change: transform; /* Optimize for changes */
+  /* Prevent any parent from hiding */
+  clip: auto !important;
+  clip-path: none !important;
+  contain: none !important;
 }
 
 /* Enhanced mobile responsiveness for the chatbot container */
 @media (max-width: 1024px) {
   .chatbotContainer {
-    bottom: 18px;
-    right: 18px;
+    bottom: 18px !important;
+    right: 18px !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
   }
 }
 
 @media (max-width: 768px) {
   .chatbotContainer {
-    bottom: 15px;
-    right: 15px;
-    min-height: 60px;
-    min-width: 60px;
+    bottom: 15px !important;
+    right: 15px !important;
+    min-height: 60px !important;
+    min-width: 60px !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
   }
 }
 
 @media (max-width: 480px) {
   .chatbotContainer {
-    bottom: 12px;
-    right: 12px;
-    min-height: 55px;
-    min-width: 55px;
+    bottom: 12px !important;
+    right: 12px !important;
+    min-height: 55px !important;
+    min-width: 55px !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
+    pointer-events: all !important;
   }
 }
 
 /* Additional media query for very small screens */
 @media (max-width: 360px) {
   .chatbotContainer {
-    bottom: 10px;
-    right: 10px;
-    min-height: 50px;
-    min-width: 50px;
+    bottom: 10px !important;
+    right: 10px !important;
+    min-height: 50px !important;
+    min-width: 50px !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
+    pointer-events: all !important;
   }
 }
 
 /* Ensure visibility on all screen sizes */
 @media (min-width: 1025px) {
   .chatbotContainer {
-    bottom: 20px;
-    right: 20px;
+    bottom: 20px !important;
+    right: 20px !important;
+    display: block !important;
+    visibility: visible !important;
   }
 }
 
@@ -415,30 +449,48 @@
 /* Enhanced mobile responsiveness for the chat button */
 @media (max-width: 1024px) {
   .chatButton {
-    width: 65px;
-    height: 65px;
+    width: 65px !important;
+    height: 65px !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
   }
 }
 
 @media (max-width: 768px) {
   .chatButton {
-    width: 60px;
-    height: 60px;
+    width: 60px !important;
+    height: 60px !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
   }
 }
 
 @media (max-width: 480px) {
   .chatButton {
-    width: 55px;
-    height: 55px;
+    width: 55px !important;
+    height: 55px !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    position: relative !important;
   }
 }
 
 /* Additional media query for very small screens */
 @media (max-width: 360px) {
   .chatButton {
-    width: 50px;
-    height: 50px;
+    width: 50px !important;
+    height: 50px !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+    position: relative !important;
   }
 }
 

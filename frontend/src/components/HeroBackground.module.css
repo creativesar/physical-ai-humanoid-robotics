@@ -28,7 +28,7 @@
   filter: blur(1px);
 }
 
-/* Floating particles */
+/* Floating particles - OPTIMIZED: Removed expensive box-shadow */
 .floatingParticle {
   position: absolute;
   width: 2px;
@@ -36,15 +36,14 @@
   background: radial-gradient(circle, #4f46e5, #7c3aed, #4f46e5);
   border-radius: 50%;
   opacity: 0;
-  box-shadow: 0 0 8px #4f46e5, 0 0 16px #7c3aed;
 }
 
-/* Gradient Orbs */
+/* Gradient Orbs - OPTIMIZED: Reduced blur from 20px to 8px */
 .gradientOrb {
   position: absolute;
   border-radius: 50%;
   opacity: 0.3;
-  filter: blur(20px);
+  filter: blur(8px);
   z-index: 0;
 }
 
@@ -163,12 +162,12 @@
   box-shadow: 0 0 6px #00ffff, 0 0 12px #0088ff;
 }
 
-/* Blue neon orb */
+/* Blue neon orb - OPTIMIZED: Reduced blur from 20px to 8px */
 .blueNeonOrb {
   position: absolute;
   border-radius: 50%;
   opacity: 0.15;
-  filter: blur(20px);
+  filter: blur(8px);
   z-index: 1;
   background: radial-gradient(circle, #00ffff, #0088ff, #0044aa);
 }

@@ -628,7 +628,17 @@ const LuxuryChatbotWidget: React.FC = () => {
 
 
   return (
-    <div className={styles.chatbotContainer}>
+    <div
+      className={styles.chatbotContainer}
+      style={{
+        position: 'fixed',
+        zIndex: 99999,
+        display: 'block',
+        visibility: 'visible',
+        opacity: 1,
+        pointerEvents: 'all'
+      }}
+    >
       {!isOpen && (
         <button
           className={styles.chatButton}
@@ -637,7 +647,11 @@ const LuxuryChatbotWidget: React.FC = () => {
           style={{
             background: `linear-gradient(135deg, #0a0a0a, #1a1a1a, #000000)`,
             borderColor: themeColors.primary,
-            boxShadow: `0 0 30px ${themeColors.glow}, 0 0 0 2px rgba(0, 0, 0, 0.8), inset 0 2px 10px rgba(0, 0, 0, 0.8)`
+            boxShadow: `0 0 30px ${themeColors.glow}, 0 0 0 2px rgba(0, 0, 0, 0.8), inset 0 2px 10px rgba(0, 0, 0, 0.8)`,
+            display: 'flex',
+            visibility: 'visible',
+            opacity: 1,
+            pointerEvents: 'all'
           }}
         >
           <div className={styles.chatButtonInner}>

@@ -12,7 +12,7 @@
   background-attachment: fixed;
 }
 
-/* Luxury Background Elements */
+/* Luxury Background Elements - OPTIMIZED: Reduced blur values */
 .luxuryAccent1 {
   position: absolute;
   top: 10%;
@@ -21,7 +21,7 @@
   height: 200px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(219, 39, 119, 0.1) 0%, rgba(139, 92, 246, 0.1) 40%, transparent 70%);
-  filter: blur(50px);
+  filter: blur(20px); /* Reduced from 50px */
   z-index: 0;
   animation: luxuryPulse 6s ease-in-out infinite;
 }
@@ -34,7 +34,7 @@
   height: 180px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, rgba(245, 158, 11, 0.1) 40%, transparent 70%);
-  filter: blur(45px);
+  filter: blur(18px); /* Reduced from 45px */
   z-index: 0;
   animation: luxuryPulse 7s ease-in-out infinite 1s;
 }
@@ -47,7 +47,7 @@
   height: 120px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(14, 165, 233, 0.1) 40%, transparent 70%);
-  filter: blur(35px);
+  filter: blur(15px); /* Reduced from 35px */
   z-index: 0;
   animation: luxuryPulse 8s ease-in-out infinite 2s;
 }

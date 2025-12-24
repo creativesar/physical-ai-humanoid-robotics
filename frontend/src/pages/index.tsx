@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
-// Import all components from components folder
+// OPTIMIZED: Only load hero immediately, lazy load all other sections
 import PremiumHero from '../components/PremiumHero';
-import LuxuryAboutUs from '../components/LuxuryAboutUs';
-import WhatWeDoCompact from '../components/WhatWeDoCompact';
-import TrustedPersons from '../components/TrustedPersons';
-import PremiumModules from '../components/PremiumModules';
-import CoreThinking from '../components/CoreThinking';
-import PremiumCounter from '../components/PremiumCounter';
-import PremiumGetInTouch from '../components/PremiumGetInTouch';
+
+const LuxuryAboutUs = lazy(() => import('../components/LuxuryAboutUs'));
+const WhatWeDoCompact = lazy(() => import('../components/WhatWeDoCompact'));
+const TrustedPersons = lazy(() => import('../components/TrustedPersons'));
+const PremiumModules = lazy(() => import('../components/PremiumModules'));
+const CoreThinking = lazy(() => import('../components/CoreThinking'));
+const PremiumCounter = lazy(() => import('../components/PremiumCounter'));
+const PremiumGetInTouch = lazy(() => import('../components/PremiumGetInTouch'));
 
 // ============================================
 // MAIN HOMEPAGE COMPONENT
@@ -23,29 +24,37 @@ export default function Home() {
       title="Home"
       description="Master Physical AI & Humanoid Robotics with ROS 2, NVIDIA Isaac, Gazebo, and Vision-Language-Action systems. Comprehensive, hands-on curriculum for the next generation of robotics."
     >
-      {/* Premium Hero Section with glassmorphism effects */}
+      {/* Premium Hero Section - Load immediately */}
       <PremiumHero />
 
-      {/* About Us Section - Premium Luxury Design */}
-      <LuxuryAboutUs />
+      {/* OPTIMIZED: Lazy load all sections below the fold */}
+      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+        <LuxuryAboutUs />
+      </Suspense>
 
-      {/* What We Do - Compact Premium Version */}
-      <WhatWeDoCompact />
+      <Suspense fallback={<div style={{ minHeight: '80vh' }} />}>
+        <WhatWeDoCompact />
+      </Suspense>
 
-      {/* Premium Animated Counter */}
-      <PremiumCounter />
+      <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
+        <PremiumCounter />
+      </Suspense>
 
-      {/* Premium Modules Section */}
-      <PremiumModules />
+      <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+        <PremiumModules />
+      </Suspense>
 
-      {/* Core Thinking Section */}
-      <CoreThinking />
+      <Suspense fallback={<div style={{ minHeight: '80vh' }} />}>
+        <CoreThinking />
+      </Suspense>
 
-      {/* Trusted Persons & Education Section */}
-      <TrustedPersons />
+      <Suspense fallback={<div style={{ minHeight: '80vh' }} />}>
+        <TrustedPersons />
+      </Suspense>
 
-      {/* Get In Touch Section */}
-      <PremiumGetInTouch />
+      <Suspense fallback={<div style={{ minHeight: '80vh' }} />}>
+        <PremiumGetInTouch />
+      </Suspense>
     </Layout>
   );
 }

@@ -13,12 +13,11 @@ interface FeatureCardProps {
 function FeatureCard({ icon, title, description, delay = 0 }: FeatureCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
       className={styles.featureCard}
-      whileHover={{ y: -8 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
     >
       <div className={styles.featureIcon}>
         {icon}
@@ -50,51 +49,24 @@ function PremiumButton({
 }
 
 export default function LuxuryAboutUs() {
-  // Generate particles for background effect
-  const particles = Array.from({ length: 12 }, (_, i) => i);
-
+  // OPTIMIZED: Reduced particles from 12 to 0 for better performance
   return (
     <section className={styles.section}>
       {/* Background effects */}
       <div className={styles.backgroundGlow} />
-      <div className={styles.backgroundParticles}>
-        {particles.map((i) => (
-          <motion.div
-            key={i}
-            className={styles.particle}
-            animate={{
-              y: [0, -100 - Math.random() * 100, 0],
-              x: [0, Math.sin(i) * 50, 0],
-              opacity: [0, 0.8, 0],
-            }}
-            transition={{
-              duration: 5 + i,
-              repeat: Infinity,
-              delay: i * 0.5,
-              ease: 'easeInOut',
-            }}
-            style={{
-              left: `${10 + i * 8}%`,
-              top: `${20 + (i % 4) * 20}%`,
-            }}
-          />
-        ))}
-      </div>
 
       <div className={styles.container}>
         <div className={styles.contentGrid}>
-          {/* Left content - Heading, text, and buttons */}
+          {/* Left content - Heading, text, and buttons - OPTIMIZED: Light animations */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
             className={styles.leftContent}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
               <span className={styles.badge}>About This Textbook</span>
@@ -103,18 +75,16 @@ export default function LuxuryAboutUs() {
             <motion.h2
               className={styles.mainHeading}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               About <span className={styles.highlight}>Us</span>
             </motion.h2>
-            
+
             <motion.p
               className={styles.description}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               We are pioneering the future of embodied intelligence through a world-class, research-driven textbook that seamlessly integrates cutting-edge AI theory with real-world humanoid robotics engineering. Our vision is to democratize access to elite-level knowledge, empowering the next generation of innovators to build intelligent machines that learn, reason, and act in the physical world.
@@ -123,51 +93,40 @@ export default function LuxuryAboutUs() {
             <motion.div
               className={styles.statsGrid}
               initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <motion.div
                 className={styles.statCard}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
               >
                 <h3 className={styles.statNumber}>15+</h3>
                 <p className={styles.statLabel}>Advanced Modules</p>
               </motion.div>
               <motion.div
                 className={styles.statCard}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
               >
                 <h3 className={styles.statNumber}>100+</h3>
                 <p className={styles.statLabel}>Practical Exercises</p>
               </motion.div>
               <motion.div
                 className={styles.statCard}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
               >
                 <h3 className={styles.statNumber}>50+</h3>
                 <p className={styles.statLabel}>World-Class Contributors</p>
               </motion.div>
               <motion.div
                 className={styles.statCard}
-                whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300 }}
+                whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
               >
                 <h3 className={styles.statNumber}>∞</h3>
                 <p className={styles.statLabel}>Innovation Potential</p>
               </motion.div>
             </motion.div>
 
-            <motion.div 
-              className={styles.buttonGroup}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
+            <div className={styles.buttonGroup}>
               <PremiumButton
                 to="/docs/module-1/"
                 variant="primary"
@@ -180,16 +139,15 @@ export default function LuxuryAboutUs() {
               >
                 Our Vision
               </PremiumButton>
-            </motion.div>
+            </div>
           </motion.div>
 
           {/* Right content - Grid cards */}
-          <motion.div 
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+          <motion.div
             className={styles.rightContent}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
           >
             <div className={styles.featuresGrid}>
               <FeatureCard

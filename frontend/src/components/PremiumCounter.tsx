@@ -35,46 +35,8 @@ const PremiumCounter = () => {
     }
   ]);
 
-  const [animatedValues, setAnimatedValues] = useState<number[]>(Array(counters.length).fill(0));
-
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
-    
-    counters.forEach((_, index) => {
-      const timer = setTimeout(() => {
-        let start = 0;
-        const end = counters[index].value;
-        const duration = 2000; // 2 seconds
-        const increment = end / (duration / 16); // 60fps approximation
-        
-        const animate = () => {
-          start += increment;
-          if (start >= end) {
-            setAnimatedValues(prev => {
-              const newValues = [...prev];
-              newValues[index] = end;
-              return newValues;
-            });
-          } else {
-            setAnimatedValues(prev => {
-              const newValues = [...prev];
-              newValues[index] = Math.floor(start);
-              return newValues;
-            });
-            requestAnimationFrame(animate);
-          }
-        };
-        
-        animate();
-      }, index * 300); // Stagger animations
-      
-      timers.push(timer);
-    });
-    
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
-  }, []);
+  // OPTIMIZED: Display final values immediately, no animation
+  const [animatedValues] = useState<number[]>(counters.map(c => c.value));
 
   return (
     <section className={styles.section}>

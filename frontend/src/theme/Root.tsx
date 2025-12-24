@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { PersonalizationProvider } from '../contexts/PersonalizationContext';
 import { AuthProvider } from '../hooks/useAuth';
-import LuxuryChatbotWidget from '../components/LuxuryChatbotWidget';
+
+// OPTIMIZED: Lazy load chatbot to improve initial page load
+const LuxuryChatbotWidget = lazy(() => import('../components/LuxuryChatbotWidget'));
 
 export default function Root({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +11,9 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <PersonalizationProvider>
         <>
           {children}
-          <LuxuryChatbotWidget />
+          <Suspense fallback={null}>
+            <LuxuryChatbotWidget />
+          </Suspense>
         </>
       </PersonalizationProvider>
     </AuthProvider>

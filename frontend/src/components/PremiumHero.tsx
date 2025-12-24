@@ -30,13 +30,8 @@ function PremiumButton({
       whileTap={{ scale: 0.98 }}
       style={{ position: 'relative' }}
     >
-      {/* Outer glow effect */}
-      <motion.div
-        animate={{
-          opacity: isHovered ? 1 : 0,
-          scale: isHovered ? 1 : 0.8,
-        }}
-        transition={{ duration: 0.3 }}
+      {/* Outer glow effect - OPTIMIZED: Removed animation, reduced blur */}
+      <div
         style={{
           position: 'absolute',
           inset: '-4px',
@@ -44,8 +39,10 @@ function PremiumButton({
             ? 'linear-gradient(135deg, #0FE3C0, #6366F1, #EC4899)'
             : 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
           borderRadius: '16px',
-          filter: 'blur(12px)',
+          filter: 'blur(6px)',
           zIndex: 0,
+          opacity: isHovered ? 0.7 : 0,
+          transition: 'opacity 0.3s ease',
         }}
       />
 

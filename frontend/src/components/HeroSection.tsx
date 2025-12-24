@@ -7,8 +7,11 @@ const HeroSection = () => {
   // Check if we're client-side (SSR support)
   const isClient = typeof window !== 'undefined';
 
+  // OPTIMIZED: Disable Three.js on mobile and tablets for better performance
+  const isMobile = isClient && (window.innerWidth < 1024 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+
   useEffect(() => {
-    if (!isClient || !canvasRef.current) return;
+    if (!isClient || !canvasRef.current || isMobile) return;
 
     let animationActive = true;
     let renderer: any = null;
@@ -56,11 +59,11 @@ const HeroSection = () => {
       );
       scene.add(core);
 
-      // Thunder / lightning arcs
+      // Thunder / lightning arcs - OPTIMIZED: Reduced from 12 to 6 arcs
       arcs = [];
-      for(let i = 0; i < 12; i++){
+      for(let i = 0; i < 6; i++){
         const points = [];
-        for(let j = 0; j < 20; j++) points.push(new (window as any).THREE.Vector3());
+        for(let j = 0; j < 12; j++) points.push(new (window as any).THREE.Vector3()); // Reduced from 20 to 12 points
         const geo = new (window as any).THREE.BufferGeometry().setFromPoints(points);
         const mat = new (window as any).THREE.LineBasicMaterial({
           color: 0x00ffff,
@@ -73,11 +76,11 @@ const HeroSection = () => {
         arcs.push(line);
       }
 
-      // Orbiting energy rings
+      // Orbiting energy rings - OPTIMIZED: Reduced from 5 to 3 rings, lower segment count
       rings = [];
-      for(let i = 1; i <= 5; i++){
+      for(let i = 1; i <= 3; i++){
         const ring = new (window as any).THREE.Mesh(
-          new (window as any).THREE.RingGeometry(i*1.2, i*1.2 + 0.15, 64),
+          new (window as any).THREE.RingGeometry(i*1.5, i*1.5 + 0.15, 32), // Reduced segments from 64 to 32
           new (window as any).THREE.MeshBasicMaterial({
             color: 0x00ffff,
             side: (window as any).THREE.DoubleSide,
@@ -90,11 +93,11 @@ const HeroSection = () => {
         rings.push(ring);
       }
 
-      // Shockwave rings
+      // Shockwave rings - OPTIMIZED: Reduced segments from 64 to 32
       shocks = [];
-      for(let i = 0; i < 3; i++){
+      for(let i = 0; i < 2; i++){ // Reduced from 3 to 2
         const s = new (window as any).THREE.Mesh(
-          new (window as any).THREE.RingGeometry(0.5, 8, 64),
+          new (window as any).THREE.RingGeometry(0.5, 8, 32), // Reduced segments
           new (window as any).THREE.MeshBasicMaterial({
             color: 0xff0088,
             side: (window as any).THREE.DoubleSide,
@@ -107,8 +110,8 @@ const HeroSection = () => {
         shocks.push(s);
       }
 
-      // Fire particles (explosion)
-      const fireCount = 800;
+      // Fire particles (explosion) - OPTIMIZED: Reduced from 800 to 200
+      const fireCount = 200;
       fireGeo = new (window as any).THREE.BufferGeometry();
       pos = new Float32Array(fireCount * 3);
       vel = new Float32Array(fireCount * 3);
