@@ -22,5 +22,9 @@ COPY . .
 # Expose port (Hugging Face Spaces uses 7860)
 EXPOSE 7860
 
+
+# Set PORT environment variable for Hugging Face Spaces
+ENV PORT=7860
+
 # Run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

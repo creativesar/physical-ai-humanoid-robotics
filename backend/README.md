@@ -1,6 +1,18 @@
+---
+title: Physical AI Robotics Backend API
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # Physical AI & Humanoid Robotics Textbook - Backend API
 
 This backend API provides RAG (Retrieval Augmented Generation) functionality for the Physical AI & Humanoid Robotics textbook, allowing users to ask questions about the content and receive contextually relevant answers.
+
+**🚀 Live API Documentation:** Visit `/docs` endpoint after deployment for interactive Swagger UI.
 
 ## Features
 

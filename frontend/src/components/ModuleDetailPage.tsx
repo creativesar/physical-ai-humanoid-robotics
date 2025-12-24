@@ -23,7 +23,7 @@ interface ModuleDetailPageProps {
 
 const ModuleDetailPage: React.FC<ModuleDetailPageProps> = ({ moduleData }) => {
   const context = useDocusaurusContext();
-  const backendUrl = context.siteConfig.customFields?.backendUrl || 'http://localhost:8000';
+  const backendUrl = context.siteConfig.customFields?.backendUrl || 'https://creativesar-face.hf.space';
   const [activeTab, setActiveTab] = useState<'content' | 'exercises' | 'glossary' | 'references'>('content');
   const [selectedText, setSelectedText] = useState<string | null>(null);
 

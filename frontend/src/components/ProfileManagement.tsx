@@ -23,7 +23,7 @@ interface ProfileManagementProps {
 
 const ProfileManagement: React.FC<ProfileManagementProps> = ({
   userId,
-  backendUrl = 'http://localhost:8000',
+  backendUrl = 'https://creativesar-face.hf.space',
   onClose
 }) => {
   const [profile, setProfile] = useState<ProfileData>({

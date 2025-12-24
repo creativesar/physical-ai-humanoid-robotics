@@ -246,7 +246,7 @@ const LuxuryChatbotWidget: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { siteConfig } = useDocusaurusContext();
 
-  const API_URL = (siteConfig.customFields?.backendUrl as string) || 'http://localhost:8000';
+  const API_URL = (siteConfig.customFields?.backendUrl as string) || 'https://creativesar-face.hf.space';
 
   // Get current conversation and theme
   const currentConversation = conversations.find(conv => conv.id === currentConversationId) || conversations[0];
